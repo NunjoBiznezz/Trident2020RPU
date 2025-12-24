@@ -21,6 +21,7 @@
 // Scores not ending in zero (wizard mode)
 // unstructured play jackpots
 // increase mode start time with new qualifier
+#include <Arduino.h>
 #include "RPU_config.h"
 #include "RPU.h"
 #include "Trident2020.h"
@@ -28,6 +29,10 @@
 #include <EEPROM.h>
 #include "AudioHandler.h"
 
+// Forward declarations
+byte ReadSetting(byte setting, byte defaultValue);
+void PlaySoundEffect(byte soundEffectNum);
+void PlayBackgroundSongBasedOnBall(byte ballNum);
 
 #define TRIDENT2020_MAJOR_VERSION  2020
 #define TRIDENT2020_MINOR_VERSION  3
