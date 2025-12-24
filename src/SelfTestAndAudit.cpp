@@ -19,7 +19,7 @@
  */
 
 #include <Arduino.h>
-#include "RPU_Config.h"
+#include "RPU_config.h"
 #include "RPU.h"
 #include "SelfTestAndAudit.h"
 
