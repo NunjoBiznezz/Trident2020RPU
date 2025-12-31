@@ -48,6 +48,7 @@
 #include "RPU_config.h"
 #include <Arduino.h>
 
+
 constexpr uint16_t VOICE_NOTIFICATION_STACK_EMPTY = 0xFFFF;
 constexpr uint16_t BACKGROUND_TRACK_NONE = 0xFFFF;
 
@@ -85,7 +86,7 @@ AudioHandler::AudioHandler() {
 AudioHandler::~AudioHandler() {}
 
 bool AudioHandler::InitDevices(uint8_t audioType) {
-#if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
+#if defined(AUDIOHANDLER_USES_WAV_TRIGGER)
    if (audioType & AUDIO_PLAY_TYPE_WAV_TRIGGER) {
       // WAV Trigger startup at 57600
       wTrig.start();
@@ -100,9 +101,6 @@ bool AudioHandler::InitDevices(uint8_t audioType) {
 #ifdef RPU_OS_USE_SB300
       InitSB300Registers();
       PlaySB300StartupBeep();
-#endif
-
-#if defined(RPU_OS_USE_WTYPE_1_SOUND) || defined(RPU_OS_USE_WTYPE_2_SOUND)
 #endif
    }
 
@@ -140,7 +138,7 @@ void AudioHandler::SetSoundFXDuckingGain(uint8_t s_ducking) {
 }
 
 bool AudioHandler::StopSound(uint16_t soundIndex) {
-#if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
+#if defined(AUDIOHANDLER_USES_WAV_TRIGGER)
    wTrig.trackStop(soundIndex);
 #else
    (void)soundIndex;
@@ -150,7 +148,7 @@ bool AudioHandler::StopSound(uint16_t soundIndex) {
 
 bool AudioHandler::StopAllMusic() {
    curSoundtrack = NULL;
-#if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
+#if defined(AUDIOHANDLER_USES_WAV_TRIGGER)
    if (currentBackgroundTrack != BACKGROUND_TRACK_NONE) {
       wTrig.trackStop(currentBackgroundTrack);
       currentBackgroundTrack = BACKGROUND_TRACK_NONE;
@@ -189,7 +187,7 @@ bool AudioHandler::StopCurrentNotification(uint8_t priority) {
    nextVoiceNotificationPlayTime = 0;
 
    if (currentNotificationPlaying != INVALID_SOUND_INDEX && currentNotificationPriority <= priority) {
-#if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
+#if defined(AUDIOHANDLER_USES_WAV_TRIGGER)
       wTrig.trackStop(currentNotificationPlaying);
 #endif
       //    currentNotificationPlaying = INVALID_SOUND_INDEX;
@@ -256,7 +254,7 @@ void AudioHandler::DuckCurrentSoundEffects() {
       return;
    }
 
-#if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
+#if defined(AUDIOHANDLER_USES_WAV_TRIGGER)
    for (int count = 0; count < WavTrigger::maxNumVoices(); count++) {
       int trackNum = wTrig.getPlayingTrack(count);
       if (trackNum != ((int)0xFFFF) && trackNum != ((int)currentBackgroundTrack) && trackNum != ((int)currentNotificationPlaying)) {
@@ -269,7 +267,7 @@ void AudioHandler::DuckCurrentSoundEffects() {
 
 bool AudioHandler::QueuePrioritizedNotification(uint16_t notificationIndex, uint16_t notificationLength, uint8_t priority,
                                                 unsigned long currentTime) {
-#if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
+#if defined(AUDIOHANDLER_USES_WAV_TRIGGER)
    // if everything on the queue has a lower priority, kill all those
    uint8_t topQueuePriority = GetTopNotificationPriority();
    if (priority > topQueuePriority) {
@@ -309,7 +307,7 @@ bool AudioHandler::QueuePrioritizedNotification(uint16_t notificationIndex, uint
 }
 
 void AudioHandler::OutputTracksPlaying() {
-#if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
+#if defined(AUDIOHANDLER_USES_WAV_TRIGGER)
    int i;
    char buf[256];
    sprintf(buf, "nothing");
@@ -329,7 +327,7 @@ void AudioHandler::OutputTracksPlaying() {
 
 bool AudioHandler::ServiceNotificationQueue(unsigned long currentTime) {
    bool queueStillHasEntries = true;
-#if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
+#if defined(AUDIOHANDLER_USES_WAV_TRIGGER)
    bool playNextNotification = false;
 
    if (nextVoiceNotificationPlayTime != 0) {
@@ -406,7 +404,7 @@ bool AudioHandler::StopAllNotifications(uint8_t priority) {
 }
 
 bool AudioHandler::StopAllSoundFX() {
-#if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
+#if defined(AUDIOHANDLER_USES_WAV_TRIGGER)
    wTrig.stopAllTracks();
 #endif
    ClearSoundCardQueue();
@@ -499,7 +497,7 @@ bool AudioHandler::PlaySound(uint16_t soundIndex, uint8_t audioType, uint8_t ove
       break;
 
    case AUDIO_PLAY_TYPE_WAV_TRIGGER:
-#if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
+#if defined(AUDIOHANDLER_USES_WAV_TRIGGER)
 #ifdef RPU_OS_USE_WAV_TRIGGER
       wTrig.trackStop(soundIndex);
 #endif
@@ -519,7 +517,7 @@ bool AudioHandler::PlaySound(uint16_t soundIndex, uint8_t audioType, uint8_t ove
 
 bool AudioHandler::FadeSound(uint16_t soundIndex, int fadeGain, int numMilliseconds, bool stopTrack) {
    bool soundFaded = false;
-#if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
+#if defined(AUDIOHANDLER_USES_WAV_TRIGGER)
    wTrig.trackFade(soundIndex, fadeGain, numMilliseconds, stopTrack);
    soundFaded = true;
 #endif
@@ -720,14 +718,14 @@ bool AudioHandler::PlayBackgroundSong(uint16_t trackIndex, bool loopTrack) {
 
    if (trackIndex != BACKGROUND_TRACK_NONE) {
       currentBackgroundTrack = trackIndex;
-#if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
-#ifdef RPU_OS_USE_WAV_TRIGGER_1p3
+#if defined(AUDIOHANDLER_USES_WAV_TRIGGER)
+#  if defined(AUDIOHANDLER_USES_WAV_TRIGGER_1P3)
       wTrig.trackPlayPoly(trackIndex, true);
       trackPlayed = true;
-#else
+#  else
       wTrig.trackPlayPoly(trackIndex);
       trackPlayed = true;
-#endif
+#  endif
       if (loopTrack) {
          wTrig.trackLoop(trackIndex, true);
       }
@@ -770,18 +768,18 @@ void AudioHandler::StartNextSoundtrackSong(unsigned long currentTime) {
    backgroundSongEndTime = (((unsigned long)curSoundtrack[retSong].TrackLength) * 1000) + currentTime;
 
    if (currentBackgroundTrack != BACKGROUND_TRACK_NONE) {
-#if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
+#if defined(AUDIOHANDLER_USES_WAV_TRIGGER)
       wTrig.trackFade(currentBackgroundTrack, -80, 2000, 1);
 #endif
    }
    currentBackgroundTrack = curSoundtrack[retSong].TrackIndex;
 
-#if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
-#ifdef RPU_OS_USE_WAV_TRIGGER_1p3
+#if defined(AUDIOHANDLER_USES_WAV_TRIGGER)
+#  if defined(AUDIOHANDLER_USES_WAV_TRIGGER_1P3)
    wTrig.trackPlayPoly(currentBackgroundTrack, true);
-#else
+#  else
    wTrig.trackPlayPoly(currentBackgroundTrack);
-#endif
+#  endif
    wTrig.trackGain(currentBackgroundTrack, musicGain);
 #endif
 }
@@ -796,7 +794,7 @@ void AudioHandler::ManageBackgroundSong(unsigned long currentTime) {
          StartNextSoundtrackSong(currentTime);
       }
    } else {
-#if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
+#if defined(AUDIOHANDLER_USES_WAV_TRIGGER)
       if (!wTrig.isTrackPlaying(currentBackgroundTrack)) {
          StartNextSoundtrackSong(currentTime);
       }
@@ -805,7 +803,7 @@ void AudioHandler::ManageBackgroundSong(unsigned long currentTime) {
 }
 
 bool AudioHandler::Update(unsigned long currentTime) {
-#if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
+#if defined(AUDIOHANDLER_USES_WAV_TRIGGER)
    wTrig.update();
 #endif
    bool queueHasEntries = false;

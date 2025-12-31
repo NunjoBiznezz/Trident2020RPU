@@ -6,6 +6,13 @@
 #include <HardwareSerial.h>
 #include <stdint.h>
 
+#if defined(RPU_OS_USE_WAV_TRIGGER_1p3)
+#define AUDIOHANDLER_USES_WAV_TRIGGER
+#define AUDIOHANDLER_USES_WAV_TRIGGER_1P3
+#elif defined(RPU_OS_USE_WAV_TRIGGER)
+#define AUDIOHANDLER_USES_WAV_TRIGGER
+#endif
+
 // These are also used as masks in the InitDevices code, so leave them as powers of 2
 constexpr uint8_t AUDIO_PLAY_TYPE_CHIMES = 1; // Not used?
 constexpr uint8_t AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS = 2;
@@ -133,7 +140,7 @@ class AudioHandler {
    SoundCardCommandEntry soundCardQueue[SOUND_CARD_QUEUE_SIZE];
 #endif
 
-#if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
+#if defined(AUDIOHANDLER_USES_WAV_TRIGGER)
    WavTrigger wTrig; // Our WAV Trigger object
 #endif
 
