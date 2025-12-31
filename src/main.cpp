@@ -47,36 +47,14 @@ void PlayBackgroundSongBasedOnBall(uint8_t ballNum);
 
 *********************************************************************/
 
+#include "MachineState.h"
+
 // MachineState
 //  0 - Attract Mode
 //  negative - self-test modes
 //  positive - game play
 int8_t MachineState = 0;
 bool MachineStateChanged = true;
-
-constexpr int8_t MACHINE_STATE_ATTRACT = 0;
-constexpr int8_t MACHINE_STATE_INIT_GAMEPLAY = 1;
-constexpr int8_t MACHINE_STATE_INIT_NEW_BALL = 2;
-constexpr int8_t MACHINE_STATE_NORMAL_GAMEPLAY = 4;
-constexpr int8_t MACHINE_STATE_COUNTDOWN_BONUS = 99;
-constexpr int8_t MACHINE_STATE_BALL_OVER = 100;
-constexpr int8_t MACHINE_STATE_MATCH_MODE = 110;
-
-constexpr int8_t MACHINE_STATE_ADJUST_FREEPLAY = (MACHINE_STATE_TEST_DONE - 1);
-constexpr int8_t MACHINE_STATE_ADJUST_BALL_SAVE = (MACHINE_STATE_TEST_DONE - 2);
-constexpr int8_t MACHINE_STATE_ADJUST_SFX_AND_SOUNDTRACK = (MACHINE_STATE_TEST_DONE - 3);
-constexpr int8_t MACHINE_STATE_ADJUST_MUSIC_VOLUME = (MACHINE_STATE_TEST_DONE - 4);
-constexpr int8_t MACHINE_STATE_ADJUST_SFX_VOLUME = (MACHINE_STATE_TEST_DONE - 5);
-constexpr int8_t MACHINE_STATE_ADJUST_CALLOUTS_VOLUME = (MACHINE_STATE_TEST_DONE - 6);
-constexpr int8_t MACHINE_STATE_ADJUST_TOURNAMENT_SCORING = (MACHINE_STATE_TEST_DONE - 7);
-constexpr int8_t MACHINE_STATE_ADJUST_TILT_WARNING = (MACHINE_STATE_TEST_DONE - 8);
-constexpr int8_t MACHINE_STATE_ADJUST_AWARD_OVERRIDE = (MACHINE_STATE_TEST_DONE - 9);
-constexpr int8_t MACHINE_STATE_ADJUST_BALLS_OVERRIDE = (MACHINE_STATE_TEST_DONE - 10);
-constexpr int8_t MACHINE_STATE_ADJUST_SCROLLING_SCORES = (MACHINE_STATE_TEST_DONE - 11);
-constexpr int8_t MACHINE_STATE_ADJUST_EXTRA_BALL_AWARD = (MACHINE_STATE_TEST_DONE - 12);
-constexpr int8_t MACHINE_STATE_ADJUST_SPECIAL_AWARD = (MACHINE_STATE_TEST_DONE - 13);
-constexpr int8_t MACHINE_STATE_ADJUST_DIM_LEVEL = (MACHINE_STATE_TEST_DONE - 14);
-constexpr int8_t MACHINE_STATE_ADJUST_DONE = (MACHINE_STATE_TEST_DONE - 15);
 
 // Game modes
 constexpr uint8_t GAME_MODE_SKILL_SHOT = 0;
@@ -106,7 +84,6 @@ constexpr int EEPROM_CALLOUTS_VOLUME_BYTE = 111;
 constexpr int EEPROM_DIM_LEVEL_BYTE = 113;
 constexpr int EEPROM_EXTRA_BALL_SCORE_BYTE = 140;
 constexpr int EEPROM_SPECIAL_SCORE_BYTE = 144;
-
 
 #define STANDUP_PURPLE_MASK 0x01
 #define STANDUP_YELLOW_MASK 0x02
