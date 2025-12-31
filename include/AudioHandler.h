@@ -177,8 +177,17 @@ class AudioHandler
 
     bool PlaySound(unsigned short soundIndex, uint8_t audioType, uint8_t overrideVolume=0xFF);
     bool FadeSound(unsigned short soundIndex, int fadeGain, int numMilliseconds, bool stopTrack);
+    
     bool QueueSound(unsigned short soundIndex, uint8_t audioType, unsigned long timeToPlay, uint8_t overrideVolume=0xFF);
+    inline bool QueueOriginalSound(unsigned short soundIndex, unsigned long timeToPlay, uint8_t overrideVolume=0xFF) {
+      return QueueSound(soundIndex, AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS, timeToPlay, overrideVolume);
+    }
+    inline bool QueueWavTriggerSound(unsigned short soundIndex, unsigned long timeToPlay, uint8_t overrideVolume=0xFF) {
+      return QueueSound(soundIndex, AUDIO_PLAY_TYPE_WAV_TRIGGER, timeToPlay, overrideVolume);
+    }
+
     bool QueueSoundCardCommand(uint8_t scFunction, uint8_t scRegister, uint8_t scData, unsigned long startTime);
+  
     bool PlaySoundCardWhenPossible(unsigned short soundEffectNum, unsigned long currentTime, unsigned long requestedPlayTime = 0, unsigned long playUntil = 50, uint8_t priority = 10);
     
     bool QueuePrioritizedNotification(unsigned short notificationIndex, unsigned short notificationLength, uint8_t priority, unsigned long currentTime);
@@ -194,7 +203,6 @@ class AudioHandler
 
   private:
     AudioSoundtrack *curSoundtrack;
-    int volumeToGainConversion[11] = {-70, -18, -16, -14, -12, -10, -8, -6, -4, -2, 0};
     int soundFXGain;
     int notificationsGain;
     int musicGain;    

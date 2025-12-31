@@ -93,6 +93,7 @@ constexpr uint8_t SOUND_EFFECT_COIN_DROP_3 = 102;
 constexpr uint8_t SOUND_EFFECT_SELF_TEST_CPC_START = 180;
 constexpr uint8_t SOUND_EFFECT_SELF_TEST_AUDIO_OPTIONS_START = 190;
 
+// Diagnostic sound effects
 constexpr uint16_t SOUND_EFFECT_DIAG_START = 1900;
 constexpr uint16_t SOUND_EFFECT_DIAG_CREDIT_RESET_BUTTON = 1900;
 constexpr uint16_t SOUND_EFFECT_DIAG_SELECTOR_SWITCH_ON = 1901;

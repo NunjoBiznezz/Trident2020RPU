@@ -18,8 +18,8 @@
     See <https://www.gnu.org/licenses/>.
  */
 
- #include <stdint.h>
- 
+#include <stdint.h>
+
 // Lamp Numbers (defines for lamps)
 constexpr int BONUS_1 = 0;
 constexpr int BONUS_2 = 1;
