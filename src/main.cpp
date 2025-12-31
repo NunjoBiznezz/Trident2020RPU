@@ -28,9 +28,12 @@
 #include "Trident2020.h"
 #include <Arduino.h>
 #include <EEPROM.h>
+#include <stdint.h>
+
+#include "SoundEffects.h"
 
 // Forward declarations
-uint8_t ReadSetting(uint8_t setting, uint8_t defaultValue);
+uint8_t ReadSetting(int setting, uint8_t defaultValue);
 void PlaySoundEffect(uint8_t soundEffectNum);
 void PlayBackgroundSongBasedOnBall(uint8_t ballNum);
 
@@ -48,164 +51,62 @@ void PlayBackgroundSongBasedOnBall(uint8_t ballNum);
 //  0 - Attract Mode
 //  negative - self-test modes
 //  positive - game play
-char MachineState = 0;
+int8_t MachineState = 0;
 bool MachineStateChanged = true;
-#define MACHINE_STATE_ATTRACT 0
-#define MACHINE_STATE_INIT_GAMEPLAY 1
-#define MACHINE_STATE_INIT_NEW_BALL 2
-#define MACHINE_STATE_NORMAL_GAMEPLAY 4
-#define MACHINE_STATE_COUNTDOWN_BONUS 99
-#define MACHINE_STATE_BALL_OVER 100
-#define MACHINE_STATE_MATCH_MODE 110
 
-#define MACHINE_STATE_ADJUST_FREEPLAY (MACHINE_STATE_TEST_DONE - 1)
-#define MACHINE_STATE_ADJUST_BALL_SAVE (MACHINE_STATE_TEST_DONE - 2)
-#define MACHINE_STATE_ADJUST_SFX_AND_SOUNDTRACK (MACHINE_STATE_TEST_DONE - 3)
-#define MACHINE_STATE_ADJUST_MUSIC_VOLUME (MACHINE_STATE_TEST_DONE - 4)
-#define MACHINE_STATE_ADJUST_SFX_VOLUME (MACHINE_STATE_TEST_DONE - 5)
-#define MACHINE_STATE_ADJUST_CALLOUTS_VOLUME (MACHINE_STATE_TEST_DONE - 6)
-#define MACHINE_STATE_ADJUST_TOURNAMENT_SCORING (MACHINE_STATE_TEST_DONE - 7)
-#define MACHINE_STATE_ADJUST_TILT_WARNING (MACHINE_STATE_TEST_DONE - 8)
-#define MACHINE_STATE_ADJUST_AWARD_OVERRIDE (MACHINE_STATE_TEST_DONE - 9)
-#define MACHINE_STATE_ADJUST_BALLS_OVERRIDE (MACHINE_STATE_TEST_DONE - 10)
-#define MACHINE_STATE_ADJUST_SCROLLING_SCORES (MACHINE_STATE_TEST_DONE - 11)
-#define MACHINE_STATE_ADJUST_EXTRA_BALL_AWARD (MACHINE_STATE_TEST_DONE - 12)
-#define MACHINE_STATE_ADJUST_SPECIAL_AWARD (MACHINE_STATE_TEST_DONE - 13)
-#define MACHINE_STATE_ADJUST_DIM_LEVEL (MACHINE_STATE_TEST_DONE - 14)
-#define MACHINE_STATE_ADJUST_DONE (MACHINE_STATE_TEST_DONE - 15)
+constexpr int8_t MACHINE_STATE_ATTRACT = 0;
+constexpr int8_t MACHINE_STATE_INIT_GAMEPLAY = 1;
+constexpr int8_t MACHINE_STATE_INIT_NEW_BALL = 2;
+constexpr int8_t MACHINE_STATE_NORMAL_GAMEPLAY = 4;
+constexpr int8_t MACHINE_STATE_COUNTDOWN_BONUS = 99;
+constexpr int8_t MACHINE_STATE_BALL_OVER = 100;
+constexpr int8_t MACHINE_STATE_MATCH_MODE = 110;
 
-#define GAME_MODE_SKILL_SHOT 0
-#define GAME_MODE_UNSTRUCTURED_PLAY 1
-#define GAME_MODE_MINI_GAME_QUALIFIED 2
-#define GAME_MODE_MINI_GAME_ENGAGED 3
-#define GAME_MODE_MINI_GAME_REWARD_COUNTDOWN 4
-#define GAME_MODE_WIZARD_INTRO 5
-#define GAME_MODE_FEEDING_FRENZY_FLAG 0x10
-#define GAME_MODE_SHARP_SHOOTER_FLAG 0x20
-#define GAME_MODE_EXPLORE_THE_DEPTHS_FLAG 0x40
-#define GAME_MODE_WIZARD_WITHOUT_FLAGS 0x0F
-#define GAME_MODE_WIZARD 0x7F
+constexpr int8_t MACHINE_STATE_ADJUST_FREEPLAY = (MACHINE_STATE_TEST_DONE - 1);
+constexpr int8_t MACHINE_STATE_ADJUST_BALL_SAVE = (MACHINE_STATE_TEST_DONE - 2);
+constexpr int8_t MACHINE_STATE_ADJUST_SFX_AND_SOUNDTRACK = (MACHINE_STATE_TEST_DONE - 3);
+constexpr int8_t MACHINE_STATE_ADJUST_MUSIC_VOLUME = (MACHINE_STATE_TEST_DONE - 4);
+constexpr int8_t MACHINE_STATE_ADJUST_SFX_VOLUME = (MACHINE_STATE_TEST_DONE - 5);
+constexpr int8_t MACHINE_STATE_ADJUST_CALLOUTS_VOLUME = (MACHINE_STATE_TEST_DONE - 6);
+constexpr int8_t MACHINE_STATE_ADJUST_TOURNAMENT_SCORING = (MACHINE_STATE_TEST_DONE - 7);
+constexpr int8_t MACHINE_STATE_ADJUST_TILT_WARNING = (MACHINE_STATE_TEST_DONE - 8);
+constexpr int8_t MACHINE_STATE_ADJUST_AWARD_OVERRIDE = (MACHINE_STATE_TEST_DONE - 9);
+constexpr int8_t MACHINE_STATE_ADJUST_BALLS_OVERRIDE = (MACHINE_STATE_TEST_DONE - 10);
+constexpr int8_t MACHINE_STATE_ADJUST_SCROLLING_SCORES = (MACHINE_STATE_TEST_DONE - 11);
+constexpr int8_t MACHINE_STATE_ADJUST_EXTRA_BALL_AWARD = (MACHINE_STATE_TEST_DONE - 12);
+constexpr int8_t MACHINE_STATE_ADJUST_SPECIAL_AWARD = (MACHINE_STATE_TEST_DONE - 13);
+constexpr int8_t MACHINE_STATE_ADJUST_DIM_LEVEL = (MACHINE_STATE_TEST_DONE - 14);
+constexpr int8_t MACHINE_STATE_ADJUST_DONE = (MACHINE_STATE_TEST_DONE - 15);
 
-#define EEPROM_BALL_SAVE_BYTE 100
-#define EEPROM_FREE_PLAY_BYTE 101
-#define EEPROM_SOUND_SELECTOR_BYTE 102
-#define EEPROM_SKILL_SHOT_BYTE 103
-#define EEPROM_TILT_WARNING_BYTE 104
-#define EEPROM_AWARD_OVERRIDE_BYTE 105
-#define EEPROM_BALLS_OVERRIDE_BYTE 106
-#define EEPROM_TOURNAMENT_SCORING_BYTE 107
-#define EEPROM_MUSIC_VOLUME_BYTE 108
-#define EEPROM_SFX_VOLUME_BYTE 109
-#define EEPROM_SCROLLING_SCORES_BYTE 110
-#define EEPROM_CALLOUTS_VOLUME_BYTE 111
-#define EEPROM_DIM_LEVEL_BYTE 113
-#define EEPROM_EXTRA_BALL_SCORE_BYTE 140
-#define EEPROM_SPECIAL_SCORE_BYTE 144
+// Game modes
+constexpr uint8_t GAME_MODE_SKILL_SHOT = 0;
+constexpr uint8_t GAME_MODE_UNSTRUCTURED_PLAY = 1;
+constexpr uint8_t GAME_MODE_MINI_GAME_QUALIFIED = 2;
+constexpr uint8_t GAME_MODE_MINI_GAME_ENGAGED = 3;
+constexpr uint8_t GAME_MODE_MINI_GAME_REWARD_COUNTDOWN = 4;
+constexpr uint8_t GAME_MODE_WIZARD_INTRO = 5;
+constexpr uint8_t GAME_MODE_FEEDING_FRENZY_FLAG = 0x10;
+constexpr uint8_t GAME_MODE_SHARP_SHOOTER_FLAG = 0x20;
+constexpr uint8_t GAME_MODE_EXPLORE_THE_DEPTHS_FLAG = 0x40;
+constexpr uint8_t GAME_MODE_WIZARD_WITHOUT_FLAGS = 0x0F;
+constexpr uint8_t GAME_MODE_WIZARD = 0x7F;
 
-#define SOUND_EFFECT_NONE 0
-#define SOUND_EFFECT_DT_SKILL_SHOT 1
-#define SOUND_EFFECT_ROLLOVER_SKILL_SHOT 2
-#define SOUND_EFFECT_SU_SKILL_SHOT 3
-#define SOUND_EFFECT_LEFT_SPINNER 4
-#define SOUND_EFFECT_RIGHT_SPINNER 5
-#define SOUND_EFFECT_ROLLOVER 6
-#define SOUND_EFFECT_LEFT_INLANE 7
-#define SOUND_EFFECT_RIGHT_INLANE 8
-#define SOUND_EFFECT_RIGHT_OUTLANE 9
-#define SOUND_EFFECT_TOP_BUMPER_HIT 10
-#define SOUND_EFFECT_BOTTOM_BUMPER_HIT 11
-#define SOUND_EFFECT_DROP_TARGET 12
-#define SOUND_EFFECT_ADD_CREDIT 13
-#define SOUND_EFFECT_RESCUE_FROM_THE_DEEP 14
-#define SOUND_EFFECT_SHOOT_AGAIN 15
-#define SOUND_EFFECT_FEEDING_FRENZY 16
-#define SOUND_EFFECT_FEEDING_FRENZY_START 17
-#define SOUND_EFFECT_SHARP_SHOOTER_START 18
-#define SOUND_EFFECT_JACKPOT 19
-#define SOUND_EFFECT_ADD_PLAYER_1 20
-#define SOUND_EFFECT_ADD_PLAYER_2 SOUND_EFFECT_ADD_PLAYER_1 + 1
-#define SOUND_EFFECT_ADD_PLAYER_3 SOUND_EFFECT_ADD_PLAYER_1 + 2
-#define SOUND_EFFECT_ADD_PLAYER_4 SOUND_EFFECT_ADD_PLAYER_1 + 3
-#define SOUND_EFFECT_PLAYER_1_UP 24
-#define SOUND_EFFECT_PLAYER_2_UP SOUND_EFFECT_PLAYER_1_UP + 1
-#define SOUND_EFFECT_PLAYER_3_UP SOUND_EFFECT_PLAYER_1_UP + 2
-#define SOUND_EFFECT_PLAYER_4_UP SOUND_EFFECT_PLAYER_1_UP + 3
-#define SOUND_EFFECT_BALL_OVER 30
-#define SOUND_EFFECT_GAME_OVER 31
-#define SOUND_EFFECT_BONUS_COUNT 32
-#define SOUND_EFFECT_2X_BONUS_COUNT 33
-#define SOUND_EFFECT_3X_BONUS_COUNT 34
-#define SOUND_EFFECT_4X_BONUS_COUNT 35
-#define SOUND_EFFECT_5X_BONUS_COUNT 36
-#define SOUND_EFFECT_EXTRA_BALL 37
-#define SOUND_EFFECT_TILT_WARNING 39
-#define SOUND_EFFECT_MATCH_SPIN 40
-#define SOUND_EFFECT_LOWER_SLING 41
-#define SOUND_EFFECT_UPPER_SLING 42
-#define SOUND_EFFECT_10PT_SWITCH 43
-#define SOUND_EFFECT_SAUCER_HIT_5K 44
-#define SOUND_EFFECT_SAUCER_HIT_10K 45
-#define SOUND_EFFECT_SAUCER_HIT_20K 46
-#define SOUND_EFFECT_SAUCER_HIT_30K 47
-#define SOUND_EFFECT_SHARP_SHOOTER_HIT 48
-#define SOUND_EFFECT_DROP_TARGET_CLEAR_1 50
-#define SOUND_EFFECT_DROP_TARGET_CLEAR_2 SOUND_EFFECT_DROP_TARGET_CLEAR_1 + 1
-#define SOUND_EFFECT_DROP_TARGET_CLEAR_3 SOUND_EFFECT_DROP_TARGET_CLEAR_1 + 2
-#define SOUND_EFFECT_DROP_TARGET_CLEAR_4 SOUND_EFFECT_DROP_TARGET_CLEAR_1 + 3
-#define SOUND_EFFECT_DROP_TARGET_CLEAR_5 SOUND_EFFECT_DROP_TARGET_CLEAR_1 + 4
-#define SOUND_EFFECT_FIRST_SU_SWITCH_HIT 55
-#define SOUND_EFFECT_SECOND_SU_SWITCH_HIT SOUND_EFFECT_FIRST_SU_SWITCH_HIT + 1
-#define SOUND_EFFECT_THIRD_SU_SWITCH_HIT SOUND_EFFECT_FIRST_SU_SWITCH_HIT + 2
-#define SOUND_EFFECT_FOURTH_SU_SWITCH_HIT SOUND_EFFECT_FIRST_SU_SWITCH_HIT + 3
-#define SOUND_EFFECT_FIFTH_SU_SWITCH_HIT SOUND_EFFECT_FIRST_SU_SWITCH_HIT + 4
-#define SOUND_EFFECT_EXPLORE_QUALIFIED 60
-#define SOUND_EFFECT_STANDUPS_CLEARED 61
-#define SOUND_EFFECT_EXPLORE_HIT 62
-#define SOUND_EFFECT_EXPLORE_THE_DEPTHS_START 63
-#define SOUND_EFFECT_SHARP_SHOOTER_QUALIFIED 65
-#define SOUND_EFFECT_FEEDING_FRENZY_QUALIFIED 66
-#define SOUND_EFFECT_MODE_FINISHED 67
-#define SOUND_EFFECT_SS_AND_FF_START 68
-#define SOUND_EFFECT_SS_AND_ETD_START 69
-#define SOUND_EFFECT_FF_AND_ETD_START 70
-#define SOUND_EFFECT_MEGA_STACK_START 71
-#define SOUND_EFFECT_SWIM_AGAIN 72
-#define SOUND_EFFECT_DEEP_BLUE_SEA_MODE 73
-#define SOUND_EFFECT_TRIDENT_INTRO 89
-#define SOUND_EFFECT_BACKGROUND_1 90
-#define SOUND_EFFECT_BACKGROUND_2 91
-#define SOUND_EFFECT_BACKGROUND_3 92
-#define SOUND_EFFECT_BACKGROUND_4 93
-#define SOUND_EFFECT_BACKGROUND_5 94
-#define SOUND_EFFECT_BACKGROUND_6 95
-#define SOUND_EFFECT_BACKGROUND_WIZ 96
-#define SOUND_EFFECT_BACKGROUND_FOR_SINGLE_MODE 97
-#define SOUND_EFFECT_BACKGROUND_FOR_DOUBLE_MODE 98
-#define SOUND_EFFECT_BACKGROUND_FOR_TRIPLE_MODE 99
+constexpr int EEPROM_BALL_SAVE_BYTE = 100;
+constexpr int EEPROM_FREE_PLAY_BYTE = 101;
+constexpr int EEPROM_SOUND_SELECTOR_BYTE = 102;
+constexpr int EEPROM_SKILL_SHOT_BYTE = 103;
+constexpr int EEPROM_TILT_WARNING_BYTE = 104;
+constexpr int EEPROM_AWARD_OVERRIDE_BYTE = 105;
+constexpr int EEPROM_BALLS_OVERRIDE_BYTE = 106;
+constexpr int EEPROM_TOURNAMENT_SCORING_BYTE = 107;
+constexpr int EEPROM_MUSIC_VOLUME_BYTE = 108;
+constexpr int EEPROM_SFX_VOLUME_BYTE = 109;
+constexpr int EEPROM_SCROLLING_SCORES_BYTE = 110;
+constexpr int EEPROM_CALLOUTS_VOLUME_BYTE = 111;
+constexpr int EEPROM_DIM_LEVEL_BYTE = 113;
+constexpr int EEPROM_EXTRA_BALL_SCORE_BYTE = 140;
+constexpr int EEPROM_SPECIAL_SCORE_BYTE = 144;
 
-#define SOUND_EFFECT_COIN_DROP_1 100
-#define SOUND_EFFECT_COIN_DROP_2 101
-#define SOUND_EFFECT_COIN_DROP_3 102
-
-#define SOUND_EFFECT_SELF_TEST_CPC_START 180
-#define SOUND_EFFECT_SELF_TEST_AUDIO_OPTIONS_START 190
-
-#define SOUND_EFFECT_DIAG_START 1900
-#define SOUND_EFFECT_DIAG_CREDIT_RESET_BUTTON 1900
-#define SOUND_EFFECT_DIAG_SELECTOR_SWITCH_ON 1901
-#define SOUND_EFFECT_DIAG_SELECTOR_SWITCH_OFF 1902
-#define SOUND_EFFECT_DIAG_STARTING_ORIGINAL_CODE 1903
-#define SOUND_EFFECT_DIAG_STARTING_NEW_CODE 1904
-#define SOUND_EFFECT_DIAG_ORIGINAL_CPU_DETECTED 1905
-#define SOUND_EFFECT_DIAG_ORIGINAL_CPU_RUNNING 1906
-#define SOUND_EFFECT_DIAG_PROBLEM_PIA_U10 1907
-#define SOUND_EFFECT_DIAG_PROBLEM_PIA_U11 1908
-#define SOUND_EFFECT_DIAG_PROBLEM_PIA_1 1909
-#define SOUND_EFFECT_DIAG_PROBLEM_PIA_2 1910
-#define SOUND_EFFECT_DIAG_PROBLEM_PIA_3 1911
-#define SOUND_EFFECT_DIAG_PROBLEM_PIA_4 1912
-#define SOUND_EFFECT_DIAG_PROBLEM_PIA_5 1913
-#define SOUND_EFFECT_DIAG_STARTING_DIAGNOSTICS_MODE 1914
 
 #define STANDUP_PURPLE_MASK 0x01
 #define STANDUP_YELLOW_MASK 0x02
@@ -264,7 +165,7 @@ bool TournamentScoring = false;
 bool ResetScoresToClearVersion = false;
 bool ScrollingScores = true;
 
-// byte dipBank0, dipBank1, dipBank2, dipBank3;
+// uint8_t dipBank0, dipBank1, dipBank2, dipBank3;
 // int BackgroundMusicGain = -3;
 
 AudioHandler Audio;
@@ -492,7 +393,7 @@ void setup() {
    Audio.QueueSound(SOUND_EFFECT_TRIDENT_INTRO, AUDIO_PLAY_TYPE_WAV_TRIGGER, CurrentTime + 5000);
 }
 
-uint8_t ReadSetting(uint8_t setting, uint8_t defaultValue) {
+uint8_t ReadSetting(int setting, uint8_t defaultValue) {
    uint8_t value = EEPROM.read(setting);
    if (value == 0xFF) {
       EEPROM.write(setting, defaultValue);
@@ -517,9 +418,9 @@ void ShowBonusOnTree(uint8_t bonus, uint8_t dim = 0) {
       bonus = MAX_DISPLAY_BONUS;
    }
 
-   byte cap = 10;
+   uint8_t cap = 10;
 
-   for (byte turnOff = (bonus + 1); turnOff < 11; turnOff++) {
+   for (uint8_t turnOff = (bonus + 1); turnOff < 11; turnOff++) {
       RPU_SetLampState(BONUS_1 + (turnOff - 1), 0);
    }
    if (bonus == 0) {
@@ -558,7 +459,7 @@ void ShowSaucerLamps() {
          RPU_SetLampState(TOP_EJECT_5K - count, count == lampPhase);
       }
    } else if (SaucerHitTime != 0 && (CurrentTime - SaucerHitTime) < SAUCER_DISPLAY_DURATION) {
-      byte saucerLamp = 0;
+      uint8_t saucerLamp = 0;
       if (ShowSaucerHit > 5) {
          saucerLamp = ShowSaucerHit / 10;
       }
@@ -640,11 +541,11 @@ uint8_t DropTargetSwitchArray[] = {SW_DROP_TARGET_1, SW_DROP_TARGET_2, SW_DROP_T
 
 void ShowDropTargetLamps() {
    if (GameMode == GAME_MODE_MINI_GAME_QUALIFIED) {
-      byte lampPhase = 0xFF;
+      uint8_t lampPhase = 0xFF;
       if (GameModeFlagsQualified & GAME_MODE_SHARP_SHOOTER_FLAG) {
          lampPhase = ((CurrentTime - GameModeStartTime) / 250) % 9;
       }
-      for (byte count = 0; count < 4; count++) {
+      for (uint8_t count = 0; count < 4; count++) {
          RPU_SetLampState(DROP_TARGET_1 - count, lampPhase == 0, 1);
          RPU_SetLampState(BONUS_2X_FEATURE - count, 0);
       }
@@ -662,12 +563,12 @@ void ShowDropTargetLamps() {
           RPU_SetLampState(DROP_TARGET_4, lampPhase==3);
           RPU_SetLampState(DROP_TARGET_5, lampPhase==4);
       */
-      for (byte count = 0; count < 4; count++) {
+      for (uint8_t count = 0; count < 4; count++) {
          RPU_SetLampState(BONUS_2X_FEATURE - count, 0);
       }
    } else if (GameMode == GAME_MODE_SKILL_SHOT) {
-      byte lampPhase = ((CurrentTime - GameModeStartTime) / 110) % 8;
-      for (byte count = 0; count < 5; count++) {
+      uint8_t lampPhase = ((CurrentTime - GameModeStartTime) / 110) % 8;
+      for (uint8_t count = 0; count < 5; count++) {
          //      RPU_SetLampState(DropTargetLampArray[count],
          //      (count==lampPhase)||(count==((7+lampPhase)&0x07))||(count==(7-lampPhase))||(count==((0-lampPhase)&0x07)),
          //      (count==lampPhase)||(count==((0-lampPhase)&0x07)));
@@ -686,11 +587,11 @@ void ShowDropTargetLamps() {
           RPU_SetLampState(DROP_TARGET_4, lampPhase%2, 1);
           RPU_SetLampState(DROP_TARGET_5, lampPhase==0);
       */
-      for (byte count = 0; count < 4; count++) {
+      for (uint8_t count = 0; count < 4; count++) {
          RPU_SetLampState(BONUS_2X_FEATURE - count, 0);
       }
    } else {
-      for (byte count = 0; count < 5; count++) {
+      for (uint8_t count = 0; count < 5; count++) {
          RPU_SetLampState(DropTargetLampArray[count], RPU_ReadSingleSwitchState(DropTargetSwitchArray[count]) ? 0 : 1);
       }
       /*
@@ -700,7 +601,7 @@ void ShowDropTargetLamps() {
           RPU_SetLampState(DROP_TARGET_4, RPU_ReadSingleSwitchState(SW_DROP_TARGET_4)?0:1);
           RPU_SetLampState(DROP_TARGET_5, RPU_ReadSingleSwitchState(SW_DROP_TARGET_5)?0:1);
       */
-      for (byte count = 0; count < 4; count++) {
+      for (uint8_t count = 0; count < 4; count++) {
          RPU_SetLampState(BONUS_2X_FEATURE - count, BonusX == (count + 1));
       }
    }
@@ -708,7 +609,7 @@ void ShowDropTargetLamps() {
 
 void ShowStandupTargetLamps() {
    if (GameMode == GAME_MODE_MINI_GAME_QUALIFIED) {
-      byte lampPhase = 0xFF;
+      uint8_t lampPhase = 0xFF;
       if (GameModeFlagsQualified & GAME_MODE_EXPLORE_THE_DEPTHS_FLAG) {
          lampPhase = ((CurrentTime - GameModeStartTime) / 250) % 9;
       }
@@ -771,7 +672,7 @@ void ShowBonusXLamps() {
 
 void ShowLeftSpinnerLamps() {
    if (GameMode == GAME_MODE_MINI_GAME_QUALIFIED) {
-      byte lampPhase = 0xFF;
+      uint8_t lampPhase = 0xFF;
       if (GameModeFlagsQualified & GAME_MODE_FEEDING_FRENZY_FLAG) {
          lampPhase = ((CurrentTime - GameModeStartTime) / 250) % 9;
       }
@@ -786,7 +687,7 @@ void ShowLeftSpinnerLamps() {
    } else {
       if ((GameMode & GAME_MODE_FEEDING_FRENZY_FLAG) ||
           (LastSpinnerHitTime != 0 && LastSpinnerSide == 2 && (CurrentTime - LastSpinnerHitTime) < MODE_QUALIFY_TIME)) {
-         byte lampPhase = ((CurrentTime - GameModeStartTime) / 100) % 3;
+         uint8_t lampPhase = ((CurrentTime - GameModeStartTime) / 100) % 3;
          RPU_SetLampState(LEFT_SPINNER_AMBER, lampPhase == 2);
          RPU_SetLampState(LEFT_SPINNER_WHITE, lampPhase == 1);
          RPU_SetLampState(LEFT_SPINNER_PURPLE, lampPhase == 0);
@@ -807,7 +708,7 @@ void ShowLeftSpinnerLamps() {
 
 void ShowRightSpinnerLamps() {
    if (GameMode == GAME_MODE_MINI_GAME_QUALIFIED || GameMode == GAME_MODE_SKILL_SHOT) {
-      byte lampPhase = 0xFF;
+      uint8_t lampPhase = 0xFF;
       if (GameModeFlagsQualified & GAME_MODE_FEEDING_FRENZY_FLAG) {
          lampPhase = ((CurrentTime - GameModeStartTime) / 250) % 9;
       }
@@ -818,7 +719,7 @@ void ShowRightSpinnerLamps() {
    } else {
       if ((GameMode & GAME_MODE_FEEDING_FRENZY_FLAG) ||
           (LastSpinnerHitTime != 0 && LastSpinnerSide == 1 && (CurrentTime - LastSpinnerHitTime) < MODE_QUALIFY_TIME)) {
-         byte lampPhase = ((CurrentTime - GameModeStartTime) / 100) % 3;
+         uint8_t lampPhase = ((CurrentTime - GameModeStartTime) / 100) % 3;
          RPU_SetLampState(RIGHT_SPINNER_YELLOW, lampPhase == 2);
          RPU_SetLampState(RIGHT_SPINNER_GREEN, lampPhase == 1);
          RPU_SetLampState(RIGHT_SPINNER_PURPLE, lampPhase == 0);
@@ -927,12 +828,12 @@ void ShowPlayerScores(uint8_t displayToUpdate, bool flashCurrent, bool dashCurre
       ScoreOverrideStatus = 0;
    }
 
-   byte displayMask = 0x3F;
+   uint8_t displayMask = 0x3F;
    unsigned long displayScore = 0;
    unsigned long overrideAnimationSeed = CurrentTime / 250;
-   byte scrollPhaseChanged = false;
+   uint8_t scrollPhaseChanged = false;
 
-   byte scrollPhase = ((CurrentTime - LastTimeScoreChanged) / 250) % 16;
+   uint8_t scrollPhase = ((CurrentTime - LastTimeScoreChanged) / 250) % 16;
    if (scrollPhase != LastScrollPhase) {
       LastScrollPhase = scrollPhase;
       scrollPhaseChanged = true;
@@ -1112,7 +1013,7 @@ void AddCoinToAudit(uint8_t chuteNum) {
    RPU_WriteULToEEProm(coinAuditStartByte, RPU_ReadULFromEEProm(coinAuditStartByte) + 1);
 }
 
-void AddCredit(boolean playSound = false, byte numToAdd = 1) {
+void AddCredit(boolean playSound = false, uint8_t numToAdd = 1) {
    if (Credits < MaximumCredits) {
       Credits += numToAdd;
       if (Credits > MaximumCredits) {
@@ -1145,11 +1046,11 @@ bool AddCoin(uint8_t chuteNum) {
    if (chuteNum > 2) {
       return false;
    }
-   byte cpcSelection = GetCPCSelection(chuteNum);
+   uint8_t cpcSelection = GetCPCSelection(chuteNum);
 
    // Find the lowest chute num with the same ratio selection
    // and use that ChuteCoinsInProgress counter
-   byte chuteNumToUse;
+   uint8_t chuteNumToUse;
    for (chuteNumToUse = 0; chuteNumToUse <= chuteNum; chuteNumToUse++) {
       if (GetCPCSelection(chuteNumToUse) == cpcSelection) {
          break;
@@ -1158,9 +1059,9 @@ bool AddCoin(uint8_t chuteNum) {
 
    PlaySoundEffect(SOUND_EFFECT_COIN_DROP_1 + (CurrentTime % 3));
 
-   byte cpcCoins = GetCPCCoins(cpcSelection);
-   byte cpcCredits = GetCPCCredits(cpcSelection);
-   byte coinProgressBefore = ChuteCoinsInProgress[chuteNumToUse];
+   uint8_t cpcCoins = GetCPCCoins(cpcSelection);
+   uint8_t cpcCredits = GetCPCCredits(cpcSelection);
+   uint8_t coinProgressBefore = ChuteCoinsInProgress[chuteNumToUse];
    ChuteCoinsInProgress[chuteNumToUse] += 1;
 
    if (ChuteCoinsInProgress[chuteNumToUse] == cpcCoins) {
@@ -1188,25 +1089,28 @@ void AddSpecialCredit() {
    RPU_WriteULToEEProm(RPU_TOTAL_REPLAYS_EEPROM_START_BYTE, RPU_ReadULFromEEProm(RPU_TOTAL_REPLAYS_EEPROM_START_BYTE) + 1);
 }
 
-#define ADJ_TYPE_LIST 1
-#define ADJ_TYPE_MIN_MAX 2
-#define ADJ_TYPE_MIN_MAX_DEFAULT 3
-#define ADJ_TYPE_SCORE 4
-#define ADJ_TYPE_SCORE_WITH_DEFAULT 5
-#define ADJ_TYPE_SCORE_NO_DEFAULT 6
+enum AdjustmentType_t {
+   ADJ_TYPE_LIST = 1,
+   ADJ_TYPE_MIN_MAX = 2,
+   ADJ_TYPE_MIN_MAX_DEFAULT = 3,
+   ADJ_TYPE_SCORE = 4,
+   ADJ_TYPE_SCORE_WITH_DEFAULT = 5,
+   ADJ_TYPE_SCORE_NO_DEFAULT = 6
+};
+
 uint8_t AdjustmentType = 0;
 uint8_t NumAdjustmentValues = 0;
 uint8_t AdjustmentValues[8];
 unsigned long AdjustmentScore;
-byte* CurrentAdjustmentByte = NULL;
+uint8_t* CurrentAdjustmentByte = NULL;
 unsigned long* CurrentAdjustmentUL = NULL;
-byte CurrentAdjustmentStorageByte = 0;
-byte TempValue = 0;
+uint8_t CurrentAdjustmentStorageByte = 0;
+uint8_t TempValue = 0;
 
-byte SelfTestStateToCalloutMap[] = {136, 137, 135, 134, 133, 140, 141, 142, 139, 143, 144, 145, 146, 147, 148, 149, 138, 150,
-                                    151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 171, 0};
+const uint8_t SelfTestStateToCalloutMap[] = {136, 137, 135, 134, 133, 140, 141, 142, 139, 143, 144, 145, 146, 147, 148, 149, 138, 150,
+                                             151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 171, 0};
 
-byte SoundSelectorToCalloutsMap[] = {190, 191, 199, 197, 198, 196};
+const uint8_t SoundSelectorToCalloutsMap[] = {190, 191, 199, 197, 198, 196};
 
 int RunSelfTest(int curState, bool curStateChanged) {
    int returnState = curState;
@@ -1315,27 +1219,32 @@ int RunSelfTest(int curState, bool curStateChanged) {
             CurrentAdjustmentByte = &SoundEffectsVolume;
             CurrentAdjustmentStorageByte = EEPROM_SFX_VOLUME_BYTE;
             break;
+
          case MACHINE_STATE_ADJUST_CALLOUTS_VOLUME:
             AdjustmentType = ADJ_TYPE_MIN_MAX;
             AdjustmentValues[1] = 10;
             CurrentAdjustmentByte = &CalloutsVolume;
             CurrentAdjustmentStorageByte = EEPROM_CALLOUTS_VOLUME_BYTE;
             break;
+
          case MACHINE_STATE_ADJUST_TOURNAMENT_SCORING:
             CurrentAdjustmentByte = (uint8_t*)&TournamentScoring;
             CurrentAdjustmentStorageByte = EEPROM_TOURNAMENT_SCORING_BYTE;
             break;
+
          case MACHINE_STATE_ADJUST_TILT_WARNING:
             AdjustmentValues[1] = 2;
             CurrentAdjustmentByte = &MaxTiltWarnings;
             CurrentAdjustmentStorageByte = EEPROM_TILT_WARNING_BYTE;
             break;
+
          case MACHINE_STATE_ADJUST_AWARD_OVERRIDE:
             AdjustmentType = ADJ_TYPE_MIN_MAX_DEFAULT;
             AdjustmentValues[1] = 7;
             CurrentAdjustmentByte = &ScoreAwardReplay;
             CurrentAdjustmentStorageByte = EEPROM_AWARD_OVERRIDE_BYTE;
             break;
+
          case MACHINE_STATE_ADJUST_BALLS_OVERRIDE:
             AdjustmentType = ADJ_TYPE_LIST;
             NumAdjustmentValues = 3;
@@ -1630,11 +1539,11 @@ void PlaySoundEffect(uint8_t soundEffectNum) {
 ////////////////////////////////////////////////////////////////////////////
 
 unsigned long AttractLastLadderTime = 0;
-byte AttractLastLadderBonus = 0;
+uint8_t AttractLastLadderBonus = 0;
 unsigned long AttractLastStarTime = 0;
-byte AttractLastHeadMode = 255;
-byte AttractLastPlayfieldMode = 255;
-byte InAttractMode = false;
+uint8_t AttractLastHeadMode = 255;
+uint8_t AttractLastPlayfieldMode = 255;
+uint8_t InAttractMode = false;
 
 int RunAttractMode(int curState, bool curStateChanged) {
    int returnState = curState;
@@ -1718,7 +1627,7 @@ int RunAttractMode(int curState, bool curStateChanged) {
       AttractLastPlayfieldMode = 2;
    }
 
-   byte switchHit;
+   uint8_t switchHit;
    while ((switchHit = RPU_PullFirstFromSwitchStack()) != SWITCH_STACK_EMPTY) {
       if (switchHit == SW_CREDIT_RESET) {
          if (AddPlayer(true)) {
@@ -1743,10 +1652,10 @@ int RunAttractMode(int curState, bool curStateChanged) {
 //  Game Play functions
 //
 ////////////////////////////////////////////////////////////////////////////
-byte CountBits(byte byteToBeCounted) {
-   byte numBits = 0;
+uint8_t CountBits(uint8_t byteToBeCounted) {
+   uint8_t numBits = 0;
 
-   for (byte count = 0; count < 8; count++) {
+   for (uint8_t count = 0; count < 8; count++) {
       numBits += (byteToBeCounted & 0x01);
       byteToBeCounted = byteToBeCounted >> 1;
    }
@@ -1795,14 +1704,14 @@ void ResetDropTargets() {
    }
 }
 
-void HandleDropTargetHit(byte switchHit, unsigned long scoreMultiplier) {
+void HandleDropTargetHit(uint8_t switchHit, unsigned long scoreMultiplier) {
    if (GameMode == GAME_MODE_SKILL_SHOT) {
       BonusX = 2;
       PlaySoundEffect(SOUND_EFFECT_DT_SKILL_SHOT);
       ResetDropTargets();
       CurrentPlayerCurrentScore += 10000;
    } else {
-      byte switchMask = 1 << (SW_DROP_TARGET_1 - switchHit);
+      uint8_t switchMask = 1 << (SW_DROP_TARGET_1 - switchHit);
 
       if (switchMask & CurrentDropTargetsValid) {
          if (RPU_ReadSingleSwitchState(SW_DROP_TARGET_1) && RPU_ReadSingleSwitchState(SW_DROP_TARGET_2) &&
@@ -1856,15 +1765,15 @@ void HandleDropTargetHit(byte switchHit, unsigned long scoreMultiplier) {
    }
 }
 
-void HandleStandupHit(byte switchHit, unsigned long scoreMultiplier) {
-   byte switchMask = (1 << (switchHit - 19));
+void HandleStandupHit(uint8_t switchHit, unsigned long scoreMultiplier) {
+   uint8_t switchMask = (1 << (switchHit - 19));
 
    if (!(GameMode & GAME_MODE_EXPLORE_THE_DEPTHS_FLAG)) {
       if (CurrentTime > StandupDisplayEndTime || StandupDisplayEndTime == 0) {
          StandupDisplayEndTime = CurrentTime + STANDUP_HIT_DISPLAY_DURATION;
          LastStandupTargetHit = 0;
       } else {
-         byte numSwitchesOn = CountBits(LastStandupTargetHit);
+         uint8_t numSwitchesOn = CountBits(LastStandupTargetHit);
          if (numSwitchesOn > 3) {
             numSwitchesOn = 3;
          }
@@ -1875,7 +1784,7 @@ void HandleStandupHit(byte switchHit, unsigned long scoreMultiplier) {
          CurrentPlayerCurrentScore += 15000;
          PlaySoundEffect(SOUND_EFFECT_SU_SKILL_SHOT);
       } else {
-         byte numSwitchesOn = CountBits(switchMask | CurrentStandupsHit);
+         uint8_t numSwitchesOn = CountBits(switchMask | CurrentStandupsHit);
          PlaySoundEffect(SOUND_EFFECT_FIRST_SU_SWITCH_HIT + (numSwitchesOn - 1));
 
          // Hitting an already lit switch is worth half as much as a new switch
@@ -1975,7 +1884,7 @@ int InitGamePlay() {
    return MACHINE_STATE_INIT_NEW_BALL;
 }
 
-int InitNewBall(bool curStateChanged, byte playerNum, int ballNum) {
+int InitNewBall(bool curStateChanged, uint8_t playerNum, int ballNum) {
    // If we're coming into this mode for the first time
    // then we have to do everything to set up the new ball
    if (curStateChanged) {
@@ -2054,14 +1963,14 @@ int InitNewBall(bool curStateChanged, byte playerNum, int ballNum) {
    }
 }
 
-void AddToBonus(byte bonusAddition) {
+void AddToBonus(uint8_t bonusAddition) {
    Bonus += bonusAddition;
    if (Bonus > MAX_DISPLAY_BONUS) {
       Bonus = MAX_DISPLAY_BONUS;
    }
 }
 
-void PlayBackgroundSongBasedOnBall(byte ballNum) {
+void PlayBackgroundSongBasedOnBall(uint8_t ballNum) {
    if (ballNum == 1) {
       PlayBackgroundSong(SOUND_EFFECT_BACKGROUND_1);
    } else if (ballNum == BallsPerGame) {
@@ -2190,7 +2099,7 @@ int ManageGameMode() {
    case GAME_MODE_MINI_GAME_ENGAGED:
       if (GameModeStartTime == 0) {
          GameModeStartTime = CurrentTime;
-         byte modeStartSound = SOUND_EFFECT_FEEDING_FRENZY_START;
+         uint8_t modeStartSound = SOUND_EFFECT_FEEDING_FRENZY_START;
          switch ((GameMode & 0x70)) {
          case GAME_MODE_SHARP_SHOOTER_FLAG:
             modeStartSound = SOUND_EFFECT_SHARP_SHOOTER_START;
@@ -2216,7 +2125,7 @@ int ManageGameMode() {
          }
          PlaySoundEffect(modeStartSound);
 
-         byte numMiniGames = CountBits(0xF0 & GameMode);
+         uint8_t numMiniGames = CountBits(0xF0 & GameMode);
          if (numMiniGames == 1) {
             PlayBackgroundSong(SOUND_EFFECT_BACKGROUND_FOR_SINGLE_MODE);
             GameModeEndTime = CurrentTime + (MINI_GAME_SINGLE_DURATION);
@@ -2230,7 +2139,7 @@ int ManageGameMode() {
       }
 
       if ((CurrentTime - GameModeStartTime) > MODE_START_DISPLAY_DURATION) {
-         for (byte count = 0; count < 4; count++) {
+         for (uint8_t count = 0; count < 4; count++) {
             if (count != CurrentPlayer) {
                OverrideScoreDisplay(count, (GameModeEndTime - CurrentTime) / 1000, true);
             }
@@ -2305,7 +2214,7 @@ int ManageGameMode() {
          }
       }
 
-      for (byte count = 0; count < 4; count++) {
+      for (uint8_t count = 0; count < 4; count++) {
          if (count != CurrentPlayer) {
             OverrideScoreDisplay(count, (GameModeEndTime - CurrentTime) / 1000, true);
          }
@@ -2548,7 +2457,7 @@ int ShowMatchSequence(bool curStateChanged) {
 
 int RunGamePlayMode(int curState, bool curStateChanged) {
    int returnState = curState;
-   byte bonusAtTop = Bonus;
+   uint8_t bonusAtTop = Bonus;
    unsigned long scoreAtTop = CurrentPlayerCurrentScore;
    unsigned long scoreMultiplier = 1;
    if (GameMode & 0x70) {
@@ -2599,7 +2508,7 @@ int RunGamePlayMode(int curState, bool curStateChanged) {
       returnState = ShowMatchSequence(curStateChanged);
    }
 
-   byte switchHit;
+   uint8_t switchHit;
 
    if (NumTiltWarnings <= MaxTiltWarnings) {
       while ((switchHit = RPU_PullFirstFromSwitchStack()) != SWITCH_STACK_EMPTY) {
