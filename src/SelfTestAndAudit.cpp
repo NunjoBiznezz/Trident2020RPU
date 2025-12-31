@@ -32,16 +32,16 @@ unsigned long ResetHold = 0;
 unsigned long NextSpeedyValueChange = 0;
 unsigned long NumSpeedyChanges = 0;
 unsigned long LastResetPress = 0;
-byte CurValue = 0;
-byte CurSound = 0x01;
-byte SoundPlaying = 0;
-byte SoundToPlay = 0;
+uint8_t CurValue = 0;
+uint8_t CurSound = 0x01;
+uint8_t SoundPlaying = 0;
+uint8_t SoundToPlay = 0;
 boolean SolenoidCycle = true;
 
 #ifndef RPU_OS_DISABLE_CPC_FOR_SPACE
 boolean CPCSelectionsHaveBeenRead = false;
 #define NUM_CPC_PAIRS 9
-byte CPCPairs[NUM_CPC_PAIRS][2] = {
+uint8_t CPCPairs[NUM_CPC_PAIRS][2] = {
   {1, 5},
   {1, 4},
   {1, 3},
@@ -52,10 +52,10 @@ byte CPCPairs[NUM_CPC_PAIRS][2] = {
   {3, 1},
   {4, 1}
 };
-byte CPCSelection[3];
+uint8_t CPCSelection[3];
 
 
-byte GetCPCSelection(byte chuteNumber) {
+uint8_t GetCPCSelection(uint8_t chuteNumber) {
   if (chuteNumber>2) return 0xFF;
 
   if (CPCSelectionsHaveBeenRead==false) {
@@ -81,13 +81,13 @@ byte GetCPCSelection(byte chuteNumber) {
 }
 
 
-byte GetCPCCoins(byte cpcSelection) {
+uint8_t GetCPCCoins(uint8_t cpcSelection) {
   if (cpcSelection>=NUM_CPC_PAIRS) return 1;
   return CPCPairs[cpcSelection][0];
 }
 
 
-byte GetCPCCredits(byte cpcSelection) {
+uint8_t GetCPCCredits(uint8_t cpcSelection) {
   if (cpcSelection>=NUM_CPC_PAIRS) return 1;
   return CPCPairs[cpcSelection][1];
 }
@@ -103,8 +103,8 @@ byte GetCPCCredits(byte cpcSelection) {
 #define TOTAL_DISPLAY_DIGITS 30
 #endif
 
-int RunBaseSelfTest(int curState, boolean curStateChanged, unsigned long CurrentTime, byte resetSwitch, byte slamSwitch) {
-  byte curSwitch = RPU_PullFirstFromSwitchStack();
+int RunBaseSelfTest(int curState, boolean curStateChanged, unsigned long CurrentTime, uint8_t resetSwitch, uint8_t slamSwitch) {
+  uint8_t curSwitch = RPU_PullFirstFromSwitchStack();
   int returnState = curState;
   boolean resetDoubleClick = false;
   unsigned short savedScoreStartByte = 0;
@@ -266,8 +266,8 @@ int RunBaseSelfTest(int curState, boolean curStateChanged, unsigned long Current
       RPU_SetDisableFlippers(true);
     }
 
-    byte displayOutput = 0;
-    for (byte switchCount=0; switchCount<64 && displayOutput<4; switchCount++) {
+    uint8_t displayOutput = 0;
+    for (uint8_t switchCount=0; switchCount<64 && displayOutput<4; switchCount++) {
       if (RPU_ReadSingleSwitchState(switchCount)) {
         RPU_SetDisplay(displayOutput, switchCount, true);
         displayOutput += 1;
@@ -282,7 +282,7 @@ int RunBaseSelfTest(int curState, boolean curStateChanged, unsigned long Current
 
   } else if (curState==MACHINE_STATE_TEST_SOUNDS) {
 #ifdef RPU_OS_USE_SB100    
-    byte soundToPlay = 0x01 << (((CurrentTime-LastSelfTestChange)/750)%8);
+    uint8_t soundToPlay = 0x01 << (((CurrentTime-LastSelfTestChange)/750)%8);
     if (SoundPlaying!=soundToPlay) {
       RPU_PlaySB100(soundToPlay);
       SoundPlaying = soundToPlay;
@@ -292,7 +292,7 @@ int RunBaseSelfTest(int curState, boolean curStateChanged, unsigned long Current
     // If the sound play call was more than 300ms ago, turn it off
 //    if ((CurrentTime-LastSolTestTime)>300) RPU_PlaySB100(128);
 #elif defined (RPU_OS_USE_S_AND_T)
-    byte soundToPlay = ((CurrentTime-LastSelfTestChange)/2000)%256;
+    uint8_t soundToPlay = ((CurrentTime-LastSelfTestChange)/2000)%256;
     if (SoundPlaying!=soundToPlay) {
       RPU_PlaySoundSAndT(soundToPlay);
       SoundPlaying = soundToPlay;
@@ -300,7 +300,7 @@ int RunBaseSelfTest(int curState, boolean curStateChanged, unsigned long Current
       LastSolTestTime = CurrentTime; // Time the sound started to play
     }
 #elif defined (RPU_OS_USE_DASH51) 
-    byte soundToPlay = ((CurrentTime-LastSelfTestChange)/2000)%32;
+    uint8_t soundToPlay = ((CurrentTime-LastSelfTestChange)/2000)%32;
     if (SoundPlaying!=soundToPlay) {
       if (soundToPlay==17) soundToPlay = 0;
       RPU_PlaySoundDash51(soundToPlay);
@@ -309,7 +309,7 @@ int RunBaseSelfTest(int curState, boolean curStateChanged, unsigned long Current
       LastSolTestTime = CurrentTime; // Time the sound started to play
     }
 #elif defined (RPU_OS_USE_WTYPE_1_SOUND)
-    byte soundToPlay = (((CurrentTime-LastSelfTestChange)/3000)%31)+1;
+    uint8_t soundToPlay = (((CurrentTime-LastSelfTestChange)/3000)%31)+1;
     if (SoundPlaying!=soundToPlay) {
       RPU_PushToSoundStack(soundToPlay*256, 8);
       SoundPlaying = soundToPlay;
@@ -317,7 +317,7 @@ int RunBaseSelfTest(int curState, boolean curStateChanged, unsigned long Current
       LastSolTestTime = CurrentTime; // Time the sound started to play
     }
 #elif defined (RPU_OS_USE_WTYPE_2_SOUND) 
-//    byte soundToPlay = (((CurrentTime-LastSelfTestChange)/1000)%32);
+//    uint8_t soundToPlay = (((CurrentTime-LastSelfTestChange)/1000)%32);
     if (SoundPlaying!=SoundToPlay) {
       RPU_PushToSoundStack(SoundToPlay, 8);
       SoundPlaying = SoundToPlay  ;
@@ -457,7 +457,7 @@ int RunBaseSelfTest(int curState, boolean curStateChanged, unsigned long Current
     }
 
     if (curSwitch==resetSwitch) {
-      byte lastValue = (byte)SavedValue;
+      uint8_t lastValue = (uint8_t)SavedValue;
       if (RPU_GetUpDownSwitchState()) {
         SavedValue += 1;
         if (SavedValue>=NUM_CPC_PAIRS) SavedValue = 0;
@@ -467,10 +467,10 @@ int RunBaseSelfTest(int curState, boolean curStateChanged, unsigned long Current
       RPU_SetDisplay(0, CPCPairs[SavedValue][0], true);
       RPU_SetDisplay(1, CPCPairs[SavedValue][1], true);
       if (lastValue!=SavedValue) {
-        RPU_WriteByteToEEProm(cpcSelectorStartByte, (byte)SavedValue);
-        if (cpcSelectorStartByte==RPU_CPC_CHUTE_1_SELECTION_BYTE) CPCSelection[0] = (byte)SavedValue;
-        else if (cpcSelectorStartByte==RPU_CPC_CHUTE_2_SELECTION_BYTE) CPCSelection[1] = (byte)SavedValue;
-        else if (cpcSelectorStartByte==RPU_CPC_CHUTE_3_SELECTION_BYTE) CPCSelection[2] = (byte)SavedValue;
+        RPU_WriteByteToEEProm(cpcSelectorStartByte, (uint8_t)SavedValue);
+        if (cpcSelectorStartByte==RPU_CPC_CHUTE_1_SELECTION_BYTE) CPCSelection[0] = (uint8_t)SavedValue;
+        else if (cpcSelectorStartByte==RPU_CPC_CHUTE_2_SELECTION_BYTE) CPCSelection[1] = (uint8_t)SavedValue;
+        else if (cpcSelectorStartByte==RPU_CPC_CHUTE_3_SELECTION_BYTE) CPCSelection[2] = (uint8_t)SavedValue;
       }
     }
   }

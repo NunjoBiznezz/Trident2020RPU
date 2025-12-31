@@ -22,6 +22,8 @@
 #ifndef SELF_TEST_H
 #define SELF_TEST_H
 
+#include <stdint.h>
+
 #if (RPU_MPU_ARCHITECTURE<10)
 #define MACHINE_STATE_TEST_LAMPS          -1
 #define MACHINE_STATE_TEST_DISPLAYS       -2
@@ -72,12 +74,13 @@
 
 unsigned long GetLastSelfTestChangedTime();
 void SetLastSelfTestChangedTime(unsigned long setSelfTestChange);
-int RunBaseSelfTest(int curState, boolean curStateChanged, unsigned long CurrentTime, byte resetSwitch, byte slamSwitch=0xFF);
+int RunBaseSelfTest(int curState, bool curStateChanged, unsigned long CurrentTime, uint8_t resetSwitch, uint8_t slamSwitch=0xFF);
 
-unsigned long GetAwardScore(byte level);
+unsigned long GetAwardScore(uint8_t level);
 #ifndef RPU_OS_DISABLE_CPC_FOR_SPACE
-byte GetCPCSelection(byte chuteNumber);
-byte GetCPCCoins(byte cpcSelection);
-byte GetCPCCredits(byte cpcSelection);
+uint8_t GetCPCSelection(uint8_t chuteNumber);
+uint8_t GetCPCCoins(uint8_t cpcSelection);
+uint8_t GetCPCCredits(uint8_t cpcSelection);
 #endif
+
 #endif

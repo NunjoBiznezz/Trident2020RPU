@@ -1398,7 +1398,7 @@ byte RPU_GetDipSwitches(byte index) {
 }
 
 
-void RPU_SetupGameSwitches(int s_numSwitches, int s_numPrioritySwitches, PlayfieldAndCabinetSwitch *s_gameSwitchArray) {
+void RPU_SetupGameSwitches(int s_numSwitches, int s_numPrioritySwitches, const PlayfieldAndCabinetSwitch *s_gameSwitchArray) {
   NumGameSwitches = s_numSwitches;
   NumGamePrioritySwitches = s_numPrioritySwitches;
   GameSwitches = s_gameSwitchArray;

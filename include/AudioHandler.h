@@ -1,7 +1,8 @@
 #ifndef AUDIO_HANDLER_H
 
+#include <stdint.h>
 #include <HardwareSerial.h>
-#include "RPU_Config.h"
+#include "RPU_config.h"
 #include "RPU.h"
 
 
@@ -29,9 +30,9 @@ struct AudioSoundtrack {
 #define SOUND_EFFECT_QUEUE_SIZE 50
 
 struct SoundCardCommandEntry {
-  byte soundFunction;
-  byte soundRegister;
-  byte soundByte;
+  uint8_t soundFunction;
+  uint8_t soundRegister;
+  uint8_t soundByte;
   unsigned long playTime;
 };
 
@@ -39,8 +40,8 @@ struct SoundCardCommandEntry {
 
 struct SoundEntry {
   unsigned short soundIndex;
-  byte audioType;
-  byte overrideVolume;
+  uint8_t audioType;
+  uint8_t overrideVolume;
   unsigned long playTime;  
 };
 
@@ -51,8 +52,8 @@ struct SoundEffectEntry {
   unsigned short soundEffectNum;
   unsigned long requestedPlayTime;
   unsigned long playUntil;
-  byte priority; // 0 is least important, 100 is most
-  boolean inUse;
+  uint8_t priority; // 0 is least important, 100 is most
+  bool inUse;
 };
 
 
@@ -158,37 +159,37 @@ class AudioHandler
 {
   public:
     AudioHandler();
-    ~AudioHandler();
+    virtual ~AudioHandler();
 
-    boolean InitDevices(byte audioType);
+    bool InitDevices(uint8_t audioType);
 
     void OutputTracksPlaying();
 
-    void SetSoundFXVolume(byte s_volume);
-    void SetNotificationsVolume(byte s_volume);
-    void SetMusicVolume(byte s_volume);
-    void SetMusicDuckingGain(byte s_ducking);
-    void SetSoundFXDuckingGain(byte s_ducking);
+    void SetSoundFXVolume(uint8_t s_volume);
+    void SetNotificationsVolume(uint8_t s_volume);
+    void SetMusicVolume(uint8_t s_volume);
+    void SetMusicDuckingGain(uint8_t s_ducking);
+    void SetSoundFXDuckingGain(uint8_t s_ducking);
 
-    boolean PlayBackgroundSoundtrack(AudioSoundtrack *soundtrackArray, unsigned short numSoundtrackEntries, unsigned long currentTime, boolean randomOrder=true);
-    boolean PlayBackgroundSong(unsigned short trackIndex, boolean loopTrack=true);
+    bool PlayBackgroundSoundtrack(AudioSoundtrack *soundtrackArray, unsigned short numSoundtrackEntries, unsigned long currentTime, bool randomOrder=true);
+    bool PlayBackgroundSong(unsigned short trackIndex, bool loopTrack=true);
 
-    boolean PlaySound(unsigned short soundIndex, byte audioType, byte overrideVolume=0xFF);
-    boolean FadeSound(unsigned short soundIndex, int fadeGain, int numMilliseconds, boolean stopTrack);
-    boolean QueueSound(unsigned short soundIndex, byte audioType, unsigned long timeToPlay, byte overrideVolume=0xFF);
-    boolean QueueSoundCardCommand(byte scFunction, byte scRegister, byte scData, unsigned long startTime);
-    boolean PlaySoundCardWhenPossible(unsigned short soundEffectNum, unsigned long currentTime, unsigned long requestedPlayTime = 0, unsigned long playUntil = 50, byte priority = 10);
+    bool PlaySound(unsigned short soundIndex, uint8_t audioType, uint8_t overrideVolume=0xFF);
+    bool FadeSound(unsigned short soundIndex, int fadeGain, int numMilliseconds, bool stopTrack);
+    bool QueueSound(unsigned short soundIndex, uint8_t audioType, unsigned long timeToPlay, uint8_t overrideVolume=0xFF);
+    bool QueueSoundCardCommand(uint8_t scFunction, uint8_t scRegister, uint8_t scData, unsigned long startTime);
+    bool PlaySoundCardWhenPossible(unsigned short soundEffectNum, unsigned long currentTime, unsigned long requestedPlayTime = 0, unsigned long playUntil = 50, uint8_t priority = 10);
     
-    boolean QueuePrioritizedNotification(unsigned short notificationIndex, unsigned short notificationLength, byte priority, unsigned long currentTime);
+    bool QueuePrioritizedNotification(unsigned short notificationIndex, unsigned short notificationLength, uint8_t priority, unsigned long currentTime);
     
-    boolean Update(unsigned long currentTime);
+    bool Update(unsigned long currentTime);
 
-    boolean StopSound(unsigned short soundIndex);
-    boolean StopCurrentNotification(byte priority = 10);
-    boolean StopAllMusic();
-    boolean StopAllNotifications(byte priority = 10);
-    boolean StopAllSoundFX();
-    boolean StopAllAudio();
+    bool StopSound(unsigned short soundIndex);
+    bool StopCurrentNotification(uint8_t priority = 10);
+    bool StopAllMusic();
+    bool StopAllNotifications(uint8_t priority = 10);
+    bool StopAllSoundFX();
+    bool StopAllAudio();
 
   private:
     AudioSoundtrack *curSoundtrack;
@@ -198,11 +199,11 @@ class AudioHandler
     int musicGain;    
     int musicDucking;
     int soundFXDucking;
-    byte voiceNotificationStackFirst;
-    byte voiceNotificationStackLast;
-    byte voiceNotificationPriorityStack[VOICE_NOTIFICATION_STACK_SIZE];
-    byte currentNotificationPriority;
-    boolean soundtrackRandomOrder;
+    uint8_t voiceNotificationStackFirst;
+    uint8_t voiceNotificationStackLast;
+    uint8_t voiceNotificationPriorityStack[VOICE_NOTIFICATION_STACK_SIZE];
+    uint8_t currentNotificationPriority;
+    bool soundtrackRandomOrder;
     unsigned int currentNotificationPlaying;
     unsigned int voiceNotificationNumStack[VOICE_NOTIFICATION_STACK_SIZE];
     unsigned int voiceNotificationDuration[VOICE_NOTIFICATION_STACK_SIZE];
@@ -227,7 +228,7 @@ class AudioHandler
     wavTrigger wTrig;             // Our WAV Trigger object 
 #endif
 
-    int ConvertVolumeSettingToGain(byte volumeSetting);
+    int ConvertVolumeSettingToGain(uint8_t volumeSetting);
 
     void InitSB300Registers();
     void PlaySB300StartupBeep();
@@ -236,15 +237,15 @@ class AudioHandler
     int SpaceLeftOnNotificationStack();
     void ClearSoundQueue();
     void ClearSoundCardQueue();
-    void ClearNotificationStack(byte priority = 10);
+    void ClearNotificationStack(uint8_t priority = 10);
     void InitSoundEffectQueue();
     void StartNextSoundtrackSong(unsigned long currentTime);
     void ManageBackgroundSong(unsigned long currentTime);
-    boolean ServiceNotificationQueue(unsigned long currentTime);
-    void PushToNotificationStack(unsigned int notification, unsigned int duration, byte priority);
-    byte GetTopNotificationPriority();
-    boolean ServiceSoundCardQueue(unsigned long currentTime);
-    boolean ServiceSoundQueue(unsigned long currentTime);
+    bool ServiceNotificationQueue(unsigned long currentTime);
+    void PushToNotificationStack(unsigned int notification, unsigned int duration, uint8_t priority);
+    uint8_t GetTopNotificationPriority();
+    bool ServiceSoundCardQueue(unsigned long currentTime);
+    bool ServiceSoundQueue(unsigned long currentTime);
 
     unsigned long nextVoiceNotificationPlayTime;
     unsigned long backgroundSongEndTime;

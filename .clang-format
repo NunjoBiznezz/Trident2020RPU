@@ -1,0 +1,77 @@
+# clang-format configuration for Trident2020RPU2
+# Arduino/Embedded C++ style based on existing codebase
+
+BasedOnStyle: LLVM
+Language: Cpp
+
+# Force braces around control statements
+InsertBraces: true
+
+# Indentation
+IndentWidth: 3
+TabWidth: 3
+UseTab: Never
+ContinuationIndentWidth: 4
+
+# Line length
+ColumnLimit: 140
+
+# Braces
+BreakBeforeBraces: Attach
+Cpp11BracedListStyle: true
+
+# Pointers and References
+PointerAlignment: Left
+DerivePointerAlignment: false
+
+# Spacing
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpaceAfterCStyleCast: false
+SpaceBeforeAssignmentOperators: true
+
+# Function calls and definitions
+BinPackArguments: true
+BinPackParameters: true
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+
+# Control statements
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Empty
+
+# Alignment
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: None
+AlignConsecutiveDeclarations: None
+AlignEscapedNewlines: Left
+AlignOperands: Align
+AlignTrailingComments: true
+
+# Breaking
+AlwaysBreakAfterReturnType: None
+AlwaysBreakBeforeMultilineStrings: false
+BreakBeforeBinaryOperators: None
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializers: BeforeColon
+BreakStringLiterals: true
+
+# Sorting
+SortIncludes: CaseInsensitive
+SortUsingDeclarations: true
+
+# Namespaces
+CompactNamespaces: false
+FixNamespaceComments: true
+
+# Comments
+ReflowComments: true
+
+# Other
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
