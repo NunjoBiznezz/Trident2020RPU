@@ -20,6 +20,7 @@
 
 #ifndef RPU_OS_H
 
+#include "RPU_config.h" // include this here for safety sake
 #include <stdint.h>
 
 #define RPU_OS_MAJOR_VERSION 5
@@ -110,7 +111,7 @@ void RPU_UpdateTimedSolenoidStack(unsigned long curTime);
 
 //   Displays
 uint8_t RPU_SetDisplay(int displayNumber, unsigned long value, bool blankByMagnitude = false, uint8_t minDigits = 2,
-                    bool showCommasByMagnitude = false);
+                       bool showCommasByMagnitude = false);
 void RPU_SetDisplayBlank(int displayNumber, uint8_t bitMask);
 void RPU_SetDisplayCredits(int value, bool displayOn = true, bool showBothDigits = true);
 void RPU_SetDisplayMatch(int value, bool displayOn = true, bool showBothDigits = true);
@@ -175,131 +176,6 @@ void RPU_Update(unsigned long currentTime);
 void RPU_SetBoardLEDs(bool LED1, bool LED2, uint8_t BCDValue = 0xFF);
 #endif
 
-#ifdef RPU_CPP_FILE
-int NumGameSwitches = 0;
-int NumGamePrioritySwitches = 0;
-const PlayfieldAndCabinetSwitch* GameSwitches = NULL;
-
-#if (RPU_MPU_ARCHITECTURE == 15)
-
-// Alpha numeric numbers and alphabet
-
-const uint16_t SevenSegmentNumbers[10] = {
-    0x3F, /* 0 */
-    0x06, /* 1 */
-    0x5B, /* 2 */
-    0x4F, /* 3 */
-    0x66, /* 4 */
-    0x6D, /* 5 */
-    0x7D, /* 6 */
-    0x07, /* 7 */
-    0x7F, /* 8 */
-    0x6F  /* 9 */
-};
-
-// alphanumeric 14-segment display (ASCII)
-const uint16_t FourteenSegmentASCII[96] = {
-    0x0000, /*   converted 0x0000 to 0x0000*/
-    0x0006, /* ! converted 0x4006 to 0x0006*/
-    0x0102, /* " converted 0x0202 to 0x0102*/
-    0x154E, /* # converted 0x12CE to 0x154E*/
-    0x156D, /* $ converted 0x12ED to 0x156D*/
-    0x3FE4, /* % converted 0x3FE4 to 0x3FE4*/
-    0x09D9, /* & converted 0x2359 to 0x09D9*/
-    0x0100, /* ' converted 0x0200 to 0x0100*/
-    0x0A00, /* ( converted 0x2400 to 0x0A00*/
-    0x2080, /* ) converted 0x0900 to 0x2080*/
-    0x3FC0, /* * converted 0x3FC0 to 0x3FC0*/
-    0x1540, /* + converted 0x12C0 to 0x1540*/
-    0x2000, /* , converted 0x0800 to 0x2000*/
-    0x0440, /* - converted 0x00C0 to 0x0440*/
-    0x0000, /* . converted 0x4000 to 0x0000*/
-    0x2200, /* / converted 0x0C00 to 0x2200*/
-    0x223F, /* 0 converted 0x0C3F to 0x223F*/
-    0x0206, /* 1 converted 0x0406 to 0x0206*/
-    0x045B, /* 2 converted 0x00DB to 0x045B*/
-    0x040F, /* 3 converted 0x008F to 0x040F*/
-    0x0466, /* 4 converted 0x00E6 to 0x0466*/
-    0x0869, /* 5 converted 0x2069 to 0x0869*/
-    0x047D, /* 6 converted 0x00FD to 0x047D*/
-    0x0007, /* 7 converted 0x0007 to 0x0007*/
-    0x047F, /* 8 converted 0x00FF to 0x047F*/
-    0x046F, /* 9 converted 0x00EF to 0x046F*/
-    0x1100, /* : converted 0x1200 to 0x1100*/
-    0x2100, /* ; converted 0x0A00 to 0x2100*/
-    0x0A40, /* < converted 0x2440 to 0x0A40*/
-    0x0448, /* = converted 0x00C8 to 0x0448*/
-    0x2480, /* > converted 0x0980 to 0x2480*/
-    0x1403, /* ? converted 0x5083 to 0x1403*/
-    0x053B, /* @ converted 0x02BB to 0x053B*/
-    0x0477, /* A converted 0x00F7 to 0x0477*/
-    0x150F, /* B converted 0x128F to 0x150F*/
-    0x0039, /* C converted 0x0039 to 0x0039*/
-    0x110F, /* D converted 0x120F to 0x110F*/
-    0x0079, /* E converted 0x0079 to 0x0079*/
-    0x0071, /* F converted 0x0071 to 0x0071*/
-    0x043D, /* G converted 0x00BD to 0x043D*/
-    0x0476, /* H converted 0x00F6 to 0x0476*/
-    0x1109, /* I converted 0x1209 to 0x1109*/
-    0x001E, /* J converted 0x001E to 0x001E*/
-    0x0A70, /* K converted 0x2470 to 0x0A70*/
-    0x0038, /* L converted 0x0038 to 0x0038*/
-    0x02B6, /* M converted 0x0536 to 0x02B6*/
-    0x08B6, /* N converted 0x2136 to 0x08B6*/
-    0x003F, /* O converted 0x003F to 0x003F*/
-    0x0473, /* P converted 0x00F3 to 0x0473*/
-    0x083F, /* Q converted 0x203F to 0x083F*/
-    0x0C73, /* R converted 0x20F3 to 0x0C73*/
-    0x046D, /* S converted 0x00ED to 0x046D*/
-    0x1101, /* T converted 0x1201 to 0x1101*/
-    0x003E, /* U converted 0x003E to 0x003E*/
-    0x2230, /* V converted 0x0C30 to 0x2230*/
-    0x2836, /* W converted 0x2836 to 0x2836*/
-    0x2A80, /* X converted 0x2D00 to 0x2A80*/
-    0x046E, /* Y converted 0x00EE to 0x046E*/
-    0x2209, /* Z converted 0x0C09 to 0x2209*/
-    0x0039, /* [ converted 0x0039 to 0x0039*/
-    0x0880, /* \ converted 0x2100 to 0x0880*/
-    0x000F, /* ] converted 0x000F to 0x000F*/
-    0x2800, /* ^ converted 0x2800 to 0x2800*/
-    0x0008, /* _ converted 0x0008 to 0x0008*/
-    0x0080, /* ` converted 0x0100 to 0x0080*/
-    0x1058, /* a converted 0x1058 to 0x1058*/
-    0x0878, /* b converted 0x2078 to 0x0878*/
-    0x0458, /* c converted 0x00D8 to 0x0458*/
-    0x240E, /* d converted 0x088E to 0x240E*/
-    0x2058, /* e converted 0x0858 to 0x2058*/
-    0x1640, /* f converted 0x14C0 to 0x1640*/
-    0x060E, /* g converted 0x048E to 0x060E*/
-    0x1070, /* h converted 0x1070 to 0x1070*/
-    0x1000, /* i converted 0x1000 to 0x1000*/
-    0x2110, /* j converted 0x0A10 to 0x2110*/
-    0x1B00, /* k converted 0x3600 to 0x1B00*/
-    0x0030, /* l converted 0x0030 to 0x0030*/
-    0x1454, /* m converted 0x10D4 to 0x1454*/
-    0x1050, /* n converted 0x1050 to 0x1050*/
-    0x045C, /* o converted 0x00DC to 0x045C*/
-    0x00F0, /* p converted 0x0170 to 0x00F0*/
-    0x0606, /* q converted 0x0486 to 0x0606*/
-    0x0050, /* r converted 0x0050 to 0x0050*/
-    0x0C08, /* s converted 0x2088 to 0x0C08*/
-    0x0078, /* t converted 0x0078 to 0x0078*/
-    0x001C, /* u converted 0x001C to 0x001C*/
-    0x2010, /* v converted 0x0810 to 0x2010*/
-    0x2814, /* w converted 0x2814 to 0x2814*/
-    0x2A80, /* x converted 0x2D00 to 0x2A80*/
-    0x050E, /* y converted 0x028E to 0x050E*/
-    0x2048, /* z converted 0x0848 to 0x2048*/
-    0x20C9, /* { converted 0x0949 to 0x20C9*/
-    0x1100, /* | converted 0x1200 to 0x1100*/
-    0x0E09, /* } converted 0x2489 to 0x0E09*/
-    0x2640, /* ~ converted 0x0CC0 to 0x2640*/
-    0x0000  /*  converted 0x0000 to 0x0000*/
-};
-
-#endif
-
-#endif
 
 #define RPU_OS_H
 #endif

@@ -41,7 +41,7 @@ bool SolenoidCycle = true;
 #ifndef RPU_OS_DISABLE_CPC_FOR_SPACE
 bool CPCSelectionsHaveBeenRead = false;
 #define NUM_CPC_PAIRS 9
-uint8_t CPCPairs[NUM_CPC_PAIRS][2] = {{1, 5}, {1, 4}, {1, 3}, {1, 2}, {1, 1}, {2, 3}, {2, 1}, {3, 1}, {4, 1}};
+const uint8_t CPCPairs[NUM_CPC_PAIRS][2] = {{1, 5}, {1, 4}, {1, 3}, {1, 2}, {1, 1}, {2, 3}, {2, 1}, {3, 1}, {4, 1}};
 uint8_t CPCSelection[3];
 
 uint8_t GetCPCSelection(uint8_t chuteNumber) {
