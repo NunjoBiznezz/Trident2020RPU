@@ -22,8 +22,8 @@
 // unstructured play jackpots
 // increase mode start time with new qualifier
 #include "AudioHandler.h"
-#include "RPU_config.h"
 #include "RPU.h"
+#include "RPU_config.h"
 #include "SelfTestAndAudit.h"
 #include "Trident2020.h"
 #include <Arduino.h>
@@ -38,14 +38,17 @@ uint8_t ReadSetting(int setting, uint8_t defaultValue);
 void PlaySoundEffect(uint8_t soundEffectNum);
 void PlayBackgroundSongBasedOnBall(uint8_t ballNum);
 
-#define TRIDENT2020_MAJOR_VERSION 2020
-#define TRIDENT2020_MINOR_VERSION 3
-#define DEBUG_MESSAGES 0
+constexpr unsigned long TRIDENT2020_MAJOR_VERSION = 2020;  
+constexpr unsigned long TRIDENT2020_MINOR_VERSION = 3;
+   
+#if defined(DEBUG_MESSAGES) 
+#  define DEBUG_MESSAGE(x) Serial.write(x)
+#else
+#  define DEBUG_MESSAGE(x)
+#endif
 
 /*********************************************************************
-
     Game specific code
-
 *********************************************************************/
 
 // MachineState
@@ -149,12 +152,13 @@ bool ScrollingScores = true;
 // uint8_t dipBank0, dipBank1, dipBank2, dipBank3;
 // int BackgroundMusicGain = -3;
 
+/*********************************************************************
+ * Audio Handler
+ *********************************************************************/
 AudioHandler Audio;
 
 /*********************************************************************
-
     Game State
-
 *********************************************************************/
 uint8_t CurrentPlayer = 0;
 uint8_t CurrentBallInPlay = 1;
@@ -212,18 +216,6 @@ unsigned long RolloverFlashEndTime = 0;
 unsigned long RescueFromTheDeepEndTime = 0;
 unsigned long LastMiniGameBonusTime = 0;
 
-/*
-void GetDIPSwitches() {
-  dipBank0 = RPU_GetDipSwitches(0);
-  dipBank1 = RPU_GetDipSwitches(1);
-  dipBank2 = RPU_GetDipSwitches(2);
-  dipBank3 = RPU_GetDipSwitches(3);
-}
-
-void DecodeDIPSwitchParameters() {
-
-}
-*/
 void ReadStoredParameters() {
    HighScore = RPU_ReadULFromEEProm(RPU_HIGHSCORE_EEPROM_START_BYTE, 10000);
    Credits = RPU_ReadByteFromEEProm(RPU_CREDITS_EEPROM_BYTE);
@@ -325,19 +317,19 @@ void QueueDIAGNotification(unsigned short notificationNum) {
 }
 
 void setup() {
-   if (DEBUG_MESSAGES) {
+   #if defined(DEBUG_MESSAGES)
       Serial.begin(115200);
-   }
+   #endif
 
    // TODO remove the hard-coded serial port from WavTrigger
-// #if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
-// #  if (RPU_OS_HARDWARE_REV <= 3)
-// #     define WTSerial Serial
-// #  else
-// #     define WTSerial Serial1 // Hardware serial
-// #  endif
-//    WTSerial.begin(57600);
-// #endif
+   // #if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
+   // #  if (RPU_OS_HARDWARE_REV <= 3)
+   // #     define WTSerial Serial
+   // #  else
+   // #     define WTSerial Serial1 // Hardware serial
+   // #  endif
+   //    WTSerial.begin(57600);
+   // #endif
 
    CurrentTime = millis();
    Audio.InitDevices(AUDIO_PLAY_TYPE_WAV_TRIGGER | AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS);
@@ -1568,9 +1560,7 @@ int RunAttractMode(int curState, bool curStateChanged) {
       RPU_DisableSolenoidStack();
       RPU_TurnOffAllLamps();
       RPU_SetDisableFlippers(true);
-      if (DEBUG_MESSAGES) {
-         Serial.write("Entering Attract Mode\n\r");
-      }
+      DEBUG_MESSAGE("Entering Attract Mode\n\r");
 
       AttractLastHeadMode = 0;
       AttractLastPlayfieldMode = 0;
@@ -1849,9 +1839,7 @@ int InitGamePlay() {
    wTrig.samplerateOffset(0);
 #endif
 
-   if (DEBUG_MESSAGES) {
-      Serial.write("Starting game\n\r");
-   }
+   DEBUG_MESSAGE("Starting game\n\r");
 
    // The start button has been hit only once to get
    // us into this mode, so we assume a 1-player game
@@ -2045,9 +2033,7 @@ int ManageGameMode() {
          GameModeStartTime = 0;
          ResetDropTargets();
 
-         if (DEBUG_MESSAGES) {
-            Serial.write("Exit skill shot - Changing to Qualify Select\n\r");
-         }
+         DEBUG_MESSAGE("Exit skill shot - Changing to Qualify Select\n\r");
       }
       break;
    case GAME_MODE_UNSTRUCTURED_PLAY:
@@ -2852,9 +2838,7 @@ int RunGamePlayMode(int curState, bool curStateChanged) {
                   returnState = MACHINE_STATE_INIT_GAMEPLAY;
                }
             }
-            if (DEBUG_MESSAGES) {
-               Serial.write("Start game button pressed\n\r");
-            }
+            DEBUG_MESSAGE("Start game button pressed\n\r");
             break;
          }
       }
