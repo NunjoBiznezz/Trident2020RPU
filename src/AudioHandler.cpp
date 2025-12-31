@@ -669,7 +669,7 @@ void AudioHandler::DuckCurrentSoundEffects() {
    }
 
 #if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
-   for (int count = 0; count < MAX_NUM_VOICES; count++) {
+   for (int count = 0; count < wavTrigger::maxNumVoices(); count++) {
       int trackNum = wTrig.getPlayingTrack(count);
       if (trackNum != ((int)0xFFFF) && trackNum != ((int)currentBackgroundTrack) && trackNum != ((int)currentNotificationPlaying)) {
          // This is a sound effect that needs to be ducked

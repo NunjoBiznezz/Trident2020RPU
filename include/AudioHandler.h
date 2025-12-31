@@ -119,6 +119,10 @@ class wavTrigger {
    void samplerateOffset(int offset);
    void setTriggerBank(int bank);
 
+   static int maxNumVoices() {
+      return MAX_NUM_VOICES;
+   }
+
  private:
    static constexpr int MAX_MESSAGE_LEN = 32;
    static constexpr int MAX_NUM_VOICES = 14;
