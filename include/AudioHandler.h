@@ -6,26 +6,17 @@
 #include <stdint.h>
 
 // These are also used as masks in the InitDevices code, so leave them as powers of 2
-constexpr uint8_t AUDIO_PLAY_TYPE_CHIMES = 1;
+constexpr uint8_t AUDIO_PLAY_TYPE_CHIMES = 1; // Not used?
 constexpr uint8_t AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS = 2;
 constexpr uint8_t AUDIO_PLAY_TYPE_WAV_TRIGGER = 4;
 
-constexpr int NUMBER_OF_SONGS_REMEMBERED = 10;
-
-constexpr int VOICE_NOTIFICATION_STACK_SIZE = 5;
-constexpr uint16_t VOICE_NOTIFICATION_STACK_EMPTY = 0xFFFF;
-
-constexpr uint16_t BACKGROUND_TRACK_NONE = 0xFFFF;
-
 struct AudioSoundtrack {
-   unsigned short TrackIndex;
-   unsigned short TrackLength;
+   uint16_t TrackIndex;
+   uint16_t TrackLength;
 };
 
-#define SOUND_CARD_QUEUE_SIZE 100
-#define SB300_SOUND_FUNCTION_SQUARE_WAVE 0
-#define SB300_SOUND_FUNCTION_ANALOG 1
-#define SOUND_EFFECT_QUEUE_SIZE 50
+constexpr uint8_t SB300_SOUND_FUNCTION_SQUARE_WAVE = 0;
+constexpr uint8_t SB300_SOUND_FUNCTION_ANALOG = 1;
 
 struct SoundCardCommandEntry {
    uint8_t soundFunction;
@@ -34,10 +25,8 @@ struct SoundCardCommandEntry {
    unsigned long playTime;
 };
 
-#define SOUND_QUEUE_SIZE 30
-
 struct SoundEntry {
-   unsigned short soundIndex;
+   uint16_t soundIndex;
    uint8_t audioType;
    uint8_t overrideVolume;
    unsigned long playTime;
@@ -47,7 +36,7 @@ struct SoundEntry {
 // built-in sound card because it can only handle one sound
 // at a time.
 struct SoundEffectEntry {
-   unsigned short soundEffectNum;
+   uint16_t soundEffectNum;
    unsigned long requestedPlayTime;
    unsigned long playUntil;
    uint8_t priority; // 0 is least important, 100 is most
@@ -81,10 +70,6 @@ struct SoundEffectEntry {
 #define RSP_SYSTEM_INFO 130
 #define RSP_STATUS 131
 #define RSP_TRACK_REPORT 132
-
-#define MAX_MESSAGE_LEN 32
-#define MAX_NUM_VOICES 14
-#define VERSION_STRING_LEN 21
 
 #define SOM1 0xf0
 #define SOM2 0xaa
@@ -135,6 +120,10 @@ class wavTrigger {
    void setTriggerBank(int bank);
 
  private:
+   static constexpr int MAX_MESSAGE_LEN = 32;
+   static constexpr int MAX_NUM_VOICES = 14;
+   static constexpr int VERSION_STRING_LEN = 21;
+
    void trackControl(int trk, int code);
    void trackControl(int trk, int code, bool lock);
 
@@ -169,32 +158,31 @@ class AudioHandler {
    void SetMusicDuckingGain(uint8_t s_ducking);
    void SetSoundFXDuckingGain(uint8_t s_ducking);
 
-   bool PlayBackgroundSoundtrack(AudioSoundtrack* soundtrackArray, unsigned short numSoundtrackEntries, unsigned long currentTime,
+   bool PlayBackgroundSoundtrack(AudioSoundtrack* soundtrackArray, uint16_t numSoundtrackEntries, unsigned long currentTime,
                                  bool randomOrder = true);
-   bool PlayBackgroundSong(unsigned short trackIndex, bool loopTrack = true);
+   bool PlayBackgroundSong(uint16_t trackIndex, bool loopTrack = true);
 
-   bool PlaySound(unsigned short soundIndex, uint8_t audioType, uint8_t overrideVolume = 0xFF);
-   bool FadeSound(unsigned short soundIndex, int fadeGain, int numMilliseconds, bool stopTrack);
+   bool PlaySound(uint16_t soundIndex, uint8_t audioType, uint8_t overrideVolume = 0xFF);
+   bool FadeSound(uint16_t soundIndex, int fadeGain, int numMilliseconds, bool stopTrack);
 
-   bool QueueSound(unsigned short soundIndex, uint8_t audioType, unsigned long timeToPlay, uint8_t overrideVolume = 0xFF);
-   inline bool QueueOriginalSound(unsigned short soundIndex, unsigned long timeToPlay, uint8_t overrideVolume = 0xFF) {
+   bool QueueSound(uint16_t soundIndex, uint8_t audioType, unsigned long timeToPlay, uint8_t overrideVolume = 0xFF);
+   inline bool QueueOriginalSound(uint16_t soundIndex, unsigned long timeToPlay, uint8_t overrideVolume = 0xFF) {
       return QueueSound(soundIndex, AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS, timeToPlay, overrideVolume);
    }
-   inline bool QueueWavTriggerSound(unsigned short soundIndex, unsigned long timeToPlay, uint8_t overrideVolume = 0xFF) {
+   inline bool QueueWavTriggerSound(uint16_t soundIndex, unsigned long timeToPlay, uint8_t overrideVolume = 0xFF) {
       return QueueSound(soundIndex, AUDIO_PLAY_TYPE_WAV_TRIGGER, timeToPlay, overrideVolume);
    }
 
    bool QueueSoundCardCommand(uint8_t scFunction, uint8_t scRegister, uint8_t scData, unsigned long startTime);
 
-   bool PlaySoundCardWhenPossible(unsigned short soundEffectNum, unsigned long currentTime, unsigned long requestedPlayTime = 0,
+   bool PlaySoundCardWhenPossible(uint16_t soundEffectNum, unsigned long currentTime, unsigned long requestedPlayTime = 0,
                                   unsigned long playUntil = 50, uint8_t priority = 10);
 
-   bool QueuePrioritizedNotification(unsigned short notificationIndex, unsigned short notificationLength, uint8_t priority,
-                                     unsigned long currentTime);
+   bool QueuePrioritizedNotification(uint16_t notificationIndex, uint16_t notificationLength, uint8_t priority, unsigned long currentTime);
 
    bool Update(unsigned long currentTime);
 
-   bool StopSound(unsigned short soundIndex);
+   bool StopSound(uint16_t soundIndex);
    bool StopCurrentNotification(uint8_t priority = 10);
    bool StopAllMusic();
    bool StopAllNotifications(uint8_t priority = 10);
@@ -202,6 +190,12 @@ class AudioHandler {
    bool StopAllAudio();
 
  private:
+   static constexpr int NUMBER_OF_SONGS_REMEMBERED = 10;
+   static constexpr int VOICE_NOTIFICATION_STACK_SIZE = 5;
+   static constexpr int SOUND_QUEUE_SIZE = 30;
+   static constexpr int SOUND_CARD_QUEUE_SIZE = 100;
+   static constexpr int SOUND_EFFECT_QUEUE_SIZE = 50;
+
    AudioSoundtrack* curSoundtrack;
    int soundFXGain;
    int notificationsGain;
@@ -219,10 +213,13 @@ class AudioHandler {
    unsigned int lastSongsPlayed[NUMBER_OF_SONGS_REMEMBERED];
    unsigned long currentNotificationStartTime;
    unsigned long nextSoundtrackPlayTime;
-   unsigned short curSoundtrackEntries;
-   unsigned short currentBackgroundTrack;
+   uint16_t curSoundtrackEntries;
+   uint16_t currentBackgroundTrack;
 
    SoundEntry soundQueue[SOUND_QUEUE_SIZE];
+
+   unsigned long nextVoiceNotificationPlayTime;
+   unsigned long backgroundSongEndTime;
 
 #if defined(RPU_OS_USE_WTYPE_1_SOUND) || defined(RPU_OS_USE_WTYPE_2_SOUND)
    SoundEffectEntry CurrentSoundPlaying;
@@ -255,9 +252,6 @@ class AudioHandler {
    uint8_t GetTopNotificationPriority();
    bool ServiceSoundCardQueue(unsigned long currentTime);
    bool ServiceSoundQueue(unsigned long currentTime);
-
-   unsigned long nextVoiceNotificationPlayTime;
-   unsigned long backgroundSongEndTime;
 };
 
 #define AUDIO_HANDLER_H

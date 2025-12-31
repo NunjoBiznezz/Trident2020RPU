@@ -43,10 +43,13 @@
  *    Audio.StopAllAudio(); // Stop audio
  */
 
-#include "RPU_config.h"
-#include "RPU.h"
 #include "AudioHandler.h"
+#include "RPU.h"
+#include "RPU_config.h"
 #include <Arduino.h>
+
+constexpr uint16_t VOICE_NOTIFICATION_STACK_EMPTY = 0xFFFF;
+constexpr uint16_t BACKGROUND_TRACK_NONE = 0xFFFF;
 
 const int volumeToGainConversion[11] = {-70, -18, -16, -14, -12, -10, -8, -6, -4, -2, 0};
 
@@ -220,13 +223,13 @@ int wavTrigger::getPlayingTrack(int voiceNum) {
 // **************************************************************
 void wavTrigger::masterGain(int gain) {
    uint8_t txbuf[7];
-   unsigned short vol;
+   uint16_t vol;
 
    txbuf[0] = SOM1;
    txbuf[1] = SOM2;
    txbuf[2] = 0x07;
    txbuf[3] = CMD_MASTER_VOLUME;
-   vol = (unsigned short)gain;
+   vol = (uint16_t)gain;
    txbuf[4] = (uint8_t)vol;
    txbuf[5] = (uint8_t)(vol >> 8);
    txbuf[6] = EOM;
@@ -395,7 +398,7 @@ void wavTrigger::resumeAllInSync(void) {
 // **************************************************************
 void wavTrigger::trackGain(int trk, int gain) {
    uint8_t txbuf[9];
-   unsigned short vol;
+   uint16_t vol;
 
    txbuf[0] = SOM1;
    txbuf[1] = SOM2;
@@ -403,7 +406,7 @@ void wavTrigger::trackGain(int trk, int gain) {
    txbuf[3] = CMD_TRACK_VOLUME;
    txbuf[4] = (uint8_t)trk;
    txbuf[5] = (uint8_t)(trk >> 8);
-   vol = (unsigned short)gain;
+   vol = (uint16_t)gain;
    txbuf[6] = (uint8_t)vol;
    txbuf[7] = (uint8_t)(vol >> 8);
    txbuf[8] = EOM;
@@ -413,7 +416,7 @@ void wavTrigger::trackGain(int trk, int gain) {
 // **************************************************************
 void wavTrigger::trackFade(int trk, int gain, int time, bool stopFlag) {
    uint8_t txbuf[12];
-   unsigned short vol;
+   uint16_t vol;
 
    txbuf[0] = SOM1;
    txbuf[1] = SOM2;
@@ -421,7 +424,7 @@ void wavTrigger::trackFade(int trk, int gain, int time, bool stopFlag) {
    txbuf[3] = CMD_TRACK_FADE;
    txbuf[4] = (uint8_t)trk;
    txbuf[5] = (uint8_t)(trk >> 8);
-   vol = (unsigned short)gain;
+   vol = (uint16_t)gain;
    txbuf[6] = (uint8_t)vol;
    txbuf[7] = (uint8_t)(vol >> 8);
    txbuf[8] = (uint8_t)time;
@@ -434,13 +437,13 @@ void wavTrigger::trackFade(int trk, int gain, int time, bool stopFlag) {
 // **************************************************************
 void wavTrigger::samplerateOffset(int offset) {
    uint8_t txbuf[7];
-   unsigned short off;
+   uint16_t off;
 
    txbuf[0] = SOM1;
    txbuf[1] = SOM2;
    txbuf[2] = 0x07;
    txbuf[3] = CMD_SAMPLERATE_OFFSET;
-   off = (unsigned short)offset;
+   off = (uint16_t)offset;
    txbuf[4] = (uint8_t)off;
    txbuf[5] = (uint8_t)(off >> 8);
    txbuf[6] = EOM;
@@ -548,7 +551,7 @@ void AudioHandler::SetSoundFXDuckingGain(uint8_t s_ducking) {
    soundFXDucking = s_ducking;
 }
 
-bool AudioHandler::StopSound(unsigned short soundIndex) {
+bool AudioHandler::StopSound(uint16_t soundIndex) {
 #if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
    wTrig.trackStop(soundIndex);
 #else
@@ -676,7 +679,7 @@ void AudioHandler::DuckCurrentSoundEffects() {
 #endif
 }
 
-bool AudioHandler::QueuePrioritizedNotification(unsigned short notificationIndex, unsigned short notificationLength, uint8_t priority,
+bool AudioHandler::QueuePrioritizedNotification(uint16_t notificationIndex, uint16_t notificationLength, uint8_t priority,
                                                 unsigned long currentTime) {
 #if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
    // if everything on the queue has a lower priority, kill all those
@@ -872,9 +875,10 @@ void AudioHandler::ClearSoundQueue() {
    }
 }
 
-bool AudioHandler::PlaySound(unsigned short soundIndex, uint8_t audioType, uint8_t overrideVolume) {
+bool AudioHandler::PlaySound(uint16_t soundIndex, uint8_t audioType, uint8_t overrideVolume) {
    bool soundPlayed = false;
    int gain = soundFXGain;
+
    if (currentNotificationPlaying != INVALID_SOUND_INDEX) {
       // reduce gain (by ducking amount) if there's a notification playing
       gain -= soundFXDucking;
@@ -883,12 +887,15 @@ bool AudioHandler::PlaySound(unsigned short soundIndex, uint8_t audioType, uint8
       gain = ConvertVolumeSettingToGain(overrideVolume);
    }
 
-   if (audioType == AUDIO_PLAY_TYPE_CHIMES) {
+   switch (audioType) {
+   case AUDIO_PLAY_TYPE_CHIMES:
 #if defined(RPU_OS_USE_SB100)
       //    RPU_PlaySB100Chime((uint8_t)soundIndex);
       soundPlayed = true;
 #endif
-   } else if (audioType == AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS) {
+      break;
+
+   case AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS:
 #ifdef RPU_OS_USE_DASH51
       RPU_PlaySoundDash51((uint8_t)soundIndex);
       soundPlayed = true;
@@ -901,7 +908,9 @@ bool AudioHandler::PlaySound(unsigned short soundIndex, uint8_t audioType, uint8
       RPU_PlaySB100((uint8_t)soundIndex);
       soundPlayed = true;
 #endif
-   } else if (audioType == AUDIO_PLAY_TYPE_WAV_TRIGGER) {
+      break;
+
+   case AUDIO_PLAY_TYPE_WAV_TRIGGER:
 #if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
 #ifdef RPU_OS_USE_WAV_TRIGGER
       wTrig.trackStop(soundIndex);
@@ -911,14 +920,16 @@ bool AudioHandler::PlaySound(unsigned short soundIndex, uint8_t audioType, uint8
       wTrig.trackGain(soundIndex, gain);
       soundPlayed = true;
 #endif
+      break;
    }
+
    (void)gain;
    (void)soundIndex;
 
    return soundPlayed;
 }
 
-bool AudioHandler::FadeSound(unsigned short soundIndex, int fadeGain, int numMilliseconds, bool stopTrack) {
+bool AudioHandler::FadeSound(uint16_t soundIndex, int fadeGain, int numMilliseconds, bool stopTrack) {
    bool soundFaded = false;
 #if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
    wTrig.trackFade(soundIndex, fadeGain, numMilliseconds, stopTrack);
@@ -931,7 +942,7 @@ bool AudioHandler::FadeSound(unsigned short soundIndex, int fadeGain, int numMil
    return soundFaded;
 }
 
-bool AudioHandler::QueueSound(unsigned short soundIndex, uint8_t audioType, unsigned long timeToPlay, uint8_t overrideVolume) {
+bool AudioHandler::QueueSound(uint16_t soundIndex, uint8_t audioType, unsigned long timeToPlay, uint8_t overrideVolume) {
    for (int count = 0; count < SOUND_QUEUE_SIZE; count++) {
       if (soundQueue[count].playTime == 0) {
          soundQueue[count].soundIndex = soundIndex;
@@ -982,7 +993,7 @@ void AudioHandler::InitSoundEffectQueue() {
 #endif
 }
 
-bool AudioHandler::PlaySoundCardWhenPossible(unsigned short soundEffectNum, unsigned long currentTime, unsigned long requestedPlayTime,
+bool AudioHandler::PlaySoundCardWhenPossible(uint16_t soundEffectNum, unsigned long currentTime, unsigned long requestedPlayTime,
                                              unsigned long playUntil, uint8_t priority) {
 #if defined(RPU_OS_USE_WTYPE_1_SOUND) || defined(RPU_OS_USE_WTYPE_2_SOUND)
    uint8_t count = 0;
@@ -1096,8 +1107,8 @@ bool AudioHandler::ServiceSoundCardQueue(unsigned long currentTime) {
 #endif
 }
 
-bool AudioHandler::PlayBackgroundSoundtrack(AudioSoundtrack* soundtrackArray, unsigned short numSoundtrackEntries,
-                                            unsigned long currentTime, bool randomOrder) {
+bool AudioHandler::PlayBackgroundSoundtrack(AudioSoundtrack* soundtrackArray, uint16_t numSoundtrackEntries, unsigned long currentTime,
+                                            bool randomOrder) {
    StopAllMusic();
    if (soundtrackArray == NULL) {
       return false;
@@ -1115,7 +1126,7 @@ bool AudioHandler::PlayBackgroundSoundtrack(AudioSoundtrack* soundtrackArray, un
    return true;
 }
 
-bool AudioHandler::PlayBackgroundSong(unsigned short trackIndex, bool loopTrack) {
+bool AudioHandler::PlayBackgroundSong(uint16_t trackIndex, bool loopTrack) {
    StopAllMusic();
    bool trackPlayed = false;
 
