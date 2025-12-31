@@ -1,7 +1,6 @@
 #ifndef WAV_TRIGGER_H
 #define WAV_TRIGGER_H
 
-#include "RPU_config.h"
 #include <HardwareSerial.h>
 #include <stdint.h>
 
