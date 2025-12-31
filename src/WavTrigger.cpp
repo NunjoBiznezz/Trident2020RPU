@@ -1,8 +1,6 @@
 #include "WavTrigger.h"
 #include <Arduino.h>
 
-#if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
-
 constexpr uint8_t CMD_GET_VERSION = 1;
 constexpr uint8_t CMD_GET_SYS_INFO = 2;
 constexpr uint8_t CMD_TRACK_CONTROL = 3;
@@ -34,6 +32,12 @@ constexpr uint8_t RSP_TRACK_REPORT = 132;
 constexpr uint8_t SOM1 = 0xf0;
 constexpr uint8_t SOM2 = 0xaa;
 constexpr uint8_t EOM = 0x55;
+
+#if (RPU_OS_HARDWARE_REV <= 3)
+#define WTSerial Serial
+#else
+#define WTSerial Serial1    // Hardware serial
+#endif
 
 // **************************************************************
 void WavTrigger::start(void) {
@@ -422,4 +426,3 @@ void WavTrigger::setTriggerBank(int bank) {
    WTSerial.write(txbuf, 6);
 }
 
-#endif

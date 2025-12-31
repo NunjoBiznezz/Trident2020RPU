@@ -5,13 +5,6 @@
 #include <HardwareSerial.h>
 #include <stdint.h>
 
-#if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
-
-#if (RPU_OS_HARDWARE_REV <= 3)
-#define WTSerial Serial
-#else
-#define WTSerial Serial1
-#endif
 
 class WavTrigger {
  public:
@@ -68,7 +61,5 @@ class WavTrigger {
    bool versionRcvd;
    bool sysinfoRcvd;
 };
-
-#endif
 
 #endif // WAV_TRIGGER_H

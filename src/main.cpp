@@ -329,6 +329,16 @@ void setup() {
       Serial.begin(115200);
    }
 
+   // TODO remove the hard-coded serial port from WavTrigger
+// #if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
+// #  if (RPU_OS_HARDWARE_REV <= 3)
+// #     define WTSerial Serial
+// #  else
+// #     define WTSerial Serial1 // Hardware serial
+// #  endif
+//    WTSerial.begin(57600);
+// #endif
+
    CurrentTime = millis();
    Audio.InitDevices(AUDIO_PLAY_TYPE_WAV_TRIGGER | AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS);
    Audio.StopAllAudio();
