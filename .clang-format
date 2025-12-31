@@ -20,6 +20,9 @@ ColumnLimit: 140
 BreakBeforeBraces: Attach
 Cpp11BracedListStyle: true
 
+# Array/Braced List Formatting
+AlignArrayOfStructures: Left
+
 # Pointers and References
 PointerAlignment: Left
 DerivePointerAlignment: false
