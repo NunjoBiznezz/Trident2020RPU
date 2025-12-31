@@ -36,10 +36,10 @@ uint8_t CurValue = 0;
 uint8_t CurSound = 0x01;
 uint8_t SoundPlaying = 0;
 uint8_t SoundToPlay = 0;
-boolean SolenoidCycle = true;
+bool SolenoidCycle = true;
 
 #ifndef RPU_OS_DISABLE_CPC_FOR_SPACE
-boolean CPCSelectionsHaveBeenRead = false;
+bool CPCSelectionsHaveBeenRead = false;
 #define NUM_CPC_PAIRS 9
 uint8_t CPCPairs[NUM_CPC_PAIRS][2] = {
   {1, 5},
@@ -103,10 +103,10 @@ uint8_t GetCPCCredits(uint8_t cpcSelection) {
 #define TOTAL_DISPLAY_DIGITS 30
 #endif
 
-int RunBaseSelfTest(int curState, boolean curStateChanged, unsigned long CurrentTime, uint8_t resetSwitch, uint8_t slamSwitch) {
+int RunBaseSelfTest(int curState, bool curStateChanged, unsigned long CurrentTime, uint8_t resetSwitch, uint8_t slamSwitch) {
   uint8_t curSwitch = RPU_PullFirstFromSwitchStack();
   int returnState = curState;
-  boolean resetDoubleClick = false;
+  bool resetDoubleClick = false;
   unsigned short savedScoreStartByte = 0;
   unsigned short auditNumStartByte = 0;
 #ifndef RPU_OS_DISABLE_CPC_FOR_SPACE  
@@ -129,7 +129,7 @@ int RunBaseSelfTest(int curState, boolean curStateChanged, unsigned long Current
     NextSpeedyValueChange = 0;
   }
 
-  boolean resetBeingHeld = false;
+  bool resetBeingHeld = false;
   if (ResetHold!=0 && (CurrentTime-ResetHold)>1300) {
     resetBeingHeld = true;
     if (NextSpeedyValueChange==0) {

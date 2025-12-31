@@ -30,9 +30,9 @@
 #include <EEPROM.h>
 
 // Forward declarations
-byte ReadSetting(byte setting, byte defaultValue);
-void PlaySoundEffect(byte soundEffectNum);
-void PlayBackgroundSongBasedOnBall(byte ballNum);
+uint8_t ReadSetting(uint8_t setting, uint8_t defaultValue);
+void PlaySoundEffect(uint8_t soundEffectNum);
+void PlayBackgroundSongBasedOnBall(uint8_t ballNum);
 
 #define TRIDENT2020_MAJOR_VERSION 2020
 #define TRIDENT2020_MINOR_VERSION 3
@@ -49,7 +49,7 @@ void PlayBackgroundSongBasedOnBall(byte ballNum);
 //  negative - self-test modes
 //  positive - game play
 char MachineState = 0;
-boolean MachineStateChanged = true;
+bool MachineStateChanged = true;
 #define MACHINE_STATE_ATTRACT 0
 #define MACHINE_STATE_INIT_GAMEPLAY 1
 #define MACHINE_STATE_INIT_NEW_BALL 2
@@ -241,28 +241,28 @@ boolean MachineStateChanged = true;
 *********************************************************************/
 unsigned long HighScore = 0;
 unsigned long AwardScores[3];
-byte Credits = 0;
-boolean FreePlayMode = false;
-byte SoundSelector = 3;
-byte MusicVolume = 10;
-byte SoundEffectsVolume = 10;
-byte CalloutsVolume = 10;
-byte BallSaveNumSeconds = 0;
+uint8_t Credits = 0;
+bool FreePlayMode = false;
+uint8_t SoundSelector = 3;
+uint8_t MusicVolume = 10;
+uint8_t SoundEffectsVolume = 10;
+uint8_t CalloutsVolume = 10;
+uint8_t BallSaveNumSeconds = 0;
 unsigned long SoundSettingTimeout = 0;
 unsigned long ExtraBallValue = 0;
 unsigned long SpecialValue = 0;
 unsigned long CurrentTime = 0;
-byte MaximumCredits = 40;
-byte BallsPerGame = 3;
-byte DimLevel = 2;
-byte ScoreAwardReplay = 0;
-byte ChuteCoinsInProgress[3] = {0, 0, 0};
-boolean HighScoreReplay = true;
-boolean MatchFeature = true;
-byte SpecialLightAward = 0;
-boolean TournamentScoring = false;
-boolean ResetScoresToClearVersion = false;
-boolean ScrollingScores = true;
+uint8_t MaximumCredits = 40;
+uint8_t BallsPerGame = 3;
+uint8_t DimLevel = 2;
+uint8_t ScoreAwardReplay = 0;
+uint8_t ChuteCoinsInProgress[3] = {0, 0, 0};
+bool HighScoreReplay = true;
+bool MatchFeature = true;
+uint8_t SpecialLightAward = 0;
+bool TournamentScoring = false;
+bool ResetScoresToClearVersion = false;
+bool ScrollingScores = true;
 
 // byte dipBank0, dipBank1, dipBank2, dipBank3;
 // int BackgroundMusicGain = -3;
@@ -274,50 +274,50 @@ AudioHandler Audio;
     Game State
 
 *********************************************************************/
-byte CurrentPlayer = 0;
-byte CurrentBallInPlay = 1;
-byte CurrentNumPlayers = 0;
+uint8_t CurrentPlayer = 0;
+uint8_t CurrentBallInPlay = 1;
+uint8_t CurrentNumPlayers = 0;
 unsigned long CurrentScores[4];
 unsigned long CurrentPlayerCurrentScore = 0;
-byte Bonus;
-byte BonusX;
-byte StandupsHit[4];
-byte CurrentStandupsHit = 0;
-boolean SamePlayerShootsAgain = false;
+uint8_t Bonus;
+uint8_t BonusX;
+uint8_t StandupsHit[4];
+uint8_t CurrentStandupsHit = 0;
+bool SamePlayerShootsAgain = false;
 
-boolean BallSaveUsed = false;
+bool BallSaveUsed = false;
 unsigned long BallFirstSwitchHitTime = 0;
 unsigned long BallTimeInTrough = 0;
 
-boolean RescueFromTheDeepAvailable = true;
-boolean JackpotLit = false;
-boolean ExtraBallCollected = false;
-boolean SpecialCollected = false;
-boolean ShowingModeStats = false;
-byte GameMode = GAME_MODE_SKILL_SHOT;
-byte MaxTiltWarnings = 2;
-byte NumTiltWarnings = 0;
-byte SaucerValue = 0;
-byte ShowSaucerHit = 0;
-byte LastStandupTargetHit = 0;
-byte CurrentDropTargetsValid = 0;
-byte RolloverValue = 2;
-byte LastSpinnerSide = 0; // 1=left, 2=right
-byte AlternatingSpinnerCount = 0;
-byte FeedingFrenzySpins[4];
-byte ExploreTheDepthsHits[4];
-byte SharpShooterHits[4];
-byte CurrentFeedingFrenzy;
-byte CurrentExploreTheDepths;
-byte CurrentSharpShooter;
-byte SharpShooterTarget = 0;
-byte NumberOfStandupClears = 0;
-byte FeedingFrenzyAlternatingStart = 4;
-byte SharpShooterStartBonus = 3;
-byte TargetSpecialBonus = 4;
-byte StandupSpecialLevel = 2;
-constexpr byte ExploreTheDepthsStart = 1;
-byte GameModeFlagsQualified = 0;
+bool RescueFromTheDeepAvailable = true;
+bool JackpotLit = false;
+bool ExtraBallCollected = false;
+bool SpecialCollected = false;
+bool ShowingModeStats = false;
+uint8_t GameMode = GAME_MODE_SKILL_SHOT;
+uint8_t MaxTiltWarnings = 2;
+uint8_t NumTiltWarnings = 0;
+uint8_t SaucerValue = 0;
+uint8_t ShowSaucerHit = 0;
+uint8_t LastStandupTargetHit = 0;
+uint8_t CurrentDropTargetsValid = 0;
+uint8_t RolloverValue = 2;
+uint8_t LastSpinnerSide = 0; // 1=left, 2=right
+uint8_t AlternatingSpinnerCount = 0;
+uint8_t FeedingFrenzySpins[4];
+uint8_t ExploreTheDepthsHits[4];
+uint8_t SharpShooterHits[4];
+uint8_t CurrentFeedingFrenzy;
+uint8_t CurrentExploreTheDepths;
+uint8_t CurrentSharpShooter;
+uint8_t SharpShooterTarget = 0;
+uint8_t NumberOfStandupClears = 0;
+uint8_t FeedingFrenzyAlternatingStart = 4;
+uint8_t SharpShooterStartBonus = 3;
+uint8_t TargetSpecialBonus = 4;
+uint8_t StandupSpecialLevel = 2;
+constexpr uint8_t ExploreTheDepthsStart = 1;
+uint8_t GameModeFlagsQualified = 0;
 unsigned long LastSpinnerHitTime = 0;
 unsigned long GameModeStartTime = 0;
 unsigned long GameModeEndTime = 0;
@@ -388,12 +388,12 @@ void ReadStoredParameters() {
       MaxTiltWarnings = 2;
    }
 
-   byte awardOverride = ReadSetting(EEPROM_AWARD_OVERRIDE_BYTE, 99);
+   uint8_t awardOverride = ReadSetting(EEPROM_AWARD_OVERRIDE_BYTE, 99);
    if (awardOverride != 99) {
       ScoreAwardReplay = awardOverride;
    }
 
-   byte ballsOverride = ReadSetting(EEPROM_BALLS_OVERRIDE_BYTE, 99);
+   uint8_t ballsOverride = ReadSetting(EEPROM_BALLS_OVERRIDE_BYTE, 99);
    if (ballsOverride == 3 || ballsOverride == 5) {
       BallsPerGame = ballsOverride;
    } else {
@@ -492,8 +492,8 @@ void setup() {
    Audio.QueueSound(SOUND_EFFECT_TRIDENT_INTRO, AUDIO_PLAY_TYPE_WAV_TRIGGER, CurrentTime + 5000);
 }
 
-byte ReadSetting(byte setting, byte defaultValue) {
-   byte value = EEPROM.read(setting);
+uint8_t ReadSetting(uint8_t setting, uint8_t defaultValue) {
+   uint8_t value = EEPROM.read(setting);
    if (value == 0xFF) {
       EEPROM.write(setting, defaultValue);
       return defaultValue;
@@ -506,13 +506,13 @@ byte ReadSetting(byte setting, byte defaultValue) {
 //  Lamp Management functions
 //
 ////////////////////////////////////////////////////////////////////////////
-void SetPlayerLamps(byte numPlayers, byte playerOffset = 0, int flashPeriod = 0) {
+void SetPlayerLamps(uint8_t numPlayers, uint8_t playerOffset = 0, int flashPeriod = 0) {
    for (int count = 0; count < 4; count++) {
       RPU_SetLampState(PLAYER_1 + playerOffset + count, (numPlayers == (count + 1)) ? 1 : 0, 0, flashPeriod);
    }
 }
 
-void ShowBonusOnTree(byte bonus, byte dim = 0) {
+void ShowBonusOnTree(uint8_t bonus, uint8_t dim = 0) {
    if (bonus > MAX_DISPLAY_BONUS) {
       bonus = MAX_DISPLAY_BONUS;
    }
@@ -536,12 +536,12 @@ void ShowBonusOnTree(byte bonus, byte dim = 0) {
             break;
          }
       }
-      for (byte turnOff = (bonus + 1); turnOff < (cap + 1); turnOff++) {
+      for (uint8_t turnOff = (bonus + 1); turnOff < (cap + 1); turnOff++) {
          RPU_SetLampState(BONUS_1 + (turnOff - 1), 0);
       }
    }
 
-   byte bottom;
+   uint8_t bottom;
    for (bottom = 1; bottom < bonus; bottom++) {
       RPU_SetLampState(BONUS_1 + (bottom - 1), 0);
    }
@@ -553,8 +553,8 @@ void ShowBonusOnTree(byte bonus, byte dim = 0) {
 
 void ShowSaucerLamps() {
    if (GameMode == GAME_MODE_MINI_GAME_QUALIFIED) {
-      byte lampPhase = ((CurrentTime - GameModeStartTime) / 100) % 4;
-      for (byte count = 0; count < 4; count++) {
+      uint8_t lampPhase = ((CurrentTime - GameModeStartTime) / 100) % 4;
+      for (uint8_t count = 0; count < 4; count++) {
          RPU_SetLampState(TOP_EJECT_5K - count, count == lampPhase);
       }
    } else if (SaucerHitTime != 0 && (CurrentTime - SaucerHitTime) < SAUCER_DISPLAY_DURATION) {
@@ -570,7 +570,7 @@ void ShowSaucerLamps() {
          }
       }
    } else if (GameMode == GAME_MODE_SKILL_SHOT) {
-      byte lampPhase = ((CurrentTime - GameModeStartTime) / 250) % 28;
+      uint8_t lampPhase = ((CurrentTime - GameModeStartTime) / 250) % 28;
       if (lampPhase < 16) {
          RPU_SetLampState(TOP_EJECT_5K, lampPhase % 4, lampPhase % 2);
          SaucerValue = 5;
@@ -578,7 +578,7 @@ void ShowSaucerLamps() {
             RPU_SetLampState(TOP_EJECT_5K - count, 0);
          }
       } else {
-         byte saucerLamp;
+         uint8_t saucerLamp;
          lampPhase -= 16;
          saucerLamp = lampPhase % 6;
          if (saucerLamp > 3) {
@@ -597,7 +597,7 @@ void ShowSaucerLamps() {
          }
       }
    } else if (GameMode == GAME_MODE_WIZARD) {
-      byte lampPhase = ((CurrentTime - GameModeStartTime) / 175) % 4;
+      uint8_t lampPhase = ((CurrentTime - GameModeStartTime) / 175) % 4;
       if (!JackpotLit) {
          lampPhase = 0;
       }
@@ -612,7 +612,7 @@ void ShowSaucerLamps() {
          }
          SaucerValue = 5;
       } else if (CurrentTime < NextSaucerReduction) {
-         byte saucerLamp = 0;
+         uint8_t saucerLamp = 0;
          if (SaucerValue > 5) {
             saucerLamp = SaucerValue / 10;
          }
@@ -635,8 +635,8 @@ void ShowSaucerLamps() {
    }
 }
 
-byte DropTargetLampArray[] = {DROP_TARGET_1, DROP_TARGET_2, DROP_TARGET_3, DROP_TARGET_4, DROP_TARGET_5};
-byte DropTargetSwitchArray[] = {SW_DROP_TARGET_1, SW_DROP_TARGET_2, SW_DROP_TARGET_3, SW_DROP_TARGET_4, SW_DROP_TARGET_5};
+uint8_t DropTargetLampArray[] = {DROP_TARGET_1, DROP_TARGET_2, DROP_TARGET_3, DROP_TARGET_4, DROP_TARGET_5};
+uint8_t DropTargetSwitchArray[] = {SW_DROP_TARGET_1, SW_DROP_TARGET_2, SW_DROP_TARGET_3, SW_DROP_TARGET_4, SW_DROP_TARGET_5};
 
 void ShowDropTargetLamps() {
    if (GameMode == GAME_MODE_MINI_GAME_QUALIFIED) {
@@ -651,8 +651,8 @@ void ShowDropTargetLamps() {
       RPU_SetLampState(DROP_TARGET_5, lampPhase == 0, 1);
    } else if (GameMode & GAME_MODE_SHARP_SHOOTER_FLAG ||
               (DropTargetClearTime != 0 && (CurrentTime - DropTargetClearTime) < DROP_TARGET_CLEAR_DURATION)) {
-      byte lampPhase = ((CurrentTime - DropTargetClearTime) / 50) % 5;
-      for (byte count = 0; count < 5; count++) {
+      uint8_t lampPhase = ((CurrentTime - DropTargetClearTime) / 50) % 5;
+      for (uint8_t count = 0; count < 5; count++) {
          RPU_SetLampState(DropTargetLampArray[count], lampPhase == count);
       }
       /*
@@ -729,7 +729,7 @@ void ShowStandupTargetLamps() {
       RPU_SetLampState(STAND_UP_WHITE, CurrentStandupsHit & STANDUP_WHITE_MASK, (LastStandupTargetHit & STANDUP_WHITE_MASK) ? 0 : 1,
                        (LastStandupTargetHit & STANDUP_WHITE_MASK) ? 50 : 0);
    } else if (GameMode == GAME_MODE_SKILL_SHOT || (GameMode & GAME_MODE_EXPLORE_THE_DEPTHS_FLAG)) {
-      byte lampPhase = ((CurrentTime - GameModeStartTime) / 100) % 5;
+      uint8_t lampPhase = ((CurrentTime - GameModeStartTime) / 100) % 5;
       RPU_SetLampState(STAND_UP_PURPLE, lampPhase == 4 || lampPhase == 0, lampPhase == 0);
       RPU_SetLampState(STAND_UP_YELLOW, lampPhase == 3 || lampPhase == 4, lampPhase == 4);
       RPU_SetLampState(STAND_UP_AMBER, lampPhase == 2 || lampPhase == 3, lampPhase == 3);
@@ -744,11 +744,11 @@ void ShowStandupTargetLamps() {
    }
 }
 
-byte LastBonusShown = 0;
+uint8_t LastBonusShown = 0;
 void ShowBonusLamps() {
    if (GameMode == GAME_MODE_MINI_GAME_QUALIFIED) {
-      byte lightPhase = ((CurrentTime - GameModeStartTime) / 100) % 15;
-      for (byte count = 0; count < 10; count++) {
+      uint8_t lightPhase = ((CurrentTime - GameModeStartTime) / 100) % 15;
+      for (uint8_t count = 0; count < 10; count++) {
          RPU_SetLampState(BONUS_1 + count, (lightPhase == count) || ((lightPhase - 1) == count), ((lightPhase - 1) == count));
       }
    } else if (Bonus != LastBonusShown) {
@@ -779,7 +779,7 @@ void ShowLeftSpinnerLamps() {
       RPU_SetLampState(LEFT_SPINNER_WHITE, (lampPhase == 6), 1);
       RPU_SetLampState(LEFT_SPINNER_PURPLE, (lampPhase == 6), 1);
    } else if (GameMode == GAME_MODE_SKILL_SHOT) {
-      byte lampPhase = ((CurrentTime - GameModeStartTime) / 600) % 3;
+      uint8_t lampPhase = ((CurrentTime - GameModeStartTime) / 600) % 3;
       RPU_SetLampState(LEFT_SPINNER_AMBER, lampPhase == 0);
       RPU_SetLampState(LEFT_SPINNER_WHITE, lampPhase == 1);
       RPU_SetLampState(LEFT_SPINNER_PURPLE, lampPhase == 2);
@@ -838,7 +838,7 @@ void ShowRightSpinnerLamps() {
 }
 
 void ShowLeftLaneLamps() {
-   byte valueToShow = RolloverValue;
+   uint8_t valueToShow = RolloverValue;
    int valueFlash = 0;
    if (GameMode == GAME_MODE_MINI_GAME_QUALIFIED) {
       valueToShow = 0;
@@ -885,15 +885,15 @@ unsigned long LastTimeScoreChanged = 0;
 unsigned long LastTimeOverrideAnimated = 0;
 unsigned long LastFlashOrDash = 0;
 unsigned long ScoreOverrideValue[4] = {0, 0, 0, 0};
-byte ScoreOverrideStatus = 0;
-byte LastScrollPhase = 0;
+uint8_t ScoreOverrideStatus = 0;
+uint8_t LastScrollPhase = 0;
 
-byte MagnitudeOfScore(unsigned long score) {
+uint8_t MagnitudeOfScore(unsigned long score) {
    if (score == 0) {
       return 0;
    }
 
-   byte retval = 0;
+   uint8_t retval = 0;
    while (score > 0) {
       score = score / 10;
       retval += 1;
@@ -901,7 +901,7 @@ byte MagnitudeOfScore(unsigned long score) {
    return retval;
 }
 
-void OverrideScoreDisplay(byte displayNum, unsigned long value, boolean animate) {
+void OverrideScoreDisplay(uint8_t displayNum, unsigned long value, bool animate) {
    if (displayNum > 3) {
       return;
    }
@@ -914,15 +914,15 @@ void OverrideScoreDisplay(byte displayNum, unsigned long value, boolean animate)
    ScoreOverrideValue[displayNum] = value;
 }
 
-byte GetDisplayMask(byte numDigits) {
-   byte displayMask = 0;
-   for (byte digitCount = 0; digitCount < numDigits; digitCount++) {
+uint8_t GetDisplayMask(uint8_t numDigits) {
+   uint8_t displayMask = 0;
+   for (uint8_t digitCount = 0; digitCount < numDigits; digitCount++) {
       displayMask |= (0x20 >> digitCount);
    }
    return displayMask;
 }
 
-void ShowPlayerScores(byte displayToUpdate, boolean flashCurrent, boolean dashCurrent, unsigned long allScoresShowValue = 0) {
+void ShowPlayerScores(uint8_t displayToUpdate, bool flashCurrent, bool dashCurrent, unsigned long allScoresShowValue = 0) {
    if (displayToUpdate == 0xFF) {
       ScoreOverrideStatus = 0;
    }
@@ -938,24 +938,25 @@ void ShowPlayerScores(byte displayToUpdate, boolean flashCurrent, boolean dashCu
       scrollPhaseChanged = true;
    }
 
-   boolean updateLastTimeAnimated = false;
+   bool updateLastTimeAnimated = false;
 
-   for (byte scoreCount = 0; scoreCount < 4; scoreCount++) {
+   for (uint8_t scoreCount = 0; scoreCount < 4; scoreCount++) {
       // If this display is currently being overriden, then we should update it
       if (allScoresShowValue == 0 && (ScoreOverrideStatus & (0x10 << scoreCount))) {
          displayScore = ScoreOverrideValue[scoreCount];
-         byte numDigits = MagnitudeOfScore(displayScore);
+         uint8_t numDigits = MagnitudeOfScore(displayScore);
          if (numDigits == 0) {
             numDigits = 1;
          }
          if (numDigits < (RPU_OS_NUM_DIGITS - 1) && (ScoreOverrideStatus & (0x01 << scoreCount))) {
             if (overrideAnimationSeed != LastTimeOverrideAnimated) {
                updateLastTimeAnimated = true;
-               byte shiftDigits = (overrideAnimationSeed) % (((RPU_OS_NUM_DIGITS + 1) - numDigits) + ((RPU_OS_NUM_DIGITS - 1) - numDigits));
+               uint8_t shiftDigits =
+                   (overrideAnimationSeed) % (((RPU_OS_NUM_DIGITS + 1) - numDigits) + ((RPU_OS_NUM_DIGITS - 1) - numDigits));
                if (shiftDigits >= ((RPU_OS_NUM_DIGITS + 1) - numDigits)) {
                   shiftDigits = (RPU_OS_NUM_DIGITS - numDigits) * 2 - shiftDigits;
                }
-               byte digitCount;
+               uint8_t digitCount;
                displayMask = GetDisplayMask(numDigits);
                for (digitCount = 0; digitCount < shiftDigits; digitCount++) {
                   displayScore *= 10;
@@ -993,13 +994,13 @@ void ShowPlayerScores(byte displayToUpdate, boolean flashCurrent, boolean dashCu
                } else {
                   // Scores are scrolled 10 digits and then we wait for 6
                   if (scrollPhase < 11 && scrollPhaseChanged) {
-                     byte numDigits = MagnitudeOfScore(displayScore);
+                     uint8_t numDigits = MagnitudeOfScore(displayScore);
 
                      // Figure out top part of score
                      unsigned long tempScore = displayScore;
                      if (scrollPhase < RPU_OS_NUM_DIGITS) {
                         displayMask = RPU_OS_ALL_DIGITS_MASK;
-                        for (byte scrollCount = 0; scrollCount < scrollPhase; scrollCount++) {
+                        for (uint8_t scrollCount = 0; scrollCount < scrollPhase; scrollCount++) {
                            displayScore = (displayScore % (RPU_OS_MAX_DISPLAY_SCORE + 1)) * 10;
                            displayMask = displayMask >> 1;
                         }
@@ -1010,8 +1011,8 @@ void ShowPlayerScores(byte displayToUpdate, boolean flashCurrent, boolean dashCu
 
                      // Add in lower part of score
                      if ((numDigits + scrollPhase) > 10) {
-                        byte numDigitsNeeded = (numDigits + scrollPhase) - 10;
-                        for (byte scrollCount = 0; scrollCount < (numDigits - numDigitsNeeded); scrollCount++) {
+                        uint8_t numDigitsNeeded = (numDigits + scrollPhase) - 10;
+                        for (uint8_t scrollCount = 0; scrollCount < (numDigits - numDigitsNeeded); scrollCount++) {
                            tempScore /= 10;
                         }
                         displayMask |= GetDisplayMask(MagnitudeOfScore(tempScore));
@@ -1036,16 +1037,16 @@ void ShowPlayerScores(byte displayToUpdate, boolean flashCurrent, boolean dashCu
                   unsigned long dashSeed = CurrentTime / 50;
                   if (dashSeed != LastFlashOrDash) {
                      LastFlashOrDash = dashSeed;
-                     byte dashPhase = (CurrentTime / 60) % 36;
-                     byte numDigits = MagnitudeOfScore(displayScore);
+                     uint8_t dashPhase = (CurrentTime / 60) % 36;
+                     uint8_t numDigits = MagnitudeOfScore(displayScore);
                      if (dashPhase < 12) {
                         displayMask = GetDisplayMask((numDigits == 0) ? 2 : numDigits);
                         if (dashPhase < 7) {
-                           for (byte maskCount = 0; maskCount < dashPhase; maskCount++) {
+                           for (uint8_t maskCount = 0; maskCount < dashPhase; maskCount++) {
                               displayMask &= ~(0x01 << maskCount);
                            }
                         } else {
-                           for (byte maskCount = 12; maskCount > dashPhase; maskCount--) {
+                           for (uint8_t maskCount = 12; maskCount > dashPhase; maskCount--) {
                               displayMask &= ~(0x20 >> (maskCount - dashPhase - 1));
                            }
                         }
@@ -1073,7 +1074,7 @@ void ShowPlayerScores(byte displayToUpdate, boolean flashCurrent, boolean dashCu
 //  Machine State Helper functions
 //
 ////////////////////////////////////////////////////////////////////////////
-boolean AddPlayer(boolean resetNumPlayers = false) {
+bool AddPlayer(bool resetNumPlayers = false) {
    if (Credits < 1 && !FreePlayMode) {
       return false;
    }
@@ -1103,7 +1104,7 @@ boolean AddPlayer(boolean resetNumPlayers = false) {
 }
 
 unsigned short ChuteAuditByte[] = {RPU_CHUTE_1_COINS_START_BYTE, RPU_CHUTE_2_COINS_START_BYTE, RPU_CHUTE_3_COINS_START_BYTE};
-void AddCoinToAudit(byte chuteNum) {
+void AddCoinToAudit(uint8_t chuteNum) {
    if (chuteNum > 2) {
       return;
    }
@@ -1129,8 +1130,8 @@ void AddCredit(boolean playSound = false, byte numToAdd = 1) {
    }
 }
 
-byte SwitchToChuteNum(byte switchHit) {
-   byte chuteNum = 0;
+uint8_t SwitchToChuteNum(uint8_t switchHit) {
+   uint8_t chuteNum = 0;
    if (switchHit == SW_COIN_2) {
       chuteNum = 1;
    } else if (switchHit == SW_COIN_3) {
@@ -1139,8 +1140,8 @@ byte SwitchToChuteNum(byte switchHit) {
    return chuteNum;
 }
 
-boolean AddCoin(byte chuteNum) {
-   boolean creditAdded = false;
+bool AddCoin(uint8_t chuteNum) {
+   bool creditAdded = false;
    if (chuteNum > 2) {
       return false;
    }
@@ -1193,9 +1194,9 @@ void AddSpecialCredit() {
 #define ADJ_TYPE_SCORE 4
 #define ADJ_TYPE_SCORE_WITH_DEFAULT 5
 #define ADJ_TYPE_SCORE_NO_DEFAULT 6
-byte AdjustmentType = 0;
-byte NumAdjustmentValues = 0;
-byte AdjustmentValues[8];
+uint8_t AdjustmentType = 0;
+uint8_t NumAdjustmentValues = 0;
+uint8_t AdjustmentValues[8];
 unsigned long AdjustmentScore;
 byte* CurrentAdjustmentByte = NULL;
 unsigned long* CurrentAdjustmentUL = NULL;
@@ -1205,9 +1206,9 @@ byte TempValue = 0;
 byte SelfTestStateToCalloutMap[] = {136, 137, 135, 134, 133, 140, 141, 142, 139, 143, 144, 145, 146, 147, 148, 149, 138, 150,
                                     151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 171, 0};
 
-byte SoundSelectorToCalloutsMap[]{190, 191, 199, 197, 198, 196};
+byte SoundSelectorToCalloutsMap[] = {190, 191, 199, 197, 198, 196};
 
-int RunSelfTest(int curState, boolean curStateChanged) {
+int RunSelfTest(int curState, bool curStateChanged) {
    int returnState = curState;
    CurrentNumPlayers = 0;
 
@@ -1228,8 +1229,8 @@ int RunSelfTest(int curState, boolean curStateChanged) {
    // Any state that's greater than CHUTE_3 is handled by the Base Self-test code
    // Any that's less, is machine specific, so we handle it here.
    if (curState >= MACHINE_STATE_TEST_DONE) {
-      byte cpcSelection = 0xFF;
-      byte chuteNum = 0xFF;
+      uint8_t cpcSelection = 0xFF;
+      uint8_t chuteNum = 0xFF;
       if (curState == MACHINE_STATE_ADJUST_CPC_CHUTE_1) {
          chuteNum = 0;
       }
@@ -1245,13 +1246,13 @@ int RunSelfTest(int curState, boolean curStateChanged) {
       returnState = RunBaseSelfTest(returnState, curStateChanged, CurrentTime, SW_CREDIT_RESET, SW_SLAM);
       if (chuteNum != 0xFF) {
          if (cpcSelection != GetCPCSelection(chuteNum)) {
-            byte newCPC = GetCPCSelection(chuteNum);
+            uint8_t newCPC = GetCPCSelection(chuteNum);
             Audio.StopAllAudio();
             Audio.PlaySound(SOUND_EFFECT_SELF_TEST_CPC_START + newCPC, AUDIO_PLAY_TYPE_WAV_TRIGGER, 10);
          }
       }
    } else {
-      byte curSwitch = RPU_PullFirstFromSwitchStack();
+      uint8_t curSwitch = RPU_PullFirstFromSwitchStack();
 
       if (curSwitch == SW_SELF_TEST_SWITCH && (CurrentTime - GetLastSelfTestChangedTime()) > 250) {
          SetLastSelfTestChangedTime(CurrentTime);
@@ -1280,7 +1281,7 @@ int RunSelfTest(int curState, boolean curStateChanged) {
 
          switch (curState) {
          case MACHINE_STATE_ADJUST_FREEPLAY:
-            CurrentAdjustmentByte = (byte*)&FreePlayMode;
+            CurrentAdjustmentByte = (uint8_t*)&FreePlayMode;
             CurrentAdjustmentStorageByte = EEPROM_FREE_PLAY_BYTE;
             break;
          case MACHINE_STATE_ADJUST_BALL_SAVE:
@@ -1293,18 +1294,21 @@ int RunSelfTest(int curState, boolean curStateChanged) {
             CurrentAdjustmentByte = &BallSaveNumSeconds;
             CurrentAdjustmentStorageByte = EEPROM_BALL_SAVE_BYTE;
             break;
+
          case MACHINE_STATE_ADJUST_SFX_AND_SOUNDTRACK:
             AdjustmentType = ADJ_TYPE_MIN_MAX;
             AdjustmentValues[1] = 5;
             CurrentAdjustmentByte = &SoundSelector;
             CurrentAdjustmentStorageByte = EEPROM_SOUND_SELECTOR_BYTE;
             break;
+
          case MACHINE_STATE_ADJUST_MUSIC_VOLUME:
             AdjustmentType = ADJ_TYPE_MIN_MAX;
             AdjustmentValues[1] = 10;
             CurrentAdjustmentByte = &MusicVolume;
             CurrentAdjustmentStorageByte = EEPROM_MUSIC_VOLUME_BYTE;
             break;
+
          case MACHINE_STATE_ADJUST_SFX_VOLUME:
             AdjustmentType = ADJ_TYPE_MIN_MAX;
             AdjustmentValues[1] = 10;
@@ -1318,7 +1322,7 @@ int RunSelfTest(int curState, boolean curStateChanged) {
             CurrentAdjustmentStorageByte = EEPROM_CALLOUTS_VOLUME_BYTE;
             break;
          case MACHINE_STATE_ADJUST_TOURNAMENT_SCORING:
-            CurrentAdjustmentByte = (byte*)&TournamentScoring;
+            CurrentAdjustmentByte = (uint8_t*)&TournamentScoring;
             CurrentAdjustmentStorageByte = EEPROM_TOURNAMENT_SCORING_BYTE;
             break;
          case MACHINE_STATE_ADJUST_TILT_WARNING:
@@ -1341,8 +1345,9 @@ int RunSelfTest(int curState, boolean curStateChanged) {
             CurrentAdjustmentByte = &BallsPerGame;
             CurrentAdjustmentStorageByte = EEPROM_BALLS_OVERRIDE_BYTE;
             break;
+
          case MACHINE_STATE_ADJUST_SCROLLING_SCORES:
-            CurrentAdjustmentByte = (byte*)&ScrollingScores;
+            CurrentAdjustmentByte = (uint8_t*)&ScrollingScores;
             CurrentAdjustmentStorageByte = EEPROM_SCROLLING_SCORES_BYTE;
             break;
 
@@ -1379,7 +1384,7 @@ int RunSelfTest(int curState, boolean curStateChanged) {
       // Change value, if the switch is hit
       if (curSwitch == SW_CREDIT_RESET) {
          if (CurrentAdjustmentByte && (AdjustmentType == ADJ_TYPE_MIN_MAX || AdjustmentType == ADJ_TYPE_MIN_MAX_DEFAULT)) {
-            byte curVal = *CurrentAdjustmentByte;
+            uint8_t curVal = *CurrentAdjustmentByte;
             curVal += 1;
             if (curVal > AdjustmentValues[1]) {
                if (AdjustmentType == ADJ_TYPE_MIN_MAX) {
@@ -1397,9 +1402,9 @@ int RunSelfTest(int curState, boolean curStateChanged) {
                EEPROM.write(CurrentAdjustmentStorageByte, curVal);
             }
          } else if (CurrentAdjustmentByte && AdjustmentType == ADJ_TYPE_LIST) {
-            byte valCount = 0;
-            byte curVal = *CurrentAdjustmentByte;
-            byte newIndex = 0;
+            uint8_t valCount = 0;
+            uint8_t curVal = *CurrentAdjustmentByte;
+            uint8_t newIndex = 0;
             for (valCount = 0; valCount < (NumAdjustmentValues - 1); valCount++) {
                if (curVal == AdjustmentValues[valCount]) {
                   newIndex = valCount + 1;
@@ -1461,7 +1466,7 @@ int RunSelfTest(int curState, boolean curStateChanged) {
 ////////////////////////////////////////////////////////////////////////////
 
 #if defined(RPU_USE_WAV_TRIGGER) || defined(RPU_USE_WAV_TRIGGER_1p3)
-byte CurrentBackgroundSong = SOUND_EFFECT_NONE;
+uint8_t CurrentBackgroundSong = SOUND_EFFECT_NONE;
 #endif
 
 void PlayBackgroundSong(unsigned short songNum) {
@@ -1472,7 +1477,7 @@ void PlayBackgroundSong(unsigned short songNum) {
 
 unsigned long NextSoundEffectTime = 0;
 
-void PlaySoundEffect(byte soundEffectNum) {
+void PlaySoundEffect(uint8_t soundEffectNum) {
    if (SoundSelector == 0) {
       return;
    }
@@ -1631,7 +1636,7 @@ byte AttractLastHeadMode = 255;
 byte AttractLastPlayfieldMode = 255;
 byte InAttractMode = false;
 
-int RunAttractMode(int curState, boolean curStateChanged) {
+int RunAttractMode(int curState, bool curStateChanged) {
    int returnState = curState;
 
    if (curStateChanged) {
@@ -2087,7 +2092,7 @@ void CheckForFeedingFrenzyQualify() {
 }
 
 int LastReportedValue = 0;
-boolean PlayerUpLightBlinking = false;
+bool PlayerUpLightBlinking = false;
 
 // This function manages all timers, flags, and lights
 int ManageGameMode() {
@@ -2388,7 +2393,7 @@ unsigned long CountdownStartTime = 0;
 unsigned long LastCountdownReportTime = 0;
 unsigned long BonusCountDownEndTime = 0;
 
-int CountdownBonus(boolean curStateChanged) {
+int CountdownBonus(bool curStateChanged) {
    // If this is the first time through the countdown loop
    if (curStateChanged) {
       RPU_SetLampState(BALL_IN_PLAY, 1, 0, 250);
@@ -2463,11 +2468,11 @@ void CheckHighScores() {
 
 unsigned long MatchSequenceStartTime = 0;
 unsigned long MatchDelay = 150;
-byte MatchDigit = 0;
-byte NumMatchSpins = 0;
-byte ScoreMatches = 0;
+uint8_t MatchDigit = 0;
+uint8_t NumMatchSpins = 0;
+uint8_t ScoreMatches = 0;
 
-int ShowMatchSequence(boolean curStateChanged) {
+int ShowMatchSequence(bool curStateChanged) {
    if (!MatchFeature) {
       return MACHINE_STATE_ATTRACT;
    }
@@ -2541,7 +2546,7 @@ int ShowMatchSequence(boolean curStateChanged) {
    return MACHINE_STATE_MATCH_MODE;
 }
 
-int RunGamePlayMode(int curState, boolean curStateChanged) {
+int RunGamePlayMode(int curState, bool curStateChanged) {
    int returnState = curState;
    byte bonusAtTop = Bonus;
    unsigned long scoreAtTop = CurrentPlayerCurrentScore;
@@ -2939,7 +2944,7 @@ int RunGamePlayMode(int curState, boolean curStateChanged) {
             returnState = MACHINE_STATE_TEST_LAMPS;
             SetLastSelfTestChangedTime(CurrentTime);
             break;
-            
+
          case SW_SAUCER:
             RPU_PushToSolenoidStack(SOL_SAUCER, 5, true);
             break;

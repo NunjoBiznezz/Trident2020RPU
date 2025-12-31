@@ -522,7 +522,7 @@ AudioHandler::~AudioHandler() {
 }
 
 
-boolean AudioHandler::InitDevices(byte audioType) {
+bool AudioHandler::InitDevices(uint8_t audioType) {
 
 
 #if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
@@ -551,35 +551,35 @@ boolean AudioHandler::InitDevices(byte audioType) {
 
 
 
-int AudioHandler::ConvertVolumeSettingToGain(byte volumeSetting) {
+int AudioHandler::ConvertVolumeSettingToGain(uint8_t volumeSetting) {
   if (volumeSetting==0) return -70;
   if (volumeSetting>10) return 0;
   return volumeToGainConversion[volumeSetting];
 }
 
 
-void AudioHandler::SetSoundFXVolume(byte s_volume) {
+void AudioHandler::SetSoundFXVolume(uint8_t s_volume) {
   soundFXGain = ConvertVolumeSettingToGain(s_volume);
 }
 
-void AudioHandler::SetNotificationsVolume(byte s_volume) {
+void AudioHandler::SetNotificationsVolume(uint8_t s_volume) {
   notificationsGain = ConvertVolumeSettingToGain(s_volume);
 }
 
-void AudioHandler::SetMusicVolume(byte s_volume) {
+void AudioHandler::SetMusicVolume(uint8_t s_volume) {
   musicGain = ConvertVolumeSettingToGain(s_volume);
 }
 
-void AudioHandler::SetMusicDuckingGain(byte s_ducking) {
+void AudioHandler::SetMusicDuckingGain(uint8_t s_ducking) {
   musicDucking = s_ducking;
 }
 
-void AudioHandler::SetSoundFXDuckingGain(byte s_ducking) {
+void AudioHandler::SetSoundFXDuckingGain(uint8_t s_ducking) {
   soundFXDucking = s_ducking;
 }
 
 
-boolean AudioHandler::StopSound(unsigned short soundIndex) {
+bool AudioHandler::StopSound(unsigned short soundIndex) {
 #if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
   wTrig.trackStop(soundIndex);
 #else
@@ -588,7 +588,7 @@ boolean AudioHandler::StopSound(unsigned short soundIndex) {
   return false;
 }
 
-boolean AudioHandler::StopAllMusic() {
+bool AudioHandler::StopAllMusic() {
   curSoundtrack = NULL;
 #if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
   if (currentBackgroundTrack!=BACKGROUND_TRACK_NONE) {
@@ -602,19 +602,19 @@ boolean AudioHandler::StopAllMusic() {
 }
 
 
-void AudioHandler::ClearNotificationStack(byte priority) {
+void AudioHandler::ClearNotificationStack(uint8_t priority) {
   if (priority==10) {
     voiceNotificationStackFirst = 0;
     voiceNotificationStackLast = 0;
-    for (byte count=0; count<VOICE_NOTIFICATION_STACK_SIZE; count++) {
+    for (uint8_t count=0; count<VOICE_NOTIFICATION_STACK_SIZE; count++) {
       voiceNotificationNumStack[count] = VOICE_NOTIFICATION_STACK_EMPTY;
       voiceNotificationDuration[count] = 0;
       voiceNotificationPriorityStack[count] = 0;
 
     }
   } else {
-    byte tempFirst = voiceNotificationStackFirst;
-    byte tempLast = voiceNotificationStackLast;
+    uint8_t tempFirst = voiceNotificationStackFirst;
+    uint8_t tempLast = voiceNotificationStackLast;
     while (tempFirst != tempLast) {
       if (voiceNotificationPriorityStack[tempFirst]<=priority) {
         voiceNotificationNumStack[tempFirst] = INVALID_SOUND_INDEX;
@@ -626,7 +626,7 @@ void AudioHandler::ClearNotificationStack(byte priority) {
 }
 
 
-boolean AudioHandler::StopCurrentNotification(byte priority) {
+bool AudioHandler::StopCurrentNotification(uint8_t priority) {
   nextVoiceNotificationPlayTime = 0;
 
   if (currentNotificationPlaying!=INVALID_SOUND_INDEX && currentNotificationPriority<=priority) {
@@ -649,7 +649,7 @@ int AudioHandler::SpaceLeftOnNotificationStack() {
 }
 
 
-void AudioHandler::PushToNotificationStack(unsigned int notification, unsigned int duration, byte priority) {
+void AudioHandler::PushToNotificationStack(unsigned int notification, unsigned int duration, uint8_t priority) {
   // If the switch stack last index is out of range, then it's an error - return
   if (SpaceLeftOnNotificationStack() == 0) return;
 
@@ -666,12 +666,12 @@ void AudioHandler::PushToNotificationStack(unsigned int notification, unsigned i
 
 
 
-byte AudioHandler::GetTopNotificationPriority() {
-  byte startStack = voiceNotificationStackFirst;
-  byte endStack = voiceNotificationStackLast;
+uint8_t AudioHandler::GetTopNotificationPriority() {
+  uint8_t startStack = voiceNotificationStackFirst;
+  uint8_t endStack = voiceNotificationStackLast;
   if (startStack==endStack) return 0;
 
-  byte topPriorityFound = 0;
+  uint8_t topPriorityFound = 0;
 
   while (startStack!=endStack) {
     if (voiceNotificationPriorityStack[startStack]>topPriorityFound) topPriorityFound = voiceNotificationPriorityStack[startStack];
@@ -702,10 +702,10 @@ void AudioHandler::DuckCurrentSoundEffects() {
 
 
 
-boolean AudioHandler::QueuePrioritizedNotification(unsigned short notificationIndex, unsigned short notificationLength, byte priority, unsigned long currentTime) {
+bool AudioHandler::QueuePrioritizedNotification(unsigned short notificationIndex, unsigned short notificationLength, uint8_t priority, unsigned long currentTime) {
 #if defined (RPU_OS_USE_WAV_TRIGGER) || defined (RPU_OS_USE_WAV_TRIGGER_1p3)
   // if everything on the queue has a lower priority, kill all those
-  byte topQueuePriority = GetTopNotificationPriority();
+  uint8_t topQueuePriority = GetTopNotificationPriority();
   if (priority>topQueuePriority) {
     ClearNotificationStack();  
   }
@@ -760,10 +760,10 @@ void AudioHandler::OutputTracksPlaying() {
 }
 
 
-boolean AudioHandler::ServiceNotificationQueue(unsigned long currentTime) {
-  boolean queueStillHasEntries = true;
+bool AudioHandler::ServiceNotificationQueue(unsigned long currentTime) {
+  bool queueStillHasEntries = true;
 #if defined (RPU_OS_USE_WAV_TRIGGER) || defined (RPU_OS_USE_WAV_TRIGGER_1p3)
-  boolean playNextNotification = false;
+  bool playNextNotification = false;
 
   if (nextVoiceNotificationPlayTime != 0) { 
     if (currentTime > nextVoiceNotificationPlayTime) {
@@ -776,7 +776,7 @@ boolean AudioHandler::ServiceNotificationQueue(unsigned long currentTime) {
   }
   
   if (playNextNotification) {
-    byte nextPriority = 0;
+    uint8_t nextPriority = 0;
     unsigned int nextNotification = VOICE_NOTIFICATION_STACK_EMPTY;
     unsigned int nextDuration = 0;
 
@@ -825,12 +825,12 @@ boolean AudioHandler::ServiceNotificationQueue(unsigned long currentTime) {
 
 
 
-boolean AudioHandler::StopAllNotifications(byte priority) {
+bool AudioHandler::StopAllNotifications(uint8_t priority) {
   ClearNotificationStack(priority);
   return StopCurrentNotification(priority);
 }
 
-boolean AudioHandler::StopAllSoundFX() {
+bool AudioHandler::StopAllSoundFX() {
 #if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
   wTrig.stopAllTracks();
 #endif
@@ -840,8 +840,8 @@ boolean AudioHandler::StopAllSoundFX() {
 }
 
 
-boolean AudioHandler::StopAllAudio() {
-  boolean anythingPlaying = false;
+bool AudioHandler::StopAllAudio() {
+  bool anythingPlaying = false;
   if (StopAllMusic()) anythingPlaying = true;
   if (StopAllNotifications()) anythingPlaying = true;
   if (StopAllSoundFX()) anythingPlaying = true;
@@ -887,9 +887,9 @@ void AudioHandler::ClearSoundQueue() {
 }
 
 
-boolean AudioHandler::PlaySound(unsigned short soundIndex, byte audioType, byte overrideVolume) {
+bool AudioHandler::PlaySound(unsigned short soundIndex, uint8_t audioType, uint8_t overrideVolume) {
 
-  boolean soundPlayed = false;
+  bool soundPlayed = false;
   int gain = soundFXGain;
   if (currentNotificationPlaying!=INVALID_SOUND_INDEX) {
     // reduce gain (by ducking amount) if there's a notification playing
@@ -899,20 +899,20 @@ boolean AudioHandler::PlaySound(unsigned short soundIndex, byte audioType, byte 
 
   if (audioType==AUDIO_PLAY_TYPE_CHIMES) {
 #if defined(RPU_OS_USE_SB100)
-//    RPU_PlaySB100Chime((byte)soundIndex);
+//    RPU_PlaySB100Chime((uint8_t)soundIndex);
     soundPlayed = true;
 #endif
   } else if (audioType==AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS) {
 #ifdef RPU_OS_USE_DASH51
-    RPU_PlaySoundDash51((byte)soundIndex);
+    RPU_PlaySoundDash51((uint8_t)soundIndex);
     soundPlayed = true;
 #endif
 #ifdef RPU_OS_USE_S_AND_T
-    RPU_PlaySoundSAndT((byte)soundIndex);
+    RPU_PlaySoundSAndT((uint8_t)soundIndex);
     soundPlayed = true;
 #endif
 #ifdef RPU_OS_USE_SB100
-    RPU_PlaySB100((byte)soundIndex);
+    RPU_PlaySB100((uint8_t)soundIndex);
     soundPlayed = true;
 #endif
   } else if (audioType==AUDIO_PLAY_TYPE_WAV_TRIGGER) {
@@ -933,8 +933,8 @@ boolean AudioHandler::PlaySound(unsigned short soundIndex, byte audioType, byte 
 }
 
 
-boolean AudioHandler::FadeSound(unsigned short soundIndex, int fadeGain, int numMilliseconds, boolean stopTrack) {
-  boolean soundFaded = false;
+bool AudioHandler::FadeSound(unsigned short soundIndex, int fadeGain, int numMilliseconds, bool stopTrack) {
+  bool soundFaded = false;
 #if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
   wTrig.trackFade(soundIndex, fadeGain, numMilliseconds, stopTrack);
   soundFaded = true;
@@ -948,7 +948,7 @@ boolean AudioHandler::FadeSound(unsigned short soundIndex, int fadeGain, int num
 
 
 
-boolean AudioHandler::QueueSound(unsigned short soundIndex, byte audioType, unsigned long timeToPlay, byte overrideVolume) {
+bool AudioHandler::QueueSound(unsigned short soundIndex, uint8_t audioType, unsigned long timeToPlay, uint8_t overrideVolume) {
   for (int count=0; count<SOUND_QUEUE_SIZE; count++) {
     if (soundQueue[count].playTime==0) {
       soundQueue[count].soundIndex = soundIndex;
@@ -963,7 +963,7 @@ boolean AudioHandler::QueueSound(unsigned short soundIndex, byte audioType, unsi
 }
 
 
-boolean AudioHandler::QueueSoundCardCommand(byte scFunction, byte scRegister, byte scData, unsigned long startTime) {
+bool AudioHandler::QueueSoundCardCommand(uint8_t scFunction, uint8_t scRegister, uint8_t scData, unsigned long startTime) {
 #ifdef RPU_OS_USE_SB300
   for (int count=0; count<SOUND_QUEUE_SIZE; count++) {
     if (soundCardQueue[count].playTime==0) {
@@ -991,7 +991,7 @@ void AudioHandler::InitSoundEffectQueue() {
   CurrentSoundPlaying.priority = 0;
   CurrentSoundPlaying.inUse = false;
 
-  for (byte count = 0; count < SOUND_EFFECT_QUEUE_SIZE; count++) {
+  for (uint8_t count = 0; count < SOUND_EFFECT_QUEUE_SIZE; count++) {
     SoundEffectQueue[count].soundEffectNum = 0;
     SoundEffectQueue[count].requestedPlayTime = 0;
     SoundEffectQueue[count].playUntil = 0;
@@ -1001,10 +1001,10 @@ void AudioHandler::InitSoundEffectQueue() {
 #endif
 }
 
-boolean AudioHandler::PlaySoundCardWhenPossible(unsigned short soundEffectNum, unsigned long currentTime, unsigned long requestedPlayTime, unsigned long playUntil, byte priority) {
+bool AudioHandler::PlaySoundCardWhenPossible(unsigned short soundEffectNum, unsigned long currentTime, unsigned long requestedPlayTime, unsigned long playUntil, uint8_t priority) {
 
 #if defined(RPU_OS_USE_WTYPE_1_SOUND) || defined(RPU_OS_USE_WTYPE_2_SOUND)
-  byte count = 0;
+  uint8_t count = 0;
   for (count = 0; count < SOUND_EFFECT_QUEUE_SIZE; count++) {
     if (SoundEffectQueue[count].inUse == false) break;
   }
@@ -1029,8 +1029,8 @@ boolean AudioHandler::PlaySoundCardWhenPossible(unsigned short soundEffectNum, u
 
 
 
-boolean AudioHandler::ServiceSoundQueue(unsigned long currentTime) {
-  boolean soundCommandSent = false;
+bool AudioHandler::ServiceSoundQueue(unsigned long currentTime) {
+  bool soundCommandSent = false;
   for (int count=0; count<SOUND_QUEUE_SIZE; count++) {
     if (soundQueue[count].playTime!=0 && soundQueue[count].playTime<currentTime) {
       PlaySound(soundQueue[count].soundIndex, soundQueue[count].audioType, soundQueue[count].overrideVolume);
@@ -1042,9 +1042,9 @@ boolean AudioHandler::ServiceSoundQueue(unsigned long currentTime) {
   return soundCommandSent;
 }
 
-boolean AudioHandler::ServiceSoundCardQueue(unsigned long currentTime) {
+bool AudioHandler::ServiceSoundCardQueue(unsigned long currentTime) {
 #ifdef RPU_OS_USE_SB300
-  boolean soundCommandSent = false;
+  bool soundCommandSent = false;
   for (int count=0; count<SOUND_CARD_QUEUE_SIZE; count++) {
     if (soundCardQueue[count].playTime!=0 && soundCardQueue[count].playTime<currentTime) {
       if (soundCardQueue[count].soundFunction==SB300_SOUND_FUNCTION_SQUARE_WAVE) {
@@ -1059,10 +1059,10 @@ boolean AudioHandler::ServiceSoundCardQueue(unsigned long currentTime) {
 
   return soundCommandSent;
 #elif defined(RPU_OS_USE_WTYPE_1_SOUND) || defined(RPU_OS_USE_WTYPE_2_SOUND) 
-  byte highestPrioritySound = 0xFF;
-  byte queuePriority = 0;
+  uint8_t highestPrioritySound = 0xFF;
+  uint8_t queuePriority = 0;
 
-  for (byte count = 0; count < SOUND_EFFECT_QUEUE_SIZE; count++) {
+  for (uint8_t count = 0; count < SOUND_EFFECT_QUEUE_SIZE; count++) {
     // Skip sounds that aren't in use
     if (SoundEffectQueue[count].inUse == false) continue;
 
@@ -1089,7 +1089,7 @@ boolean AudioHandler::ServiceSoundCardQueue(unsigned long currentTime) {
     CurrentSoundPlaying.inUse = false;
   }
 
-  boolean soundCommandSent = false;
+  bool soundCommandSent = false;
   if (highestPrioritySound != 0xFF) {
     if (CurrentSoundPlaying.inUse == false || (CurrentSoundPlaying.inUse && CurrentSoundPlaying.priority < queuePriority)) {
       // Play new sound
@@ -1113,7 +1113,7 @@ boolean AudioHandler::ServiceSoundCardQueue(unsigned long currentTime) {
 }
 
 
-boolean AudioHandler::PlayBackgroundSoundtrack(AudioSoundtrack *soundtrackArray, unsigned short numSoundtrackEntries, unsigned long currentTime, boolean randomOrder) {
+bool AudioHandler::PlayBackgroundSoundtrack(AudioSoundtrack *soundtrackArray, unsigned short numSoundtrackEntries, unsigned long currentTime, bool randomOrder) {
   StopAllMusic();
   if (soundtrackArray==NULL) return false;
 
@@ -1126,9 +1126,9 @@ boolean AudioHandler::PlayBackgroundSoundtrack(AudioSoundtrack *soundtrackArray,
   return true;
 }
 
-boolean AudioHandler::PlayBackgroundSong(unsigned short trackIndex, boolean loopTrack) {
+bool AudioHandler::PlayBackgroundSong(unsigned short trackIndex, bool loopTrack) {
   StopAllMusic();
-  boolean trackPlayed = false;
+  bool trackPlayed = false;
 
   if (trackIndex!=BACKGROUND_TRACK_NONE) {
     currentBackgroundTrack = trackIndex;        
@@ -1153,11 +1153,11 @@ boolean AudioHandler::PlayBackgroundSong(unsigned short trackIndex, boolean loop
 void AudioHandler::StartNextSoundtrackSong(unsigned long currentTime) {
 
   unsigned int retSong = (currentTime%curSoundtrackEntries);
-  boolean songRecentlyPlayed = false;
+  bool songRecentlyPlayed = false;
 
   unsigned int songCount = 0;
   for (songCount=0; songCount<curSoundtrackEntries; songCount++) {
-    for (byte count=0; count<NUMBER_OF_SONGS_REMEMBERED; count++) {
+    for (uint8_t count=0; count<NUMBER_OF_SONGS_REMEMBERED; count++) {
       if (lastSongsPlayed[count]==curSoundtrack[retSong].TrackIndex) {
         songRecentlyPlayed = true;        
         break;
@@ -1170,7 +1170,7 @@ void AudioHandler::StartNextSoundtrackSong(unsigned long currentTime) {
   }
 
   // Record this song in the array
-  for (byte count=(NUMBER_OF_SONGS_REMEMBERED-1); count>0; count--) lastSongsPlayed[count] = lastSongsPlayed[count-1];
+  for (uint8_t count=(NUMBER_OF_SONGS_REMEMBERED-1); count>0; count--) lastSongsPlayed[count] = lastSongsPlayed[count-1];
   lastSongsPlayed[0] = curSoundtrack[retSong].TrackIndex;
 
   backgroundSongEndTime = (((unsigned long)curSoundtrack[retSong].TrackLength) * 1000) + currentTime;
@@ -1212,11 +1212,11 @@ void AudioHandler::ManageBackgroundSong(unsigned long currentTime) {
 }
 
 
-boolean AudioHandler::Update(unsigned long currentTime) {
+bool AudioHandler::Update(unsigned long currentTime) {
 #if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
   wTrig.update();
 #endif
-  boolean queueHasEntries = false;
+  bool queueHasEntries = false;
   ManageBackgroundSong(currentTime);
   ServiceSoundQueue(currentTime);
   ServiceSoundCardQueue(currentTime);

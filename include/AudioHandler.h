@@ -107,7 +107,8 @@ class wavTrigger
 {
 public:
   wavTrigger() {;}
-  ~wavTrigger() {;}
+  virtual ~wavTrigger() {;}
+  
   void start(void);
   void update(void);
   void flush(void);
