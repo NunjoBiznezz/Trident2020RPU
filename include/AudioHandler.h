@@ -2,6 +2,7 @@
 
 #include "RPU.h"
 #include "RPU_config.h"
+#include "WavTrigger.h"
 #include <HardwareSerial.h>
 #include <stdint.h>
 
@@ -15,8 +16,8 @@ struct AudioSoundtrack {
    uint16_t TrackLength;
 };
 
-constexpr uint8_t SB300_SOUND_FUNCTION_SQUARE_WAVE = 0;
-constexpr uint8_t SB300_SOUND_FUNCTION_ANALOG = 1;
+#define SB300_SOUND_FUNCTION_SQUARE_WAVE 0
+#define SB300_SOUND_FUNCTION_ANALOG 1
 
 struct SoundCardCommandEntry {
    uint8_t soundFunction;
@@ -42,108 +43,6 @@ struct SoundEffectEntry {
    uint8_t priority; // 0 is least important, 100 is most
    bool inUse;
 };
-
-#define CMD_GET_VERSION 1
-#define CMD_GET_SYS_INFO 2
-#define CMD_TRACK_CONTROL 3
-#define CMD_STOP_ALL 4
-#define CMD_MASTER_VOLUME 5
-#define CMD_TRACK_VOLUME 8
-#define CMD_AMP_POWER 9
-#define CMD_TRACK_FADE 10
-#define CMD_RESUME_ALL_SYNC 11
-#define CMD_SAMPLERATE_OFFSET 12
-#define CMD_TRACK_CONTROL_EX 13
-#define CMD_SET_REPORTING 14
-#define CMD_SET_TRIGGER_BANK 15
-
-#define TRK_PLAY_SOLO 0
-#define TRK_PLAY_POLY 1
-#define TRK_PAUSE 2
-#define TRK_RESUME 3
-#define TRK_STOP 4
-#define TRK_LOOP_ON 5
-#define TRK_LOOP_OFF 6
-#define TRK_LOAD 7
-
-#define RSP_VERSION_STRING 129
-#define RSP_SYSTEM_INFO 130
-#define RSP_STATUS 131
-#define RSP_TRACK_REPORT 132
-
-#define SOM1 0xf0
-#define SOM2 0xaa
-#define EOM 0x55
-
-#if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
-
-#if (RPU_OS_HARDWARE_REV <= 3)
-#define WTSerial Serial
-#else
-#define WTSerial Serial1
-#endif
-
-class wavTrigger {
- public:
-   wavTrigger() {
-      ;
-   }
-   virtual ~wavTrigger() {
-      ;
-   }
-
-   void start(void);
-   void update(void);
-   void flush(void);
-   void setReporting(bool enable);
-   void setAmpPwr(bool enable);
-   bool getVersion(char* pDst, int len);
-   int getNumTracks(void);
-   bool isTrackPlaying(int trk);
-   int getPlayingTrack(int voiceNum);
-   void masterGain(int gain);
-   void stopAllTracks(void);
-   void resumeAllInSync(void);
-   void trackPlaySolo(int trk);
-   void trackPlaySolo(int trk, bool lock);
-   void trackPlayPoly(int trk);
-   void trackPlayPoly(int trk, bool lock);
-   void trackLoad(int trk);
-   void trackLoad(int trk, bool lock);
-   void trackStop(int trk);
-   void trackPause(int trk);
-   void trackResume(int trk);
-   void trackLoop(int trk, bool enable);
-   void trackGain(int trk, int gain);
-   void trackFade(int trk, int gain, int time, bool stopFlag);
-   void samplerateOffset(int offset);
-   void setTriggerBank(int bank);
-
-   static int maxNumVoices() {
-      return MAX_NUM_VOICES;
-   }
-
- private:
-   static constexpr int MAX_MESSAGE_LEN = 32;
-   static constexpr int MAX_NUM_VOICES = 14;
-   static constexpr int VERSION_STRING_LEN = 21;
-
-   void trackControl(int trk, int code);
-   void trackControl(int trk, int code, bool lock);
-
-   uint16_t voiceTable[MAX_NUM_VOICES];
-   uint8_t rxMessage[MAX_MESSAGE_LEN];
-   char version[VERSION_STRING_LEN];
-   uint16_t numTracks;
-   uint8_t numVoices;
-   uint8_t rxCount;
-   uint8_t rxLen;
-   bool rxMsgReady;
-   bool versionRcvd;
-   bool sysinfoRcvd;
-};
-
-#endif
 
 #define INVALID_SOUND_INDEX 0xFFFF
 
@@ -235,7 +134,7 @@ class AudioHandler {
 #endif
 
 #if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
-   wavTrigger wTrig; // Our WAV Trigger object
+   WavTrigger wTrig; // Our WAV Trigger object
 #endif
 
    int ConvertVolumeSettingToGain(uint8_t volumeSetting);
