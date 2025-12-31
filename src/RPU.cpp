@@ -21,21 +21,12 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 #define RPU_CPP_FILE
-#include "RPU.h"
 #include "RPU_config.h"
+#include "RPU.h"
+#include "OsHardware.h"
 
 #define DEBUG_MESSAGES 0
 
-#ifndef RPU_OS_HARDWARE_REV
-#define RPU_OS_HARDWARE_REV 1
-#endif
-
-/******************************************************
- *   The board type, MPU architecture, and supported
- *   features are all controlled through the
- *   RPU_Config.h file.
- */
-#include "RPU_Config.h"
 
 /******************************************************
  *   Defines and library variables
@@ -174,130 +165,6 @@ struct TimedSoundEntry {
 TimedSoundEntry TimedSoundStack[TIMED_SOUND_STACK_SIZE] = {0, 0, 0, 0};
 #endif
 
-#if (RPU_OS_HARDWARE_REV == 1)
-#if (RPU_MPU_ARCHITECTURE != 1)
-#error "RPU_OS_HARDWARE_REV 1 only works on machines with RPU_MPU_ARCHITECTURE of 1"
-#endif
-#define ADDRESS_U10_A 0x14
-#define ADDRESS_U10_A_CONTROL 0x15
-#define ADDRESS_U10_B 0x16
-#define ADDRESS_U10_B_CONTROL 0x17
-#define ADDRESS_U11_A 0x18
-#define ADDRESS_U11_A_CONTROL 0x19
-#define ADDRESS_U11_B 0x1A
-#define ADDRESS_U11_B_CONTROL 0x1B
-#define ADDRESS_SB100 0x10
-
-#elif (RPU_OS_HARDWARE_REV == 2)
-#if (RPU_MPU_ARCHITECTURE != 1)
-#error "RPU_OS_HARDWARE_REV 2 only works on machines with RPU_MPU_ARCHITECTURE of 1"
-#endif
-#define ADDRESS_U10_A 0x00
-#define ADDRESS_U10_A_CONTROL 0x01
-#define ADDRESS_U10_B 0x02
-#define ADDRESS_U10_B_CONTROL 0x03
-#define ADDRESS_U11_A 0x08
-#define ADDRESS_U11_A_CONTROL 0x09
-#define ADDRESS_U11_B 0x0A
-#define ADDRESS_U11_B_CONTROL 0x0B
-#define ADDRESS_SB100 0x10
-#define ADDRESS_SB100_CHIMES 0x18
-#define ADDRESS_SB300_SQUARE_WAVES 0x10
-#define ADDRESS_SB300_ANALOG 0x18
-
-#elif (RPU_OS_HARDWARE_REV == 3) || (RPU_OS_HARDWARE_REV == 4)
-#if (RPU_MPU_ARCHITECTURE != 1)
-#error "RPU_OS_HARDWARE_REV 3 and 4 only work on machines with RPU_MPU_ARCHITECTURE of 1"
-#endif
-#define ADDRESS_U10_A 0x88
-#define ADDRESS_U10_A_CONTROL 0x89
-#define ADDRESS_U10_B 0x8A
-#define ADDRESS_U10_B_CONTROL 0x8B
-#define ADDRESS_U11_A 0x90
-#define ADDRESS_U11_A_CONTROL 0x91
-#define ADDRESS_U11_B 0x92
-#define ADDRESS_U11_B_CONTROL 0x93
-#define ADDRESS_SB100 0xA0
-#define ADDRESS_SB100_CHIMES 0xC0
-#define ADDRESS_SB300_SQUARE_WAVES 0xA0
-#define ADDRESS_SB300_ANALOG 0xC0
-
-#elif (RPU_OS_HARDWARE_REV >= 100)
-#if (RPU_MPU_ARCHITECTURE < 10)
-#define ADDRESS_U10_A 0x88
-#define ADDRESS_U10_A_CONTROL 0x89
-#define ADDRESS_U10_B 0x8A
-#define ADDRESS_U10_B_CONTROL 0x8B
-#define ADDRESS_U11_A 0x90
-#define ADDRESS_U11_A_CONTROL 0x91
-#define ADDRESS_U11_B 0x92
-#define ADDRESS_U11_B_CONTROL 0x93
-#define ADDRESS_SB100 0xA0
-#define ADDRESS_SB100_CHIMES 0xC0
-#define ADDRESS_SB300_SQUARE_WAVES 0xA0
-#define ADDRESS_SB300_ANALOG 0xC0
-#else
-#define PIA_DISPLAY_PORT_A 0x2800
-#define PIA_DISPLAY_CONTROL_A 0x2801
-#define PIA_DISPLAY_PORT_B 0x2802
-#define PIA_DISPLAY_CONTROL_B 0x2803
-#define PIA_SWITCH_PORT_A 0x3000
-#define PIA_SWITCH_CONTROL_A 0x3001
-#define PIA_SWITCH_PORT_B 0x3002
-#define PIA_SWITCH_CONTROL_B 0x3003
-#define PIA_LAMPS_PORT_A 0x2400
-#define PIA_LAMPS_CONTROL_A 0x2401
-#define PIA_LAMPS_PORT_B 0x2402
-#define PIA_LAMPS_CONTROL_B 0x2403
-#define PIA_SOLENOID_PORT_A 0x2200
-#define PIA_SOLENOID_CONTROL_A 0x2201
-#define PIA_SOLENOID_PORT_B 0x2202
-#define PIA_SOLENOID_CONTROL_B 0x2203
-#if (RPU_MPU_ARCHITECTURE == 13)
-#define PIA_SOUND_COMMA_PORT_A 0x2100
-#define PIA_SOUND_COMMA_CONTROL_A 0x2101
-#define PIA_SOUND_COMMA_PORT_B 0x2102
-#define PIA_SOUND_COMMA_CONTROL_B 0x2103
-#endif
-#if (RPU_MPU_ARCHITECTURE == 15)
-#define PIA_SOUND_11_PORT_A 0x2100
-#define PIA_SOUND_11_CONTROL_A 0x2101
-#define PIA_SOLENOID_11_PORT_B 0x2102
-#define PIA_SOLENOID_11_CONTROL_B 0x2103
-#define PIA_ALPHA_DISPLAY_PORT_A 0x2C00
-#define PIA_ALPHA_DISPLAY_CONTROL_A 0x2C01
-#define PIA_ALPHA_DISPLAY_PORT_B 0x2C02
-#define PIA_ALPHA_DISPLAY_CONTROL_B 0x2C03
-#define PIA_NUM_DISPLAY_PORT_A 0x3400
-#define PIA_NUM_DISPLAY_CONTROL_A 0x3401
-#define PIA_WIDGET_PORT_B 0x3402
-#define PIA_WIDGET_CONTROL_B 0x3403
-#endif
-#endif
-
-#endif
-
-/******************************************************
- *   Hardware Interface Functions
- *
- *   These functions have conditional compilation for different RPU_OS_HARDWARE_REVs
- *
- *   RPU_OS_HARDWARE_REV 1 - Nano board that plugs into J5 (only works on -17, -35, 100, and 200 MPUs)
- *   RPU_OS_HARDWARE_REV 2 - Nano board that plugs into J5 (only works on -17, -35, 100, and 200 MPUs)
- *                           adds support for SB300 sound cards
- *   RPU_OS_HARDWARE_REV 3 - MEGA2560 PRO board that plugs into J5 (only works on -17, -35, 100, and 200 MPUs)
- *                           adds support for full address space
- *   RPU_OS_HARDWARE_REV 4 - MEGA2560 PRO board that plugs into J5 (only works on -17, -35, 100, and 200 MPUs)
- *                           adds support for OLED display, WIFI, and multiple serial ports
- *   RPU_OS_HARDWARE_REV 4 - MEGA2560 PRO board that plugs into J5 (only works on -17, -35, 100, and 200 MPUs)
- *                           adds support for OLED display, WIFI, and multiple serial ports
- *   RPU_OS_HARDWARE_REV 100 - MEGA2560 PRO board that plugs into processor socket (prototype)
- *   RPU_OS_HARDWARE_REV 101 - MEGA2560 PRO board that plugs into processor socket
- *                             adds support for multiple serial ports (limited release)
- *   RPU_OS_HARDWARE_REV 102 - MEGA2560 PRO board that plugs into processor socket (prototype)
- *                             adds support for OLED display, WIFI, autodetection of processor type
- *
- */
 
 #if (RPU_OS_HARDWARE_REV == 1) or (RPU_OS_HARDWARE_REV == 2)
 

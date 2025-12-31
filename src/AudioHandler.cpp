@@ -43,6 +43,8 @@
  *    Audio.StopAllAudio(); // Stop audio
  */
 
+#include "RPU_config.h"
+#include "RPU.h"
 #include "AudioHandler.h"
 #include <Arduino.h>
 

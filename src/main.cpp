@@ -22,8 +22,8 @@
 // unstructured play jackpots
 // increase mode start time with new qualifier
 #include "AudioHandler.h"
-#include "RPU.h"
 #include "RPU_config.h"
+#include "RPU.h"
 #include "SelfTestAndAudit.h"
 #include "Trident2020.h"
 #include <Arduino.h>
@@ -124,8 +124,8 @@ bool FreePlayMode = false;
 constexpr int8_t SOUND_SELECTOR_NONE = 0;
 constexpr int8_t SOUND_SELECTOR_ORIGINAL = 1;
 constexpr int8_t SOUND_SELECTOR_TRIDENT2020 = 3;
-
 uint8_t SoundSelector = SOUND_SELECTOR_TRIDENT2020; // 0=No effects, 1=Original, 3=Trident 2020
+
 uint8_t MusicVolume = 10;
 uint8_t SoundEffectsVolume = 10;
 uint8_t CalloutsVolume = 10;
@@ -240,6 +240,16 @@ void ReadStoredParameters() {
    }
 
    SoundSelector = ReadSetting(EEPROM_SOUND_SELECTOR_BYTE, 3);
+   switch (SoundSelector) {
+   case SOUND_SELECTOR_NONE:
+   case SOUND_SELECTOR_ORIGINAL:
+   case SOUND_SELECTOR_TRIDENT2020:
+      // All valid values, thanks
+      break;
+   default:
+      SoundSelector = SOUND_SELECTOR_TRIDENT2020;
+   }
+
    if (SoundSelector > 3) {
       SoundSelector = 3;
    }
@@ -1360,7 +1370,7 @@ uint8_t CurrentBackgroundSong = SOUND_EFFECT_NONE;
 #endif
 
 void PlayBackgroundSong(unsigned short songNum) {
-   if (MusicVolume != 0 && (SoundSelector == 3 || SoundSelector == 5)) {
+   if ((MusicVolume != 0) && (SoundSelector == SOUND_SELECTOR_TRIDENT2020)) {
       Audio.PlayBackgroundSong(songNum, true);
    }
 }
@@ -1409,12 +1419,14 @@ void PlaySoundEffect(uint8_t soundEffectNum) {
             Audio.QueueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
          }
          break;
+
       case SOUND_EFFECT_SAUCER_HIT_20K:
          for (int count = 0; count < 2; count++) {
             Audio.QueueOriginalSound(0x08, CurrentTime + 200 * count);
             Audio.QueueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
          }
          break;
+
       case SOUND_EFFECT_SAUCER_HIT_10K:
          for (int count = 0; count < 1; count++) {
             Audio.QueueOriginalSound(0x08, CurrentTime + 200 * count);
@@ -1427,11 +1439,13 @@ void PlaySoundEffect(uint8_t soundEffectNum) {
             Audio.QueueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
          }
          break;
+
       case SOUND_EFFECT_TOP_BUMPER_HIT:
       case SOUND_EFFECT_BOTTOM_BUMPER_HIT:
          Audio.QueueOriginalSound(0x20, CurrentTime);
          Audio.QueueOriginalSound(0x00, CurrentTime + 75);
          break;
+
       case SOUND_EFFECT_SHOOT_AGAIN:
       case SOUND_EFFECT_PLAYER_1_UP:
       case SOUND_EFFECT_PLAYER_2_UP:
@@ -1441,6 +1455,7 @@ void PlaySoundEffect(uint8_t soundEffectNum) {
          Audio.QueueOriginalSound(0x04, CurrentTime + 75);
          Audio.QueueOriginalSound(0x00, CurrentTime + 175);
          break;
+
       case SOUND_EFFECT_BONUS_COUNT:
       case SOUND_EFFECT_2X_BONUS_COUNT:
       case SOUND_EFFECT_3X_BONUS_COUNT:
@@ -1449,6 +1464,7 @@ void PlaySoundEffect(uint8_t soundEffectNum) {
          Audio.QueueOriginalSound(0x04, CurrentTime);
          Audio.QueueOriginalSound(0x00, CurrentTime + 75);
          break;
+
       case SOUND_EFFECT_UPPER_SLING:
       case SOUND_EFFECT_EXTRA_BALL:
       case SOUND_EFFECT_TILT_WARNING:
@@ -1461,6 +1477,7 @@ void PlaySoundEffect(uint8_t soundEffectNum) {
          Audio.QueueOriginalSound(0x01, CurrentTime);
          Audio.QueueOriginalSound(0x00, CurrentTime + 75);
          break;
+
       case SOUND_EFFECT_DROP_TARGET_CLEAR_1:
       case SOUND_EFFECT_DROP_TARGET_CLEAR_2:
       case SOUND_EFFECT_DROP_TARGET_CLEAR_3:
@@ -1469,6 +1486,7 @@ void PlaySoundEffect(uint8_t soundEffectNum) {
          Audio.QueueOriginalSound(0x08, CurrentTime);
          Audio.QueueOriginalSound(0x00, CurrentTime + 75);
          break;
+
       case SOUND_EFFECT_FIRST_SU_SWITCH_HIT:
       case SOUND_EFFECT_SECOND_SU_SWITCH_HIT:
       case SOUND_EFFECT_THIRD_SU_SWITCH_HIT:
@@ -1477,6 +1495,7 @@ void PlaySoundEffect(uint8_t soundEffectNum) {
          Audio.QueueOriginalSound(0x04, CurrentTime);
          Audio.QueueOriginalSound(0x00, CurrentTime + 75);
          break;
+
       case SOUND_EFFECT_ADD_CREDIT:
       case SOUND_EFFECT_GAME_OVER:
          Audio.QueueOriginalSound(0x08, CurrentTime);
@@ -1489,6 +1508,7 @@ void PlaySoundEffect(uint8_t soundEffectNum) {
          Audio.QueueOriginalSound(0x01, CurrentTime + 550);
          Audio.QueueOriginalSound(0x00, CurrentTime + 650);
          break;
+
       case SOUND_EFFECT_ADD_PLAYER_1:
       case SOUND_EFFECT_ADD_PLAYER_2:
       case SOUND_EFFECT_ADD_PLAYER_3:

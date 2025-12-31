@@ -1,0 +1,22 @@
+---
+# clang-tidy configuration for Trident2020RPU
+# Focuses on readability and potential bugs
+
+Checks: >
+  -*,
+  readability-implicit-bool-conversion,
+  readability-misleading-indentation,
+  readability-simplify-boolean-expr,
+  bugprone-bool-pointer-implicit-conversion,
+  bugprone-suspicious-semicolon,
+  misc-redundant-expression
+
+CheckOptions:
+  - key: readability-implicit-bool-conversion.AllowIntegerConditions
+    value: '0'
+  - key: readability-implicit-bool-conversion.AllowPointerConditions
+    value: '0'
+
+WarningsAsErrors: ''
+HeaderFilterRegex: '.*'
+FormatStyle: file
