@@ -176,6 +176,9 @@ void RPU_Update(unsigned long currentTime);
 void RPU_SetBoardLEDs(bool LED1, bool LED2, uint8_t BCDValue = 0xFF);
 #endif
 
+#if !defined(DEBUG_MESSAGES)
+#  define DEBUG_MESSAGES 0
+#endif   
 
 #define RPU_OS_H
 #endif

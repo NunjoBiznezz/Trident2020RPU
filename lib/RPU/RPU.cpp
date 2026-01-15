@@ -18,13 +18,11 @@
     See <https://www.gnu.org/licenses/>.
  */
 
+#include "RPU.h"
+#include "RPU_config.h"
 #include <Arduino.h>
 #include <EEPROM.h>
-#include "RPU_config.h"
-#include "RPU.h"
 #include "OsHardware.h"
-
-#define DEBUG_MESSAGES 0
 
 int NumGameSwitches = 0;
 int NumGamePrioritySwitches = 0;
@@ -166,7 +164,6 @@ struct TimedSoundEntry {
 };
 TimedSoundEntry TimedSoundStack[TIMED_SOUND_STACK_SIZE] = {0, 0, 0, 0};
 #endif
-
 
 #if (RPU_OS_HARDWARE_REV == 1) or (RPU_OS_HARDWARE_REV == 2)
 
@@ -1797,7 +1794,6 @@ void RPU_SetDisplayFlashCredits(unsigned long curTime, int period) {
 }
 
 #if (RPU_MPU_ARCHITECTURE == 15)
-
 
 // Alpha numeric numbers and alphabet
 

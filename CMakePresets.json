@@ -1,0 +1,107 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 20,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "base",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+        {
+            "name": "rev1",
+            "displayName": "RPU Hardware Rev 1 (Nano)",
+            "description": "Build for RPU Hardware Revision 1 - Arduino Nano ATmega328",
+            "inherits": "base",
+            "cacheVariables": {
+                "RPU_BUILD_FOR_REV1": "ON",
+                "RPU_BUILD_FOR_REV2": "OFF",
+                "RPU_BUILD_FOR_REV3": "OFF",
+                "RPU_BUILD_FOR_REV4": "OFF",
+                "RPU_BUILD_FOR_REV102": "OFF"
+            }
+        },
+        {
+            "name": "rev2",
+            "displayName": "RPU Hardware Rev 2 (Nano)",
+            "description": "Build for RPU Hardware Revision 2 - Arduino Nano ATmega328",
+            "inherits": "base",
+            "cacheVariables": {
+                "RPU_BUILD_FOR_REV1": "OFF",
+                "RPU_BUILD_FOR_REV2": "ON",
+                "RPU_BUILD_FOR_REV3": "OFF",
+                "RPU_BUILD_FOR_REV4": "OFF",
+                "RPU_BUILD_FOR_REV102": "OFF"
+            }
+        },
+        {
+            "name": "rev3",
+            "displayName": "RPU Hardware Rev 3 (MEGA)",
+            "description": "Build for RPU Hardware Revision 3 - Arduino MEGA 2560",
+            "inherits": "base",
+            "cacheVariables": {
+                "RPU_BUILD_FOR_REV1": "OFF",
+                "RPU_BUILD_FOR_REV2": "OFF",
+                "RPU_BUILD_FOR_REV3": "ON",
+                "RPU_BUILD_FOR_REV4": "OFF",
+                "RPU_BUILD_FOR_REV102": "OFF"
+            }
+        },
+        {
+            "name": "rev4",
+            "displayName": "RPU Hardware Rev 4 (MEGA) - Default",
+            "description": "Build for RPU Hardware Revision 4 - Arduino MEGA 2560",
+            "inherits": "base",
+            "cacheVariables": {
+                "RPU_BUILD_FOR_REV1": "OFF",
+                "RPU_BUILD_FOR_REV2": "OFF",
+                "RPU_BUILD_FOR_REV3": "OFF",
+                "RPU_BUILD_FOR_REV4": "ON",
+                "RPU_BUILD_FOR_REV102": "OFF"
+            }
+        },
+        {
+            "name": "rev102",
+            "displayName": "RPU Hardware Rev 102 (MEGA)",
+            "description": "Build for RPU Hardware Revision 102 - Arduino MEGA 2560 with debug",
+            "inherits": "base",
+            "cacheVariables": {
+                "RPU_BUILD_FOR_REV1": "OFF",
+                "RPU_BUILD_FOR_REV2": "OFF",
+                "RPU_BUILD_FOR_REV3": "OFF",
+                "RPU_BUILD_FOR_REV4": "OFF",
+                "RPU_BUILD_FOR_REV102": "ON",
+                "ENABLE_DEBUG_MESSAGES": "ON"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "rev1",
+            "configurePreset": "rev1"
+        },
+        {
+            "name": "rev2",
+            "configurePreset": "rev2"
+        },
+        {
+            "name": "rev3",
+            "configurePreset": "rev3"
+        },
+        {
+            "name": "rev4",
+            "configurePreset": "rev4"
+        },
+        {
+            "name": "rev102",
+            "configurePreset": "rev102"
+        }
+    ]
+}

@@ -34,7 +34,7 @@
 // Hardware Rev 101 - first RPU CPU interposer release board
 // Hardware Rev 102 - second RPU (with display and WIFI socket)
 #if !defined(RPU_OS_HARDWARE_REV)
-#error "You must define the RPU_OS_HARDWARE_REV, see RPU_config.h"
+#error "RPU_OS_HARDWARE_REV not defined. Please define it in platformio.ini or in RPU_config.h"
 #endif
 
 // Available Architectures (0-9 is for B/S Boards, 10-19 is for W)
@@ -43,8 +43,8 @@
 //  RPU_MPU_ARCHITECTURE 13 = Sys 7
 //  RPU_MPU_ARCHITECTURE 15 = Sys 11
 #if !defined(RPU_MPU_ARCHITECTURE)
-#error "You must define the RPU_MPU_ARCHITECTURE, see RPU_config.h"
-#endif
+#error "RPU_MPU_ARCHITECTURE not defined. Please define it in platformio.ini or in RPU_config.h"
+#endif  
 
 // Some boards will assume a 6800 is the processor (RPU_OS_HARDWARE_REV 1 through 4)
 // and some boards will try to detect the processor (RPU_OS_HARDWARE_REV 102)
@@ -52,8 +52,8 @@
 // Define RPU_MPU_BUILD_FOR_6800 with a 0 for 6802 or 6808, and with
 // a 1 for 6800
 #if !defined(RPU_MPU_BUILD_FOR_6800)
-#define RPU_MPU_BUILD_FOR_6800 1
-#endif
+#error "RPU_MPU_BUILD_FOR_6800 not defined. Please define it in platformio.ini or in RPU_config.h"
+#endif  
 
 // These defines allow this configuration to eliminate some functions
 // to reduce program size

@@ -1,6 +1,27 @@
-#ifndef OS_HARDWARE_H
-#define OS_HARDWARE_H
+/**************************************************************************
+ *     This file is part of the RPU for Arduino Project.
 
+    I, Dick Hamill, the author of this program disclaim all copyright
+    in order to make this program freely available in perpetuity to
+    anyone who would like to use it. Dick Hamill, 3/31/2023
+
+    RPU is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    RPU is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    See <https://www.gnu.org/licenses/>.
+ */
+
+#ifndef RPU_ADDRESSES_H
+#define RPU_ADDRESSES_H
+
+#include "RPU_config.h"
 #include <stdint.h>
 
 

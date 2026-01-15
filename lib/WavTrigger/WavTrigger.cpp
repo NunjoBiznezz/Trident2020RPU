@@ -1,37 +1,37 @@
 #include "WavTrigger.h"
 #include <Arduino.h>
 
-constexpr uint8_t CMD_GET_VERSION = 1;
-constexpr uint8_t CMD_GET_SYS_INFO = 2;
-constexpr uint8_t CMD_TRACK_CONTROL = 3;
-constexpr uint8_t CMD_STOP_ALL = 4;
-constexpr uint8_t CMD_MASTER_VOLUME = 5;
-constexpr uint8_t CMD_TRACK_VOLUME = 8;
-constexpr uint8_t CMD_AMP_POWER = 9;
-constexpr uint8_t CMD_TRACK_FADE = 10;
-constexpr uint8_t CMD_RESUME_ALL_SYNC = 11;
-constexpr uint8_t CMD_SAMPLERATE_OFFSET = 12;
-constexpr uint8_t CMD_TRACK_CONTROL_EX = 13;
-constexpr uint8_t CMD_SET_REPORTING = 14;
-constexpr uint8_t CMD_SET_TRIGGER_BANK = 15;
+static constexpr uint8_t CMD_GET_VERSION = 1;
+static constexpr uint8_t CMD_GET_SYS_INFO = 2;
+static constexpr uint8_t CMD_TRACK_CONTROL = 3;
+static constexpr uint8_t CMD_STOP_ALL = 4;
+static constexpr uint8_t CMD_MASTER_VOLUME = 5;
+static constexpr uint8_t CMD_TRACK_VOLUME = 8;
+static constexpr uint8_t CMD_AMP_POWER = 9;
+static constexpr uint8_t CMD_TRACK_FADE = 10;
+static constexpr uint8_t CMD_RESUME_ALL_SYNC = 11;
+static constexpr uint8_t CMD_SAMPLERATE_OFFSET = 12;
+static constexpr uint8_t CMD_TRACK_CONTROL_EX = 13;
+static constexpr uint8_t CMD_SET_REPORTING = 14;
+static constexpr uint8_t CMD_SET_TRIGGER_BANK = 15;
 
-constexpr uint8_t TRK_PLAY_SOLO = 0;
-constexpr uint8_t TRK_PLAY_POLY = 1;
-constexpr uint8_t TRK_PAUSE = 2;
-constexpr uint8_t TRK_RESUME = 3;
-constexpr uint8_t TRK_STOP = 4;
-constexpr uint8_t TRK_LOOP_ON = 5;
-constexpr uint8_t TRK_LOOP_OFF = 6;
-constexpr uint8_t TRK_LOAD = 7;
+static constexpr int TRK_PLAY_SOLO = 0;
+static constexpr int TRK_PLAY_POLY = 1;
+static constexpr int TRK_PAUSE = 2;
+static constexpr int TRK_RESUME = 3;
+static constexpr int TRK_STOP = 4;
+static constexpr int TRK_LOOP_ON = 5;
+static constexpr int TRK_LOOP_OFF = 6;
+static constexpr int TRK_LOAD = 7;
 
-constexpr uint8_t RSP_VERSION_STRING = 129;
-constexpr uint8_t RSP_SYSTEM_INFO = 130;
-constexpr uint8_t RSP_STATUS = 131;
-constexpr uint8_t RSP_TRACK_REPORT = 132;
+static constexpr uint8_t RSP_VERSION_STRING = 129;
+static constexpr uint8_t RSP_SYSTEM_INFO = 130;
+static constexpr uint8_t RSP_STATUS = 131;
+static constexpr uint8_t RSP_TRACK_REPORT = 132;
 
-constexpr uint8_t SOM1 = 0xf0;
-constexpr uint8_t SOM2 = 0xaa;
-constexpr uint8_t EOM = 0x55;
+static constexpr uint8_t SOM1 = 0xf0;
+static constexpr uint8_t SOM2 = 0xaa;
+static constexpr uint8_t EOM = 0x55;
 
 #if (RPU_OS_HARDWARE_REV <= 3)
 #define WTSerial Serial
@@ -101,6 +101,7 @@ void WavTrigger::update(void) {
             rxCount++;
          } else {
             rxCount = 0;
+            // Serial.print("Bad msg 1\n");
          }
       } else if (rxCount == 2) {
          if (dat <= MAX_MESSAGE_LEN) {
@@ -108,6 +109,7 @@ void WavTrigger::update(void) {
             rxLen = dat - 1;
          } else {
             rxCount = 0;
+            // Serial.print("Bad msg 2\n");
          }
       } else if ((rxCount > 2) && (rxCount < rxLen)) {
          rxMessage[rxCount - 3] = dat;
@@ -117,9 +119,11 @@ void WavTrigger::update(void) {
             rxMsgReady = true;
          } else {
             rxCount = 0;
+            // Serial.print("Bad msg 3\n");
          }
       } else {
          rxCount = 0;
+         // Serial.print("Bad msg 4\n");
       }
 
       if (rxMsgReady) {
@@ -137,6 +141,14 @@ void WavTrigger::update(void) {
                   voiceTable[voice] = track;
                }
             }
+            // ==========================
+            // Serial.print("Track ");
+            // Serial.print(track);
+            // if (rxMessage[4] == 0)
+            //  Serial.print(" off\n");
+            // else
+            //  Serial.print(" on\n");
+            // ==========================
             break;
 
          case RSP_VERSION_STRING:
@@ -145,6 +157,10 @@ void WavTrigger::update(void) {
             }
             version[VERSION_STRING_LEN - 1] = 0;
             versionRcvd = true;
+            // ==========================
+            // Serial.write(version);
+            // Serial.write("\n");
+            // ==========================
             break;
 
          case RSP_SYSTEM_INFO:
@@ -152,13 +168,18 @@ void WavTrigger::update(void) {
             numTracks = rxMessage[3];
             numTracks = (numTracks << 8) + rxMessage[2];
             sysinfoRcvd = true;
+            // ==========================
+            ///\Serial.print("Sys info received\n");
+            // ==========================
             break;
          }
          rxCount = 0;
          rxLen = 0;
          rxMsgReady = false;
-      }
-   }
+
+      } // if (rxMsgReady)
+
+   } // while (WTSerial.available() > 0)
 }
 
 // **************************************************************
