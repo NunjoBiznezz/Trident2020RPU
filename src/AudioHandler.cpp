@@ -48,7 +48,6 @@
 #include "RPU_config.h"
 #include <Arduino.h>
 
-
 constexpr uint16_t VOICE_NOTIFICATION_STACK_EMPTY = 0xFFFF;
 constexpr uint16_t BACKGROUND_TRACK_NONE = 0xFFFF;
 
@@ -427,7 +426,7 @@ bool AudioHandler::StopAllAudio() {
 }
 
 void AudioHandler::InitSB300Registers() {
-#ifdef RPU_OS_USE_SB300
+#if (RPU_OS_HARDWARE_REV >= 2 && defined(RPU_OS_USE_SB300))
    RPU_PlaySB300SquareWave(1, 0x00); // Write 0x00 to CR2 (Timer 2 off, continuous mode, 16-bit, C2 clock, CR3 set)
    RPU_PlaySB300SquareWave(0, 0x00); // Write 0x00 to CR3 (Timer 3 off, continuous mode, 16-bit, C3 clock, not prescaled)
    RPU_PlaySB300SquareWave(1, 0x01); // Write 0x00 to CR2 (Timer 2 off, continuous mode, 16-bit, C2 clock, CR1 set)
@@ -436,7 +435,7 @@ void AudioHandler::InitSB300Registers() {
 }
 
 void AudioHandler::PlaySB300StartupBeep() {
-#ifdef RPU_OS_USE_SB300
+#if (RPU_OS_HARDWARE_REV >= 2 && defined(RPU_OS_USE_SB300))
    RPU_PlaySB300SquareWave(1, 0x92); // Write 0x92 to CR2 (Timer 2 on, continuous mode, 16-bit, E clock, CR3 set)
    RPU_PlaySB300SquareWave(0, 0x92); // Write 0x92 to CR3 (Timer 3 on, continuous mode, 16-bit, E clock, not prescaled)
    RPU_PlaySB300SquareWave(4, 0x02); // Set Timer 2 to 0x0200
@@ -622,7 +621,7 @@ bool AudioHandler::ServiceSoundQueue(unsigned long currentTime) {
 }
 
 bool AudioHandler::ServiceSoundCardQueue(unsigned long currentTime) {
-#ifdef RPU_OS_USE_SB300
+#if (RPU_OS_HARDWARE_REV >= 2 && defined(RPU_OS_USE_SB300))
    bool soundCommandSent = false;
    for (int count = 0; count < SOUND_CARD_QUEUE_SIZE; count++) {
       if (soundCardQueue[count].playTime != 0 && soundCardQueue[count].playTime < currentTime) {
@@ -719,13 +718,13 @@ bool AudioHandler::PlayBackgroundSong(uint16_t trackIndex, bool loopTrack) {
    if (trackIndex != BACKGROUND_TRACK_NONE) {
       currentBackgroundTrack = trackIndex;
 #if defined(AUDIOHANDLER_USES_WAV_TRIGGER)
-#  if defined(AUDIOHANDLER_USES_WAV_TRIGGER_1P3)
+#if defined(AUDIOHANDLER_USES_WAV_TRIGGER_1P3)
       wTrig.trackPlayPoly(trackIndex, true);
       trackPlayed = true;
-#  else
+#else
       wTrig.trackPlayPoly(trackIndex);
       trackPlayed = true;
-#  endif
+#endif
       if (loopTrack) {
          wTrig.trackLoop(trackIndex, true);
       }
@@ -775,11 +774,11 @@ void AudioHandler::StartNextSoundtrackSong(unsigned long currentTime) {
    currentBackgroundTrack = curSoundtrack[retSong].TrackIndex;
 
 #if defined(AUDIOHANDLER_USES_WAV_TRIGGER)
-#  if defined(AUDIOHANDLER_USES_WAV_TRIGGER_1P3)
+#if defined(AUDIOHANDLER_USES_WAV_TRIGGER_1P3)
    wTrig.trackPlayPoly(currentBackgroundTrack, true);
-#  else
+#else
    wTrig.trackPlayPoly(currentBackgroundTrack);
-#  endif
+#endif
    wTrig.trackGain(currentBackgroundTrack, musicGain);
 #endif
 }
