@@ -44,7 +44,7 @@
 //  RPU_MPU_ARCHITECTURE 15 = Sys 11
 #if !defined(RPU_MPU_ARCHITECTURE)
 #error "RPU_MPU_ARCHITECTURE not defined. Please define it in platformio.ini or in RPU_config.h"
-#endif  
+#endif
 
 // Some boards will assume a 6800 is the processor (RPU_OS_HARDWARE_REV 1 through 4)
 // and some boards will try to detect the processor (RPU_OS_HARDWARE_REV 102)
@@ -53,18 +53,20 @@
 // a 1 for 6800
 #if !defined(RPU_MPU_BUILD_FOR_6800)
 #error "RPU_MPU_BUILD_FOR_6800 not defined. Please define it in platformio.ini or in RPU_config.h"
-#endif  
+#endif
 
 // These defines allow this configuration to eliminate some functions
 // to reduce program size
-// #define RPU_OS_USE_DIP_SWITCHES
-// #define RPU_OS_USE_S_AND_T
-// #define RPU_OS_USE_DASH51
-// #define RPU_OS_USE_SB100    // Needed for 2560
-#define RPU_OS_USE_SB300
-// #define RPU_OS_USE_WAV_TRIGGER
-#define RPU_OS_USE_WAV_TRIGGER_1p3 // Wanted for this build??
-// #define RPU_OS_DISABLE_CPC_FOR_SPACE
+// Note: These are now controlled by CMake build options. Do not define them here.
+// They will be passed as compile definitions by the build system.
+// Available options:
+//   RPU_OS_USE_DIP_SWITCHES - Enable DIP switch reading
+//   RPU_OS_USE_SB100 - Enable SB-100 sound card support
+//   RPU_OS_USE_SB300 - Enable SB-300 sound card support (requires hardware rev >= 2)
+//   RPU_OS_USE_WAV_TRIGGER_1p3 - Enable WavTrigger 1.3 support
+//   RPU_OS_USE_S_AND_T - Enable S&T sound card support
+//   RPU_OS_USE_DASH51 - Enable Dash-51 sound card support
+//   RPU_OS_DISABLE_CPC_FOR_SPACE - Disable CPC code to save space
 // #define RPU_OS_USE_AUX_LAMPS
 // #define RPU_OS_USE_7_DIGIT_DISPLAYS
 // #define RPU_USE_EXTENDED_SWITCHES_ON_PB4
