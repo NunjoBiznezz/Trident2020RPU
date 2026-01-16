@@ -50,6 +50,10 @@
 
 constexpr uint16_t VOICE_NOTIFICATION_STACK_EMPTY = 0xFFFF;
 constexpr uint16_t BACKGROUND_TRACK_NONE = 0xFFFF;
+constexpr uint16_t INVALID_SOUND_INDEX = 0xFFFF;
+
+#define SB300_SOUND_FUNCTION_SQUARE_WAVE 0
+#define SB300_SOUND_FUNCTION_ANALOG 1
 
 const int volumeToGainConversion[11] = {-70, -18, -16, -14, -12, -10, -8, -6, -4, -2, 0};
 

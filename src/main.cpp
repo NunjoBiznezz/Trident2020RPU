@@ -125,9 +125,9 @@ unsigned long AwardScores[3];
 uint8_t Credits = 0;
 bool FreePlayMode = false;
 
-constexpr int8_t SOUND_SELECTOR_NONE = 0;
-constexpr int8_t SOUND_SELECTOR_ORIGINAL = 1;
-constexpr int8_t SOUND_SELECTOR_TRIDENT2020 = 3;
+constexpr uint8_t SOUND_SELECTOR_NONE = 0;
+constexpr uint8_t SOUND_SELECTOR_ORIGINAL = 1;
+constexpr uint8_t SOUND_SELECTOR_TRIDENT2020 = 3;
 uint8_t SoundSelector = SOUND_SELECTOR_TRIDENT2020; // 0=No effects, 1=Original, 3=Trident 2020
 
 uint8_t MusicVolume = 10;
@@ -156,7 +156,7 @@ bool ScrollingScores = true;
 /*********************************************************************
  * Audio Handler
  *********************************************************************/
-AudioHandler Audio;
+AudioHandler audioHandler;
 
 /*********************************************************************
     Game State
@@ -262,9 +262,9 @@ void ReadStoredParameters() {
       CalloutsVolume = 10;
    }
 
-   Audio.SetMusicVolume(MusicVolume);
-   Audio.SetSoundFXVolume(SoundEffectsVolume);
-   Audio.SetNotificationsVolume(CalloutsVolume);
+   audioHandler.SetMusicVolume(MusicVolume);
+   audioHandler.SetSoundFXVolume(SoundEffectsVolume);
+   audioHandler.SetNotificationsVolume(CalloutsVolume);
 
    TournamentScoring = (ReadSetting(EEPROM_TOURNAMENT_SCORING_BYTE, 0)) ? true : false;
 
@@ -314,11 +314,11 @@ void QueueDIAGNotification(unsigned short notificationNum) {
    // This is optional, but the machine can play an audio message at boot
    // time to indicate any errors and whether it's going to boot to original
    // or new code.
-   Audio.QueuePrioritizedNotification(notificationNum, 0, 10, CurrentTime);
+   audioHandler.QueuePrioritizedNotification(notificationNum, 0, 10, CurrentTime);
 }
 
 void setup() {
-   #if defined(DEBUG_MESSAGES)
+   #if defined(RPU_DEBUG_MESSAGES)
       Serial.begin(115200);
    #endif
 
@@ -333,8 +333,8 @@ void setup() {
    // #endif
 
    CurrentTime = millis();
-   Audio.InitDevices(AUDIO_PLAY_TYPE_WAV_TRIGGER | AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS);
-   Audio.StopAllAudio();
+   audioHandler.InitDevices(AUDIO_PLAY_TYPE_WAV_TRIGGER | AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS);
+   audioHandler.StopAllAudio();
 
    // Tell the OS about game-specific lights and switches
    RPU_SetupGameSwitches(NUM_SWITCHES_WITH_TRIGGERS, NUM_PRIORITY_SWITCHES_WITH_TRIGGERS, TriggeredSwitches);
@@ -361,7 +361,7 @@ void setup() {
    if (initResult & RPU_RET_ORIGINAL_CODE_REQUESTED) {
       delay(100);
       QueueDIAGNotification(SOUND_EFFECT_DIAG_STARTING_ORIGINAL_CODE);
-      while (Audio.Update(millis()))
+      while (audioHandler.Update(millis()))
          ;
       // Arduino should hang if original code is running
       while (1)
@@ -383,8 +383,8 @@ void setup() {
    ResetScoresToClearVersion = true;
 
    CurrentTime = millis();
-   Audio.SetMusicDuckingGain(16);
-   Audio.QueueWavTriggerSound(SOUND_EFFECT_TRIDENT_INTRO, CurrentTime + 5000);
+   audioHandler.SetMusicDuckingGain(16);
+   audioHandler.QueueWavTriggerSound(SOUND_EFFECT_TRIDENT_INTRO, CurrentTime + 5000);
 }
 
 uint8_t ReadSetting(int setting, uint8_t defaultValue) {
@@ -1113,14 +1113,14 @@ int RunSelfTest(int curState, bool curStateChanged) {
    if (curStateChanged) {
       // Send a stop-all command and reset the sample-rate offset, in case we have
       //  reset while the WAV Trigger was already playing.
-      Audio.StopAllAudio();
+      audioHandler.StopAllAudio();
       unsigned short modeMapping = SelfTestStateToCalloutMap[-1 - curState];
-      Audio.PlaySound(modeMapping, AUDIO_PLAY_TYPE_WAV_TRIGGER, 10);
+      audioHandler.PlaySound(modeMapping, AUDIO_PLAY_TYPE_WAV_TRIGGER, 10);
       SoundSettingTimeout = 0;
    } else {
       if (SoundSettingTimeout && CurrentTime > SoundSettingTimeout) {
          SoundSettingTimeout = 0;
-         Audio.StopAllAudio();
+         audioHandler.StopAllAudio();
       }
    }
 
@@ -1145,8 +1145,8 @@ int RunSelfTest(int curState, bool curStateChanged) {
       if (chuteNum != 0xFF) {
          if (cpcSelection != GetCPCSelection(chuteNum)) {
             uint8_t newCPC = GetCPCSelection(chuteNum);
-            Audio.StopAllAudio();
-            Audio.PlaySound(SOUND_EFFECT_SELF_TEST_CPC_START + newCPC, AUDIO_PLAY_TYPE_WAV_TRIGGER, 10);
+            audioHandler.StopAllAudio();
+            audioHandler.PlaySound(SOUND_EFFECT_SELF_TEST_CPC_START + newCPC, AUDIO_PLAY_TYPE_WAV_TRIGGER, 10);
          }
       }
    } else {
@@ -1374,7 +1374,7 @@ uint8_t CurrentBackgroundSong = SOUND_EFFECT_NONE;
 
 void PlayBackgroundSong(unsigned short songNum) {
    if ((MusicVolume != 0) && (SoundSelector == SOUND_SELECTOR_TRIDENT2020)) {
-      Audio.PlayBackgroundSong(songNum, true);
+      audioHandler.PlayBackgroundSong(songNum, true);
    }
 }
 
@@ -1395,58 +1395,58 @@ void PlaySoundEffect(uint8_t soundEffectNum) {
       case SOUND_EFFECT_RIGHT_SPINNER:
       case SOUND_EFFECT_DROP_TARGET:
       case SOUND_EFFECT_BALL_OVER:
-         Audio.QueueOriginalSound(0x02, CurrentTime);
-         Audio.QueueOriginalSound(0x00, CurrentTime + 75);
+         audioHandler.QueueOriginalSound(0x02, CurrentTime);
+         audioHandler.QueueOriginalSound(0x00, CurrentTime + 75);
          break;
       case SOUND_EFFECT_LEFT_INLANE:
          for (int count = 0; count < RolloverValue; count++) {
-            Audio.QueueOriginalSound(0x04, CurrentTime + 200 * count);
-            Audio.QueueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
+            audioHandler.QueueOriginalSound(0x04, CurrentTime + 200 * count);
+            audioHandler.QueueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
          }
          break;
       case SOUND_EFFECT_RIGHT_INLANE:
          for (int count = 0; count < 6; count++) {
-            Audio.QueueOriginalSound((count < 3) ? 0x04 : 0x10, CurrentTime + 200 * count);
-            Audio.QueueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
+            audioHandler.QueueOriginalSound((count < 3) ? 0x04 : 0x10, CurrentTime + 200 * count);
+            audioHandler.QueueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
          }
          break;
       case SOUND_EFFECT_SAUCER_HIT_5K:
          for (int count = 0; count < 5; count++) {
-            Audio.QueueOriginalSound(0x04, CurrentTime + 200 * count);
-            Audio.QueueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
+            audioHandler.QueueOriginalSound(0x04, CurrentTime + 200 * count);
+            audioHandler.QueueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
          }
          break;
       case SOUND_EFFECT_SAUCER_HIT_30K:
          for (int count = 0; count < 3; count++) {
-            Audio.QueueOriginalSound(0x08, CurrentTime + 200 * count);
-            Audio.QueueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
+            audioHandler.QueueOriginalSound(0x08, CurrentTime + 200 * count);
+            audioHandler.QueueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
          }
          break;
 
       case SOUND_EFFECT_SAUCER_HIT_20K:
          for (int count = 0; count < 2; count++) {
-            Audio.QueueOriginalSound(0x08, CurrentTime + 200 * count);
-            Audio.QueueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
+            audioHandler.QueueOriginalSound(0x08, CurrentTime + 200 * count);
+            audioHandler.QueueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
          }
          break;
 
       case SOUND_EFFECT_SAUCER_HIT_10K:
          for (int count = 0; count < 1; count++) {
-            Audio.QueueOriginalSound(0x08, CurrentTime + 200 * count);
-            Audio.QueueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
+            audioHandler.QueueOriginalSound(0x08, CurrentTime + 200 * count);
+            audioHandler.QueueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
          }
          break;
       case SOUND_EFFECT_RIGHT_OUTLANE:
          for (int count = 0; count < 5; count++) {
-            Audio.QueueOriginalSound(0x04, CurrentTime + 200 * count);
-            Audio.QueueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
+            audioHandler.QueueOriginalSound(0x04, CurrentTime + 200 * count);
+            audioHandler.QueueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
          }
          break;
 
       case SOUND_EFFECT_TOP_BUMPER_HIT:
       case SOUND_EFFECT_BOTTOM_BUMPER_HIT:
-         Audio.QueueOriginalSound(0x20, CurrentTime);
-         Audio.QueueOriginalSound(0x00, CurrentTime + 75);
+         audioHandler.QueueOriginalSound(0x20, CurrentTime);
+         audioHandler.QueueOriginalSound(0x00, CurrentTime + 75);
          break;
 
       case SOUND_EFFECT_SHOOT_AGAIN:
@@ -1454,9 +1454,9 @@ void PlaySoundEffect(uint8_t soundEffectNum) {
       case SOUND_EFFECT_PLAYER_2_UP:
       case SOUND_EFFECT_PLAYER_3_UP:
       case SOUND_EFFECT_PLAYER_4_UP:
-         Audio.QueueOriginalSound(0x08, CurrentTime);
-         Audio.QueueOriginalSound(0x04, CurrentTime + 75);
-         Audio.QueueOriginalSound(0x00, CurrentTime + 175);
+         audioHandler.QueueOriginalSound(0x08, CurrentTime);
+         audioHandler.QueueOriginalSound(0x04, CurrentTime + 75);
+         audioHandler.QueueOriginalSound(0x00, CurrentTime + 175);
          break;
 
       case SOUND_EFFECT_BONUS_COUNT:
@@ -1464,21 +1464,21 @@ void PlaySoundEffect(uint8_t soundEffectNum) {
       case SOUND_EFFECT_3X_BONUS_COUNT:
       case SOUND_EFFECT_4X_BONUS_COUNT:
       case SOUND_EFFECT_5X_BONUS_COUNT:
-         Audio.QueueOriginalSound(0x04, CurrentTime);
-         Audio.QueueOriginalSound(0x00, CurrentTime + 75);
+         audioHandler.QueueOriginalSound(0x04, CurrentTime);
+         audioHandler.QueueOriginalSound(0x00, CurrentTime + 75);
          break;
 
       case SOUND_EFFECT_UPPER_SLING:
       case SOUND_EFFECT_EXTRA_BALL:
       case SOUND_EFFECT_TILT_WARNING:
-         Audio.QueueOriginalSound(0x10, CurrentTime);
-         Audio.QueueOriginalSound(0x00, CurrentTime + 75);
+         audioHandler.QueueOriginalSound(0x10, CurrentTime);
+         audioHandler.QueueOriginalSound(0x00, CurrentTime + 75);
          break;
       case SOUND_EFFECT_10PT_SWITCH:
       case SOUND_EFFECT_MATCH_SPIN:
       case SOUND_EFFECT_LOWER_SLING:
-         Audio.QueueOriginalSound(0x01, CurrentTime);
-         Audio.QueueOriginalSound(0x00, CurrentTime + 75);
+         audioHandler.QueueOriginalSound(0x01, CurrentTime);
+         audioHandler.QueueOriginalSound(0x00, CurrentTime + 75);
          break;
 
       case SOUND_EFFECT_DROP_TARGET_CLEAR_1:
@@ -1486,8 +1486,8 @@ void PlaySoundEffect(uint8_t soundEffectNum) {
       case SOUND_EFFECT_DROP_TARGET_CLEAR_3:
       case SOUND_EFFECT_DROP_TARGET_CLEAR_4:
       case SOUND_EFFECT_DROP_TARGET_CLEAR_5:
-         Audio.QueueOriginalSound(0x08, CurrentTime);
-         Audio.QueueOriginalSound(0x00, CurrentTime + 75);
+         audioHandler.QueueOriginalSound(0x08, CurrentTime);
+         audioHandler.QueueOriginalSound(0x00, CurrentTime + 75);
          break;
 
       case SOUND_EFFECT_FIRST_SU_SWITCH_HIT:
@@ -1495,21 +1495,21 @@ void PlaySoundEffect(uint8_t soundEffectNum) {
       case SOUND_EFFECT_THIRD_SU_SWITCH_HIT:
       case SOUND_EFFECT_FOURTH_SU_SWITCH_HIT:
       case SOUND_EFFECT_FIFTH_SU_SWITCH_HIT:
-         Audio.QueueOriginalSound(0x04, CurrentTime);
-         Audio.QueueOriginalSound(0x00, CurrentTime + 75);
+         audioHandler.QueueOriginalSound(0x04, CurrentTime);
+         audioHandler.QueueOriginalSound(0x00, CurrentTime + 75);
          break;
 
       case SOUND_EFFECT_ADD_CREDIT:
       case SOUND_EFFECT_GAME_OVER:
-         Audio.QueueOriginalSound(0x08, CurrentTime);
-         Audio.QueueOriginalSound(0x04, CurrentTime + 75);
-         Audio.QueueOriginalSound(0x02, CurrentTime + 150);
-         Audio.QueueOriginalSound(0x01, CurrentTime + 225);
-         Audio.QueueOriginalSound(0x08, CurrentTime + 325);
-         Audio.QueueOriginalSound(0x04, CurrentTime + 400);
-         Audio.QueueOriginalSound(0x02, CurrentTime + 475);
-         Audio.QueueOriginalSound(0x01, CurrentTime + 550);
-         Audio.QueueOriginalSound(0x00, CurrentTime + 650);
+         audioHandler.QueueOriginalSound(0x08, CurrentTime);
+         audioHandler.QueueOriginalSound(0x04, CurrentTime + 75);
+         audioHandler.QueueOriginalSound(0x02, CurrentTime + 150);
+         audioHandler.QueueOriginalSound(0x01, CurrentTime + 225);
+         audioHandler.QueueOriginalSound(0x08, CurrentTime + 325);
+         audioHandler.QueueOriginalSound(0x04, CurrentTime + 400);
+         audioHandler.QueueOriginalSound(0x02, CurrentTime + 475);
+         audioHandler.QueueOriginalSound(0x01, CurrentTime + 550);
+         audioHandler.QueueOriginalSound(0x00, CurrentTime + 650);
          break;
 
       case SOUND_EFFECT_ADD_PLAYER_1:
@@ -1518,22 +1518,22 @@ void PlaySoundEffect(uint8_t soundEffectNum) {
       case SOUND_EFFECT_ADD_PLAYER_4:
       case SOUND_EFFECT_RESCUE_FROM_THE_DEEP:
       case SOUND_EFFECT_TRIDENT_INTRO:
-         Audio.QueueOriginalSound(0x01, CurrentTime);
-         Audio.QueueOriginalSound(0x02, CurrentTime + 75);
-         Audio.QueueOriginalSound(0x04, CurrentTime + 150);
-         Audio.QueueOriginalSound(0x08, CurrentTime + 225);
-         Audio.QueueOriginalSound(0x01, CurrentTime + 325);
-         Audio.QueueOriginalSound(0x02, CurrentTime + 400);
-         Audio.QueueOriginalSound(0x04, CurrentTime + 475);
-         Audio.QueueOriginalSound(0x08, CurrentTime + 550);
-         Audio.QueueOriginalSound(0x00, CurrentTime + 650);
+         audioHandler.QueueOriginalSound(0x01, CurrentTime);
+         audioHandler.QueueOriginalSound(0x02, CurrentTime + 75);
+         audioHandler.QueueOriginalSound(0x04, CurrentTime + 150);
+         audioHandler.QueueOriginalSound(0x08, CurrentTime + 225);
+         audioHandler.QueueOriginalSound(0x01, CurrentTime + 325);
+         audioHandler.QueueOriginalSound(0x02, CurrentTime + 400);
+         audioHandler.QueueOriginalSound(0x04, CurrentTime + 475);
+         audioHandler.QueueOriginalSound(0x08, CurrentTime + 550);
+         audioHandler.QueueOriginalSound(0x00, CurrentTime + 650);
          break;
       }
       break;
 
    case SOUND_SELECTOR_TRIDENT2020:
    default:
-      Audio.PlaySound(soundEffectNum, AUDIO_PLAY_TYPE_WAV_TRIGGER);
+      audioHandler.PlaySound(soundEffectNum, AUDIO_PLAY_TYPE_WAV_TRIGGER);
       break;
    }
 }
@@ -2917,6 +2917,6 @@ void loop() {
       MachineStateChanged = false;
    }
 
-   Audio.Update(CurrentTime);
+   audioHandler.Update(CurrentTime);
    RPU_Update(CurrentTime);
 }

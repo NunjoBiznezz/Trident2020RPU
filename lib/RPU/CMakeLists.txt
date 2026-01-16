@@ -35,26 +35,33 @@ endif()
 
 # RPU library sources
 set(RPU_SOURCES
-    RPU.cpp
-)
-required architecture definitions (passed from parent)
-target_compile_definitions(${PROJECT_NAME} PUBLIC
-    RPU_MPU_ARCHITECTURE=${RPU_MPU_ARCHITECTURE}
-    RPU_OS_HARDWARE_REV=${RPU_OS_HARDWARE_REV}
-    RPU_MPU_BUILD_FOR_6800=${RPU_MPU_BUILD_FOR_6800}
+    src/RPU.cpp
+    src/Dash51.cpp
+    src/SB100Sound.cpp
+    src/SquawkAndTalk.cpp
+    src/WType11Sound.cpp
+    src/WTypeSound12.cpp
 )
 
-# Configure 
 set(RPU_HEADERS
-    RPU.h
-    RPU_config.h
-    RPU_Addresses.h
+    include/RPU.h
+    include/RPU_config.h
+    include/RPU_Addresses.h
+    include/CircularStack.h
+    include/TimedStack.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${RPU_SOURCES} ${RPU_HEADERS})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+# Configure required architecture definitions (passed from parent)
+target_compile_definitions(${PROJECT_NAME} PUBLIC
+    RPU_MPU_ARCHITECTURE=${RPU_MPU_ARCHITECTURE}
+    RPU_OS_HARDWARE_REV=${RPU_OS_HARDWARE_REV}
+    RPU_MPU_BUILD_FOR_6800=${RPU_MPU_BUILD_FOR_6800}
 )
 
 # Configure feature flags as compile definitions

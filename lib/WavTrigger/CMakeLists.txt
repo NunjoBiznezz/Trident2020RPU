@@ -4,17 +4,17 @@ project(WavTrigger)
 
 # WavTrigger library sources
 set(WAVTRIGGER_SOURCES
-    WavTrigger.cpp
+    src/WavTrigger.cpp
 )
 
 set(WAVTRIGGER_HEADERS
-    WavTrigger.h
+    include/WavTrigger.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${WAVTRIGGER_SOURCES} ${WAVTRIGGER_HEADERS})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 # Link Arduino core (needs HardwareSerial for UART communication)

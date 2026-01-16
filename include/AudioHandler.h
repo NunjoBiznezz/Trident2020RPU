@@ -23,9 +23,6 @@ struct AudioSoundtrack {
    uint16_t TrackLength;
 };
 
-#define SB300_SOUND_FUNCTION_SQUARE_WAVE 0
-#define SB300_SOUND_FUNCTION_ANALOG 1
-
 struct SoundCardCommandEntry {
    uint8_t soundFunction;
    uint8_t soundRegister;
@@ -51,7 +48,6 @@ struct SoundEffectEntry {
    bool inUse;
 };
 
-#define INVALID_SOUND_INDEX 0xFFFF
 
 class AudioHandler {
  public:
@@ -83,6 +79,7 @@ class AudioHandler {
       return QueueSound(soundIndex, AUDIO_PLAY_TYPE_WAV_TRIGGER, timeToPlay, overrideVolume);
    }
 
+   // Not used in this code
    bool QueueSoundCardCommand(uint8_t scFunction, uint8_t scRegister, uint8_t scData, unsigned long startTime);
 
    bool PlaySoundCardWhenPossible(uint16_t soundEffectNum, unsigned long currentTime, unsigned long requestedPlayTime = 0,

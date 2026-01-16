@@ -8,7 +8,7 @@ Trident 2020 is a single-ball pinball machine controller running on Arduino MEGA
 ### Core Components
 - **RPU Library** (`lib/RPU/`): Hardware abstraction layer for vintage pinball MPU boards (-17, -35, 100, 200 architectures). Handles low-level PIA chip communication, display multiplexing, switch/lamp matrices, and solenoid control
 - **Main Game Logic** (`src/main.cpp`): 2900+ line state machine managing game modes, scoring, and player progression
-- **AudioHandler** (`src/AudioHandler.cpp`, `include/AudioHandler.h`): Unified audio system supporting both original sound card commands and WAV Trigger board. Manages ducking, priorities, and queued playback
+- **AudioHandler** (`src/AudioHandler.cpp`, `include/AudioHandler.h`): Unified audio system supporting both original sound card commands and WAV Trigger board. Manages ducking, priorities, and queued playback. Must call `Audio.Update(CurrentTime)` every loop iteration
 - **Hardware Definitions** (`include/Trident2020.h`): Game-specific mappings of switches (SW_*), solenoids (SOL_*), and lamps using `constexpr` for zero runtime overhead
 
 ### State Machine Pattern
@@ -25,13 +25,19 @@ Game modes use bitwise flags for composite states - check with `(GameMode & FLAG
 - Lamps controlled via `RPU_SetLampState(lampNum, on/off, dim, flashing)`
 - Display updates happen automatically via interrupt - just call `RPU_SetDisplay(playerNum, score)`
 
-## Build System (PlatformIO)
+## Build System
 
-### Environments in platformio.ini
-Five build targets for different RPU hardware revisions (rev1, rev2, rev3, rev4, rev102). Key differences:
-- Rev 1-2: Arduino Nano (ATmega328)
-- Rev 3-4, 102: Arduino MEGA 2560 (ATmega2560)
-- Build flags control hardware features via compile-time defines
+This project supports both PlatformIO and CMake. **PlatformIO is recommended** for quick development and flashing to hardware.
+
+### PlatformIO Build Environments
+Five build environments in [platformio.ini](../platformio.ini) for different RPU hardware revisions:
+- **rev3, rev4**: Arduino MEGA 2560 (standard and with display/WIFI)
+- **rev100, rev101, rev102**: CPU socket interposer variants
+- Rev 1-2 (Arduino Nano) are commented out - Trident2020 requires MEGA 2560
+
+Key configuration:
+- `platform = atmelavr`, `board = megaatmega2560`, `framework = arduino`
+- Build flags set in `build_flags` control hardware features via compile-time defines
 
 ### Critical Build Flags
 ```ini
@@ -55,6 +61,21 @@ pio run -e rpu_os_hardware_rev4 -t upload
 pio device monitor -b 115200
 ```
 
+### CMake Build (Alternative)
+CMake support is available for IDE integration and library development. See [README_CMAKE.md](../README_CMAKE.md) for details.
+
+```bash
+# Using presets
+cmake --preset rev4          # Configure for Rev 4
+cmake --build --preset rev4  # Build
+
+# Manual configuration
+cmake -B build -DRPU_BUILD_FOR_REV4=ON
+cmake --build build
+```
+
+**Note:** PlatformIO handles Arduino toolchain and dependencies automatically. CMake requires manual setup but offers better IDE integration (CLion, VS Code CMake Tools).
+
 ## Audio System
 
 The `AudioHandler` class abstracts multiple audio backends:
@@ -67,7 +88,20 @@ Audio files referenced in [README.md](../README.md) Google Drive link. The syste
 - Priority-based notification queueing
 - Future-timed sound queuing with `QueueSound(soundIndex, audioType, playTime)`
 
-Always call `Audio.Update(CurrentTime)` in the main loop.
+**Critical:** Always call `Audio.Update(CurrentTime)` in the main loop. Example usage:
+```cpp
+// Setup
+Audio.InitDevices(AUDIO_PLAY_TYPE_WAV_TRIGGER | AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS);
+Audio.SetMusicDuckingGain(16);  // Gain reduction for music during callouts
+
+// During gameplay
+Audio.PlayBackgroundSong(SOUND_EFFECT_BACKGROUND_1, true);  // Loop background track
+Audio.PlaySound(soundNum, AUDIO_PLAY_TYPE_WAV_TRIGGER);     // Play sound effect
+Audio.QueueSound(0x02, AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS, CurrentTime);  // Queue sound card command
+
+// In loop()
+Audio.Update(CurrentTime);  // Required for queued sounds, ducking, and notifications
+```
 
 ## Code Conventions
 
