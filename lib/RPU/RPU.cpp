@@ -19,8 +19,10 @@
  */
 
 #include "RPU.h"
+#include "CircularStack.h"
 #include "RPU_Addresses.h"
 #include "RPU_config.h"
+#include "TimedStack.h"
 #include <Arduino.h>
 #include <EEPROM.h>
 
@@ -117,9 +119,7 @@ static uint8_t DipSwitches[4];
 #define SOLENOID_STACK_SIZE 60
 #endif
 #define SOLENOID_STACK_EMPTY 0xFF
-static volatile uint8_t SolenoidStackFirst;
-static volatile uint8_t SolenoidStackLast;
-static volatile uint8_t SolenoidStack[SOLENOID_STACK_SIZE];
+static CircularStack<uint8_t, SOLENOID_STACK_SIZE, SOLENOID_STACK_EMPTY> SolenoidStack;
 static bool SolenoidStackEnabled = true;
 static volatile uint8_t CurrentSolenoidByte = 0xFF;
 static volatile uint8_t RevertSolenoidBit = 0x00;
@@ -133,13 +133,11 @@ struct TimedSolenoidEntry {
    uint8_t numPushes;
    uint8_t disableOverride;
 };
-static TimedSolenoidEntry TimedSolenoidStack[TIMED_SOLENOID_STACK_SIZE] = {0, 0, 0, 0, 0};
+static TimedStack<TimedSolenoidEntry, TIMED_SOLENOID_STACK_SIZE> TimedSolenoidStack;
 
 #define SWITCH_STACK_SIZE 60
 #define SWITCH_STACK_EMPTY 0xFF
-static volatile uint8_t SwitchStackFirst;
-static volatile uint8_t SwitchStackLast;
-static volatile uint8_t SwitchStack[SWITCH_STACK_SIZE];
+static CircularStack<uint8_t, SWITCH_STACK_SIZE, SWITCH_STACK_EMPTY> SwitchStack;
 
 // The WTYPE1 and WTYPE2 sound cards can only play one sound at a time,
 // so these structures allow the app to send in as many calls as they
@@ -151,9 +149,7 @@ static volatile uint8_t SwitchStack[SWITCH_STACK_SIZE];
 
 #define SOUND_STACK_SIZE 64
 #define SOUND_STACK_EMPTY 0x0000
-static volatile uint8_t SoundStackFirst;
-static volatile uint8_t SoundStackLast;
-static volatile unsigned short SoundStack[SOUND_STACK_SIZE];
+static CircularStack<unsigned short, SOUND_STACK_SIZE, SOUND_STACK_EMPTY> SoundStack;
 
 #define TIMED_SOUND_STACK_SIZE 20
 struct TimedSoundEntry {
@@ -162,7 +158,7 @@ struct TimedSoundEntry {
    unsigned short soundNumber;
    uint8_t numPushes;
 };
-static TimedSoundEntry TimedSoundStack[TIMED_SOUND_STACK_SIZE] = {0, 0, 0, 0};
+static TimedStack<TimedSoundEntry, TIMED_SOUND_STACK_SIZE> TimedSoundStack;
 #endif
 
 #if (RPU_OS_HARDWARE_REV == 1) or (RPU_OS_HARDWARE_REV == 2)
@@ -1229,13 +1225,7 @@ void RPU_SetBoardLEDs(bool LED1, bool LED2, uint8_t BCDValue) {
  */
 
 int SpaceLeftOnSwitchStack() {
-   if (SwitchStackFirst >= SWITCH_STACK_SIZE || SwitchStackLast >= SWITCH_STACK_SIZE) {
-      return 0;
-   }
-   if (SwitchStackLast >= SwitchStackFirst) {
-      return ((SWITCH_STACK_SIZE - 1) - (SwitchStackLast - SwitchStackFirst));
-   }
-   return (SwitchStackFirst - SwitchStackLast) - 1;
+   return SwitchStack.spaceLeft();
 }
 
 void PushToSwitchStack(uint8_t switchNumber) {
@@ -1252,18 +1242,12 @@ void PushToSwitchStack(uint8_t switchNumber) {
    // Self test is a special case - there's no good way to debounce it
    // so if it's already first on the stack, ignore it
    if (switchNumber == SW_SELF_TEST_SWITCH) {
-      if (SwitchStackLast != SwitchStackFirst && SwitchStack[SwitchStackFirst] == SW_SELF_TEST_SWITCH) {
+      if (!SwitchStack.isEmpty() && SwitchStack.peek() == SW_SELF_TEST_SWITCH) {
          return;
       }
    }
 
-   SwitchStack[SwitchStackLast] = switchNumber;
-
-   SwitchStackLast += 1;
-   if (SwitchStackLast == SWITCH_STACK_SIZE) {
-      // If the end index is off the end, then wrap
-      SwitchStackLast = 0;
-   }
+   SwitchStack.push(switchNumber);
 }
 
 void RPU_PushToSwitchStack(uint8_t switchNumber) {
@@ -1271,19 +1255,7 @@ void RPU_PushToSwitchStack(uint8_t switchNumber) {
 }
 
 uint8_t RPU_PullFirstFromSwitchStack() {
-   // If first and last are equal, there's nothing on the stack
-   if (SwitchStackFirst == SwitchStackLast) {
-      return SWITCH_STACK_EMPTY;
-   }
-
-   uint8_t retVal = SwitchStack[SwitchStackFirst];
-
-   SwitchStackFirst += 1;
-   if (SwitchStackFirst >= SWITCH_STACK_SIZE) {
-      SwitchStackFirst = 0;
-   }
-
-   return retVal;
+   return SwitchStack.pull();
 }
 
 bool RPU_ReadSingleSwitchState(uint8_t switchNum) {
@@ -1340,13 +1312,7 @@ bool RPU_GetUpDownSwitchState() {
  */
 
 int SpaceLeftOnSolenoidStack() {
-   if (SolenoidStackFirst >= SOLENOID_STACK_SIZE || SolenoidStackLast >= SOLENOID_STACK_SIZE) {
-      return 0;
-   }
-   if (SolenoidStackLast >= SolenoidStackFirst) {
-      return ((SOLENOID_STACK_SIZE - 1) - (SolenoidStackLast - SolenoidStackFirst));
-   }
-   return (SolenoidStackFirst - SolenoidStackLast) - 1;
+   return SolenoidStack.spaceLeft();
 }
 
 void RPU_PushToSolenoidStack(uint8_t solenoidNumber, uint8_t numPushes, bool disableOverride) {
@@ -1359,81 +1325,49 @@ void RPU_PushToSolenoidStack(uint8_t solenoidNumber, uint8_t numPushes, bool dis
       return;
    }
 
-   // If the solenoid stack last index is out of range, then it's an error - return
-   if (SpaceLeftOnSolenoidStack() == 0) {
-      return;
-   }
-
    for (int count = 0; count < numPushes; count++) {
-      SolenoidStack[SolenoidStackLast] = solenoidNumber;
-
-      SolenoidStackLast += 1;
-      if (SolenoidStackLast == SOLENOID_STACK_SIZE) {
-         // If the end index is off the end, then wrap
-         SolenoidStackLast = 0;
-      }
-      // If the stack is now full, return
-      if (SpaceLeftOnSolenoidStack() == 0) {
-         return;
+      if (!SolenoidStack.push(solenoidNumber)) {
+         return; // Stack is full
       }
    }
 }
 
 void PushToFrontOfSolenoidStack(uint8_t solenoidNumber, uint8_t numPushes) {
-   // If the stack is full, return
-   if (SpaceLeftOnSolenoidStack() == 0 || !SolenoidStackEnabled) {
+   // If the stack is full or disabled, return
+   if (!SolenoidStackEnabled) {
       return;
    }
 
    for (int count = 0; count < numPushes; count++) {
-      if (SolenoidStackFirst == 0) {
-         SolenoidStackFirst = SOLENOID_STACK_SIZE - 1;
-      } else {
-         SolenoidStackFirst -= 1;
-      }
-      SolenoidStack[SolenoidStackFirst] = solenoidNumber;
-      if (SpaceLeftOnSolenoidStack() == 0) {
-         return;
+      if (!SolenoidStack.pushFront(solenoidNumber)) {
+         return; // Stack is full
       }
    }
 }
 
 uint8_t PullFirstFromSolenoidStack() {
-   // If first and last are equal, there's nothing on the stack
-   if (SolenoidStackFirst == SolenoidStackLast) {
-      return SOLENOID_STACK_EMPTY;
-   }
-
-   uint8_t retVal = SolenoidStack[SolenoidStackFirst];
-
-   SolenoidStackFirst += 1;
-   if (SolenoidStackFirst >= SOLENOID_STACK_SIZE) {
-      SolenoidStackFirst = 0;
-   }
-
-   return retVal;
+   return SolenoidStack.pull();
 }
 
 bool RPU_PushToTimedSolenoidStack(uint8_t solenoidNumber, uint8_t numPushes, unsigned long whenToFire, bool disableOverride) {
-   for (int count = 0; count < TIMED_SOLENOID_STACK_SIZE; count++) {
-      if (!TimedSolenoidStack[count].inUse) {
-         TimedSolenoidStack[count].inUse = true;
-         TimedSolenoidStack[count].pushTime = whenToFire;
-         TimedSolenoidStack[count].disableOverride = disableOverride;
-         TimedSolenoidStack[count].solenoidNumber = solenoidNumber;
-         TimedSolenoidStack[count].numPushes = numPushes;
-         return true;
-      }
+   uint8_t slot = TimedSolenoidStack.findFreeSlot();
+   if (slot >= TimedSolenoidStack.getSize()) {
+      return false;
    }
-   return false;
+   TimedSolenoidStack.entries[slot].inUse = true;
+   TimedSolenoidStack.entries[slot].pushTime = whenToFire;
+   TimedSolenoidStack.entries[slot].disableOverride = disableOverride;
+   TimedSolenoidStack.entries[slot].solenoidNumber = solenoidNumber;
+   TimedSolenoidStack.entries[slot].numPushes = numPushes;
+   return true;
 }
 
 void RPU_UpdateTimedSolenoidStack(unsigned long curTime) {
-   for (int count = 0; count < TIMED_SOLENOID_STACK_SIZE; count++) {
-      if (TimedSolenoidStack[count].inUse && TimedSolenoidStack[count].pushTime < curTime) {
-         RPU_PushToSolenoidStack(TimedSolenoidStack[count].solenoidNumber, TimedSolenoidStack[count].numPushes,
-                                 TimedSolenoidStack[count].disableOverride);
-         TimedSolenoidStack[count].inUse = false;
+   for (int count = 0; count < TimedSolenoidStack.getSize(); count++) {
+      if (TimedSolenoidStack.entries[count].inUse && TimedSolenoidStack.entries[count].pushTime < curTime) {
+         RPU_PushToSolenoidStack(TimedSolenoidStack.entries[count].solenoidNumber, TimedSolenoidStack.entries[count].numPushes,
+                                 TimedSolenoidStack.entries[count].disableOverride);
+         TimedSolenoidStack.entries[count].inUse = false;
       }
    }
 }
@@ -2153,17 +2087,14 @@ void RPU_TurnOffAllLamps() {
 
 void RPU_ClearVariables() {
    // Reset solenoid stack
-   SolenoidStackFirst = 0;
-   SolenoidStackLast = 0;
+   SolenoidStack.reset();
 
    // Reset switch stack
-   SwitchStackFirst = 0;
-   SwitchStackLast = 0;
+   SwitchStack.reset();
 
 #if (RPU_MPU_ARCHITECTURE > 9)
    // Reset sound stack
-   SoundStackFirst = 0;
-   SoundStackLast = 0;
+   SoundStack.reset();
 #endif
 
    CurrentDisplayDigit = 0;
@@ -2199,167 +2130,12 @@ void RPU_ClearVariables() {
       SwitchesNow[switchCount] = 0xFF;
    }
 
-   for (uint8_t count = 0; count < TIMED_SOLENOID_STACK_SIZE; count++) {
-      TimedSolenoidStack[count].inUse = 0;
-      TimedSolenoidStack[count].pushTime = 0;
-      TimedSolenoidStack[count].solenoidNumber = 0;
-      TimedSolenoidStack[count].numPushes = 0;
-      TimedSolenoidStack[count].disableOverride = 0;
-   }
+   TimedSolenoidStack.reset();
 
 #if (RPU_MPU_ARCHITECTURE > 9)
-   for (uint8_t count = 0; count < TIMED_SOUND_STACK_SIZE; count++) {
-      TimedSoundStack[count].inUse = 0;
-      TimedSoundStack[count].pushTime = 0;
-      TimedSoundStack[count].soundNumber = 0;
-      TimedSoundStack[count].numPushes = 0;
-   }
+   TimedSoundStack.reset();
 #endif
 }
-
-/******************************************************
- *   Sound Handling Functions
- */
-
-#ifdef RPU_OS_USE_S_AND_T
-
-void RPU_PlaySoundSAndT(uint8_t soundByte) {
-   uint8_t oldSolenoidControlByte, soundLowerNibble, soundUpperNibble;
-
-   // mask further zero-crossing interrupts during this
-   noInterrupts();
-
-   // Get the current value of U11:PortB - current solenoids
-   oldSolenoidControlByte = RPU_DataRead(ADDRESS_U11_B);
-   soundLowerNibble = (oldSolenoidControlByte & 0xF0) | (soundByte & 0x0F);
-   soundUpperNibble = (oldSolenoidControlByte & 0xF0) | (soundByte / 16);
-
-   // Put 1s on momentary solenoid lines
-   RPU_DataWrite(ADDRESS_U11_B, oldSolenoidControlByte | 0x0F);
-
-   // Put sound latch low
-   RPU_DataWrite(ADDRESS_U11_B_CONTROL, 0x34);
-
-   // Let the strobe stay low for a moment
-   delayMicroseconds(32);
-
-   // Put sound latch high
-   RPU_DataWrite(ADDRESS_U11_B_CONTROL, 0x3C);
-
-   // put the new uint8_t on U11:PortB (the lower nibble is currently loaded)
-   RPU_DataWrite(ADDRESS_U11_B, soundLowerNibble);
-
-   // wait 138 microseconds
-   delayMicroseconds(138);
-
-   // put the new uint8_t on U11:PortB (the uppper nibble is currently loaded)
-   RPU_DataWrite(ADDRESS_U11_B, soundUpperNibble);
-
-   // wait 76 microseconds
-   delayMicroseconds(145);
-
-   // Restore the original solenoid uint8_t
-   RPU_DataWrite(ADDRESS_U11_B, oldSolenoidControlByte);
-
-   // Put sound latch low
-   RPU_DataWrite(ADDRESS_U11_B_CONTROL, 0x34);
-
-   interrupts();
-}
-#endif
-
-// With hardware rev 1, this function relies on D13 being connected to A5 because it writes to address 0xA0
-// A0  - A0   0
-// A1  - A1   0
-// A2  - n/c  0
-// A3  - A2   0
-// A4  - A3   0
-// A5  - D13  1
-// A6  - n/c  0
-// A7  - A4   1
-// A8  - n/c  0
-// A9  - GND  0
-// A10 - n/c  0
-// A11 - n/c  0
-// A12 - GND  0
-// A13 - n/c  0
-#ifdef RPU_OS_USE_SB100
-void RPU_PlaySB100(uint8_t soundByte) {
-#if (RPU_OS_HARDWARE_REV == 1)
-   PORTB = PORTB | 0x20;
-#endif
-
-   RPU_DataWrite(ADDRESS_SB100, soundByte);
-
-#if (RPU_OS_HARDWARE_REV == 1)
-   PORTB = PORTB & 0xDF;
-#endif
-}
-
-#if (RPU_OS_HARDWARE_REV == 2)
-void RPU_PlaySB100Chime(uint8_t soundByte) {
-   RPU_DataWrite(ADDRESS_SB100_CHIMES, soundByte);
-}
-#endif
-#endif
-
-#ifdef RPU_OS_USE_DASH51
-void RPU_PlaySoundDash51(uint8_t soundByte) {
-   // This device has 32 possible sounds, but they're mapped to
-   // 0 - 15 and then 128 - 143 on the original card, with bits b4, b5, and b6 reserved
-   // for timing controls.
-   // For ease of use, I've mapped the sounds from 0-31
-
-   uint8_t oldSolenoidControlByte, soundLowerNibble, displayWithSoundBit4, oldDisplayByte;
-
-   // mask further zero-crossing interrupts during this
-   noInterrupts();
-
-   // Get the current value of U11:PortB - current solenoids
-   oldSolenoidControlByte = RPU_DataRead(ADDRESS_U11_B);
-   oldDisplayByte = RPU_DataRead(ADDRESS_U11_A);
-   soundLowerNibble = (oldSolenoidControlByte & 0xF0) | (soundByte & 0x0F);
-   displayWithSoundBit4 = oldDisplayByte;
-   if (soundByte & 0x10) {
-      displayWithSoundBit4 |= 0x02;
-   } else {
-      displayWithSoundBit4 &= 0xFD;
-   }
-
-   // Put 1s on momentary solenoid lines
-   RPU_DataWrite(ADDRESS_U11_B, oldSolenoidControlByte | 0x0F);
-
-   // Put sound latch low
-   RPU_DataWrite(ADDRESS_U11_B_CONTROL, 0x34);
-
-   // Let the strobe stay low for a moment
-   delayMicroseconds(68);
-
-   // put bit 4 on Display Enable 7
-   RPU_DataWrite(ADDRESS_U11_A, displayWithSoundBit4);
-
-   // Put sound latch high
-   RPU_DataWrite(ADDRESS_U11_B_CONTROL, 0x3C);
-
-   // put the new uint8_t on U11:PortB (the lower nibble is currently loaded)
-   RPU_DataWrite(ADDRESS_U11_B, soundLowerNibble);
-
-   // wait 180 microseconds
-   delayMicroseconds(180);
-
-   // Restore the original solenoid uint8_t
-   RPU_DataWrite(ADDRESS_U11_B, oldSolenoidControlByte);
-
-   // Restore the original display uint8_t
-   RPU_DataWrite(ADDRESS_U11_A, oldDisplayByte);
-
-   // Put sound latch low
-   RPU_DataWrite(ADDRESS_U11_B_CONTROL, 0x34);
-
-   interrupts();
-}
-
-#endif
 
 #if (RPU_OS_HARDWARE_REV >= 2 && defined(RPU_OS_USE_SB300))
 
@@ -2371,109 +2147,6 @@ void RPU_PlaySB300Analog(uint8_t soundRegister, uint8_t soundByte) {
    RPU_DataWrite(ADDRESS_SB300_ANALOG + soundRegister, soundByte);
 }
 
-#endif
-
-#if defined(RPU_OS_USE_WTYPE_1_SOUND) || defined(RPU_OS_USE_WTYPE_2_SOUND)
-#if defined(RPU_OS_USE_WTYPE_2_SOUND)
-unsigned short SoundLowerLimit = 0x0000;
-unsigned short SoundUpperLimit = 0x0080;
-#else
-unsigned short SoundLowerLimit = 0x0100;
-unsigned short SoundUpperLimit = 0x1F00;
-#endif
-
-void RPU_SetSoundValueLimits(unsigned short lowerLimit, unsigned short upperLimit) {
-   SoundLowerLimit = lowerLimit;
-   SoundUpperLimit = upperLimit;
-}
-
-int SpaceLeftOnSoundStack() {
-   if (SoundStackFirst >= SOUND_STACK_SIZE || SoundStackLast >= SOUND_STACK_SIZE) {
-      return 0;
-   }
-   if (SoundStackLast >= SoundStackFirst) {
-      return ((SOUND_STACK_SIZE - 1) - (SoundStackLast - SoundStackFirst));
-   }
-   return (SoundStackFirst - SoundStackLast) - 1;
-}
-
-void RPU_PushToSoundStack(unsigned short soundNumber, uint8_t numPushes) {
-   // If the solenoid stack last index is out of range, then it's an error - return
-   if (SpaceLeftOnSoundStack() == 0) {
-      return;
-   }
-   if (soundNumber < SoundLowerLimit || soundNumber > SoundUpperLimit) {
-      return;
-   }
-
-   for (int count = 0; count < numPushes; count++) {
-      SoundStack[SoundStackLast] = soundNumber;
-
-      SoundStackLast += 1;
-      if (SoundStackLast == SOUND_STACK_SIZE) {
-         // If the end index is off the end, then wrap
-         SoundStackLast = 0;
-      }
-      // If the stack is now full, return
-      if (SpaceLeftOnSoundStack() == 0) {
-         return;
-      }
-   }
-}
-
-unsigned short PullFirstFromSoundStack() {
-   // If first and last are equal, there's nothing on the stack
-   if (SoundStackFirst == SoundStackLast) {
-      return SOUND_STACK_EMPTY;
-   }
-
-   unsigned short retVal = SoundStack[SoundStackFirst];
-
-   SoundStackFirst += 1;
-   if (SoundStackFirst >= SOUND_STACK_SIZE) {
-      SoundStackFirst = 0;
-   }
-
-   return retVal;
-}
-
-bool RPU_PushToTimedSoundStack(unsigned short soundNumber, uint8_t numPushes, unsigned long whenToPlay) {
-   for (int count = 0; count < TIMED_SOUND_STACK_SIZE; count++) {
-      if (!TimedSoundStack[count].inUse) {
-         TimedSoundStack[count].inUse = true;
-         TimedSoundStack[count].pushTime = whenToPlay;
-         TimedSoundStack[count].soundNumber = soundNumber;
-         TimedSoundStack[count].numPushes = numPushes;
-         return true;
-      }
-   }
-   return false;
-}
-
-void RPU_UpdateTimedSoundStack(unsigned long curTime) {
-   for (int count = 0; count < TIMED_SOUND_STACK_SIZE; count++) {
-      if (TimedSoundStack[count].inUse && TimedSoundStack[count].pushTime < curTime) {
-         RPU_PushToSoundStack(TimedSoundStack[count].soundNumber, TimedSoundStack[count].numPushes);
-         TimedSoundStack[count].inUse = false;
-      }
-   }
-}
-#endif
-
-#ifdef RPU_OS_USE_WTYPE_11_SOUND
-void RPU_PlayW11Sound(uint8_t soundNum) {
-   RPU_DataWrite(PIA_SOUND_11_PORT_A, soundNum);
-   // Strobe CA2
-   RPU_DataWrite(PIA_SOUND_11_CONTROL_A, 0x34);
-   RPU_DataWrite(PIA_SOUND_11_CONTROL_A, 0x3C);
-}
-
-void RPU_PlayW11Music(uint8_t songNum) {
-   RPU_DataWrite(PIA_WIDGET_PORT_B, songNum);
-   // Strobe CA2
-   RPU_DataWrite(PIA_WIDGET_CONTROL_B, 0x34);
-   RPU_DataWrite(PIA_WIDGET_CONTROL_B, 0x3C);
-}
 #endif
 
 /******************************************************
