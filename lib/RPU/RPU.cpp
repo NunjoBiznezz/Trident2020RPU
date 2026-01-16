@@ -24,6 +24,7 @@
 #include <EEPROM.h>
 #include "OsHardware.h"
 
+
 int NumGameSwitches = 0;
 int NumGamePrioritySwitches = 0;
 const PlayfieldAndCabinetSwitch* GameSwitches = NULL;

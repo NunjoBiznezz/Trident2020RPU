@@ -17,6 +17,9 @@ option(RPU_USE_DIP_SWITCHES "Enable DIP switch reading" ON)
 option(RPU_USE_SB100 "Enable SB-100 sound card support" ON)
 option(RPU_USE_SB300 "Enable SB-300 sound card support" ON)
 option(RPU_USE_WAV_TRIGGER "Enable WavTrigger 1.3 support" ON)
+option(RPU_USE_7_DIGIT_DISPLAYS "Enable 7-digit displays" OFF)
+option(RPU_USE_6_DIGIT_CREDIT_WITH_7_DIGIT "Use 6-digit credit display with 7-digit displays" OFF)
+option(RPU_USE_AUX_LAMPS "Enable auxiliary lamps" OFF)
 
 # Determine board type based on revision (all supported revisions use MEGA)
 set(ARDUINO_BOARD "megaatmega2560")
@@ -79,11 +82,21 @@ if(RPU_BUILD_FOR_REV102 AND ENABLE_DEBUG_MESSAGES)
     )
 endif()
 
-# Add RPU library with feature flags
+# Pass required architecture configuration to RPU library
+set(RPU_MPU_ARCHITECTURE 1 CACHE STRING "" FORCE)
+set(RPU_OS_HARDWARE_REV ${RPU_HARDWARE_REV} CACHE STRING "" FORCE)
+set(RPU_MPU_BUILD_FOR_6800 1 CACHE STRING "" FORCE)
+
+# Pass feature flags to RPU library
 set(RPU_ENABLE_DIP_SWITCHES ${RPU_USE_DIP_SWITCHES} CACHE BOOL "" FORCE)
 set(RPU_ENABLE_SB100 ${RPU_USE_SB100} CACHE BOOL "" FORCE)
 set(RPU_ENABLE_SB300 ${RPU_USE_SB300} CACHE BOOL "" FORCE)
 set(RPU_ENABLE_WAV_TRIGGER ${RPU_USE_WAV_TRIGGER} CACHE BOOL "" FORCE)
+set(RPU_ENABLE_7_DIGIT_DISPLAYS ${RPU_USE_7_DIGIT_DISPLAYS} CACHE BOOL "" FORCE)
+set(RPU_ENABLE_6_DIGIT_CREDIT_WITH_7_DIGIT ${RPU_USE_6_DIGIT_CREDIT_WITH_7_DIGIT} CACHE BOOL "" FORCE)
+set(RPU_ENABLE_AUX_LAMPS ${RPU_USE_AUX_LAMPS} CACHE BOOL "" FORCE)
+
+# Add RPU library
 add_subdirectory(lib/RPU)
 target_link_libraries(${PROJECT_NAME} PRIVATE RPU)
 

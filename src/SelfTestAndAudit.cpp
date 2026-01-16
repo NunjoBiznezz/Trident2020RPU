@@ -179,7 +179,7 @@ int RunBaseSelfTest(int curState, bool curStateChanged, unsigned long CurrentTim
          RPU_DisableSolenoidStack();
          RPU_SetDisableFlippers(true);
          RPU_TurnOffAllLamps();
-         for (int count = 0; count < RPU_MAX_LAMPS; count++) {
+         for (unsigned count = 0; count < RPU_MAX_LAMPS; count++) {
             RPU_SetLampState(count, 1, 0, 500);
          }
          CurValue = 99;
@@ -204,7 +204,7 @@ int RunBaseSelfTest(int curState, bool curStateChanged, unsigned long CurrentTim
             }
          }
          if (CurValue == 99) {
-            for (int count = 0; count < RPU_MAX_LAMPS; count++) {
+            for (unsigned count = 0; count < RPU_MAX_LAMPS; count++) {
                RPU_SetLampState(count, 1, 0, 500);
             }
          } else {

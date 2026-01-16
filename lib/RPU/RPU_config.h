@@ -20,6 +20,8 @@
 
 #ifndef RPU_CONFIG_H
 
+#include <stdint.h>
+
 /***
 
   Use this file to set game-specific and hardware-specific parameters
@@ -64,11 +66,12 @@
 //   RPU_OS_USE_SB100 - Enable SB-100 sound card support
 //   RPU_OS_USE_SB300 - Enable SB-300 sound card support (requires hardware rev >= 2)
 //   RPU_OS_USE_WAV_TRIGGER_1p3 - Enable WavTrigger 1.3 support
+//   RPU_OS_USE_7_DIGIT_DISPLAYS - Enable 7-digit displays
+//   RPU_OS_USE_6_DIGIT_CREDIT_DISPLAY_WITH_7_DIGIT_DISPLAYS - Use 6-digit credit with 7-digit displays
+//   RPU_OS_USE_AUX_LAMPS - Enable auxiliary lamps (88 lamps instead of 60)
 //   RPU_OS_USE_S_AND_T - Enable S&T sound card support
 //   RPU_OS_USE_DASH51 - Enable Dash-51 sound card support
 //   RPU_OS_DISABLE_CPC_FOR_SPACE - Disable CPC code to save space
-// #define RPU_OS_USE_AUX_LAMPS
-// #define RPU_OS_USE_7_DIGIT_DISPLAYS
 // #define RPU_USE_EXTENDED_SWITCHES_ON_PB4
 // #define RPU_USE_EXTENDED_SWITCHES_ON_PB7
 // #define RPU_OS_USE_WTYPE_1_SOUND
@@ -100,25 +103,25 @@
 // #define RPU_OS_ADJUSTABLE_DISPLAY_INTERRUPT
 
 #ifdef RPU_OS_USE_6_DIGIT_CREDIT_DISPLAY_WITH_7_DIGIT_DISPLAYS
-#define RPU_OS_MASK_SHIFT_1 0x60
-#define RPU_OS_MASK_SHIFT_2 0x0C
+constexpr uint8_t RPU_OS_MASK_SHIFT_1 = 0x60;
+constexpr uint8_t RPU_OS_MASK_SHIFT_2 = 0x0C;
 #else
-#define RPU_OS_MASK_SHIFT_1 0x30
-#define RPU_OS_MASK_SHIFT_2 0x06
+constexpr uint8_t RPU_OS_MASK_SHIFT_1 = 0x30;
+constexpr uint8_t RPU_OS_MASK_SHIFT_2 = 0x06;
 #endif
 
 #ifdef RPU_OS_USE_7_DIGIT_DISPLAYS
-#define RPU_OS_MAX_DISPLAY_SCORE 9999999
-#define RPU_OS_NUM_DIGITS 7
-#define RPU_OS_ALL_DIGITS_MASK 0x7F
+constexpr long RPU_OS_MAX_DISPLAY_SCORE = 9999999;
+constexpr int RPU_OS_NUM_DIGITS = 7;
+constexpr uint8_t RPU_OS_ALL_DIGITS_MASK = 0x7F;
 #else
-#define RPU_OS_MAX_DISPLAY_SCORE 999999
-#define RPU_OS_NUM_DIGITS 6
-#define RPU_OS_ALL_DIGITS_MASK 0x3F
+constexpr long RPU_OS_MAX_DISPLAY_SCORE = 999999;
+constexpr int RPU_OS_NUM_DIGITS = 6;
+constexpr uint8_t RPU_OS_ALL_DIGITS_MASK = 0x3F;
 #endif
 
-#define CONTSOL_DISABLE_FLIPPERS 0x40
-#define CONTSOL_DISABLE_COIN_LOCKOUT 0x20
+constexpr uint8_t CONTSOL_DISABLE_FLIPPERS = 0x40;
+constexpr uint8_t CONTSOL_DISABLE_COIN_LOCKOUT = 0x20;
 
 #define RPU_OS_SWITCH_DELAY_IN_MICROSECONDS 200
 #define RPU_OS_TIMING_LOOP_PADDING_IN_MICROSECONDS 70
@@ -127,11 +130,11 @@
 // #define RPU_OS_SLOW_DOWN_LAMP_STROBE  0
 
 #ifdef RPU_OS_USE_AUX_LAMPS
-#define RPU_NUM_LAMP_BANKS 11
-#define RPU_MAX_LAMPS 88
+constexpr int RPU_NUM_LAMP_BANKS = 11;
+constexpr int RPU_MAX_LAMPS = 88;
 #else
-#define RPU_NUM_LAMP_BANKS 8
-#define RPU_MAX_LAMPS 60
+constexpr int RPU_NUM_LAMP_BANKS = 8;
+constexpr int RPU_MAX_LAMPS = 60;
 #endif
 
 #elif (RPU_MPU_ARCHITECTURE > 9)
@@ -140,38 +143,38 @@
  * System 4, 6, 7, 9 or 11 / other MPU boards
  */
 
-#define RPU_NUM_LAMP_BANKS 8
-#define RPU_MAX_LAMPS 64
+constexpr int RPU_NUM_LAMP_BANKS = 8;
+constexpr int RPU_MAX_LAMPS = 64;
 
-#define NUM_SWITCH_BYTES 8
-#define MAX_NUM_SWITCHES 64
+constexpr int NUM_SWITCH_BYTES = 8;
+constexpr int MAX_NUM_SWITCHES = 64;
 
 #if (RPU_MPU_ARCHITECTURE < 13)
-#define RPU_OS_MAX_DISPLAY_SCORE 999999
-#define RPU_OS_NUM_DIGITS 6
-#define RPU_OS_ALL_DIGITS_MASK 0x3F
+constexpr uint16_t RPU_OS_MAX_DISPLAY_SCORE = 999999;
+constexpr uint16_t RPU_OS_NUM_DIGITS = 6;
+constexpr uint16_t RPU_OS_ALL_DIGITS_MASK = 0x3F;
 #else
-#define RPU_OS_MAX_DISPLAY_SCORE 9999999
-#define RPU_OS_NUM_DIGITS 7
-#define RPU_OS_ALL_DIGITS_MASK 0x7F
+constexpr uint16_t RPU_OS_MAX_DISPLAY_SCORE = 9999999;
+constexpr uint16_t RPU_OS_NUM_DIGITS = 7;
+constexpr uint16_t RPU_OS_ALL_DIGITS_MASK = 0x7F;
 #endif
 
 #endif
 
-#define RPU_CREDITS_EEPROM_BYTE 5
-#define RPU_HIGHSCORE_EEPROM_START_BYTE 1
-#define RPU_AWARD_SCORE_1_EEPROM_START_BYTE 10
-#define RPU_AWARD_SCORE_2_EEPROM_START_BYTE 14
-#define RPU_AWARD_SCORE_3_EEPROM_START_BYTE 18
-#define RPU_TOTAL_PLAYS_EEPROM_START_BYTE 26
-#define RPU_TOTAL_REPLAYS_EEPROM_START_BYTE 30
-#define RPU_TOTAL_HISCORE_BEATEN_START_BYTE 34
-#define RPU_CHUTE_2_COINS_START_BYTE 38
-#define RPU_CHUTE_1_COINS_START_BYTE 42
-#define RPU_CHUTE_3_COINS_START_BYTE 46
-#define RPU_CPC_CHUTE_1_SELECTION_BYTE 50
-#define RPU_CPC_CHUTE_2_SELECTION_BYTE 51
-#define RPU_CPC_CHUTE_3_SELECTION_BYTE 52
+constexpr uint16_t RPU_CREDITS_EEPROM_BYTE = 5;
+constexpr uint16_t RPU_HIGHSCORE_EEPROM_START_BYTE = 1;
+constexpr uint16_t RPU_AWARD_SCORE_1_EEPROM_START_BYTE = 10;
+constexpr uint16_t RPU_AWARD_SCORE_2_EEPROM_START_BYTE = 14;
+constexpr uint16_t RPU_AWARD_SCORE_3_EEPROM_START_BYTE = 18;
+constexpr uint16_t RPU_TOTAL_PLAYS_EEPROM_START_BYTE = 26;
+constexpr uint16_t RPU_TOTAL_REPLAYS_EEPROM_START_BYTE = 30;
+constexpr uint16_t RPU_TOTAL_HISCORE_BEATEN_START_BYTE = 34;
+constexpr uint16_t RPU_CHUTE_2_COINS_START_BYTE = 38;
+constexpr uint16_t RPU_CHUTE_1_COINS_START_BYTE = 42;
+constexpr uint16_t RPU_CHUTE_3_COINS_START_BYTE = 46;
+constexpr uint16_t RPU_CPC_CHUTE_1_SELECTION_BYTE = 50;
+constexpr uint16_t RPU_CPC_CHUTE_2_SELECTION_BYTE = 51;
+constexpr uint16_t RPU_CPC_CHUTE_3_SELECTION_BYTE = 52;
 
 #define RPU_CONFIG_H
 #endif
