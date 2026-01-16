@@ -24,6 +24,7 @@
 #include "AudioHandler.h"
 #include "RPU.h"
 #include "RPU_config.h"
+#include "RPU_Addresses.h"
 #include "SelfTestAndAudit.h"
 #include "Trident2020.h"
 #include <Arduino.h>

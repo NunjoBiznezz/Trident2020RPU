@@ -21,6 +21,7 @@
 #include "SelfTestAndAudit.h"
 #include "RPU_config.h"
 #include "RPU.h"
+#include "RPU_Addresses.h"
 #include <Arduino.h>
 
 #define MACHINE_STATE_ATTRACT 0

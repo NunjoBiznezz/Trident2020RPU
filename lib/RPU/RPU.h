@@ -20,7 +20,8 @@
 
 #ifndef RPU_OS_H
 
-#include "RPU_config.h" // include this here for safety sake
+#include "RPU_config.h"    // include this here for safety sake
+
 #include <stdint.h>
 
 #define RPU_OS_MAJOR_VERSION 5
@@ -177,8 +178,8 @@ void RPU_SetBoardLEDs(bool LED1, bool LED2, uint8_t BCDValue = 0xFF);
 #endif
 
 #if !defined(DEBUG_MESSAGES)
-#  define DEBUG_MESSAGES 0
-#endif   
+#define DEBUG_MESSAGES 0
+#endif
 
 #define RPU_OS_H
 #endif
