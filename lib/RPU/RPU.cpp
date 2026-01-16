@@ -18,28 +18,27 @@
     See <https://www.gnu.org/licenses/>.
  */
 
-#include "RPU_config.h"
 #include "RPU.h"
 #include "RPU_Addresses.h"
+#include "RPU_config.h"
 #include <Arduino.h>
 #include <EEPROM.h>
 
-
-int NumGameSwitches = 0;
-int NumGamePrioritySwitches = 0;
-const PlayfieldAndCabinetSwitch* GameSwitches = NULL;
+static int NumGameSwitches = 0;
+static int NumGamePrioritySwitches = 0;
+static const PlayfieldAndCabinetSwitch* GameSwitches = NULL;
 
 /******************************************************
  *   Defines and library variables
  */
 #if !defined(RPU_MPU_BUILD_FOR_6800) || (RPU_MPU_BUILD_FOR_6800 == 1)
-bool UsesM6800Processor = true;
+static bool UsesM6800Processor = true;
 #if (RPU_MPU_ARCHITECTURE > 11) && (RPU_OS_HARDWARE_REV < 102)
 #error \
     "Architecture > 11 doesn't make sense with RPU_MPU_BUILD_FOR_6800=1. Set RPU_MPU_BUILD_FOR_6800 to 0 in RPU_Config.h or choose a different RPU_MPU_ARCHITECTURE"
 #endif
 #else
-bool UsesM6800Processor = false;
+static bool UsesM6800Processor = false;
 #endif
 
 #if (RPU_MPU_ARCHITECTURE < 10)
@@ -76,40 +75,40 @@ bool UsesM6800Processor = false;
 #define INTERRUPT_OCR1A_COUNTER 16574
 #endif
 
-volatile uint8_t BoardLEDs = 0;
-volatile bool UpDownSwitch = false;
-unsigned short ContinuousSolenoidBits = 0;
+static volatile uint8_t BoardLEDs = 0;
+static volatile bool UpDownSwitch = false;
+static unsigned short ContinuousSolenoidBits = 0;
 
-volatile uint8_t DisplayCreditDigits[2];
-volatile uint8_t DisplayCreditDigitEnable;
-volatile uint8_t DisplayBIPDigits[2];
-volatile uint8_t DisplayBIPDigitEnable;
+static volatile uint8_t DisplayCreditDigits[2];
+static volatile uint8_t DisplayCreditDigitEnable;
+static volatile uint8_t DisplayBIPDigits[2];
+static volatile uint8_t DisplayBIPDigitEnable;
 
 #if (RPU_MPU_ARCHITECTURE >= 13)
-volatile uint8_t DisplayCommas;
+static volatile uint8_t DisplayCommas;
 #endif
 
 #if (RPU_MPU_ARCHITECTURE == 15)
-volatile uint8_t DisplayText[2][RPU_OS_NUM_DIGITS];
+static volatile uint8_t DisplayText[2][RPU_OS_NUM_DIGITS];
 #endif
 
 #endif // End of condition based on RPU_MPU_ARCHITECTURE
 
 // Global variables
-volatile uint8_t DisplayDigits[5][RPU_OS_NUM_DIGITS];
-volatile uint8_t DisplayDigitEnable[5];
-volatile bool DisplayOffCycle = false;
-volatile uint8_t CurrentDisplayDigit = 0;
-volatile uint8_t LampStates[RPU_NUM_LAMP_BANKS], LampDim1[RPU_NUM_LAMP_BANKS], LampDim2[RPU_NUM_LAMP_BANKS];
-volatile uint8_t LampFlashPeriod[RPU_MAX_LAMPS];
-uint8_t DimDivisor1 = 2;
-uint8_t DimDivisor2 = 3;
+static volatile uint8_t DisplayDigits[5][RPU_OS_NUM_DIGITS];
+static volatile uint8_t DisplayDigitEnable[5];
+static volatile bool DisplayOffCycle = false;
+static volatile uint8_t CurrentDisplayDigit = 0;
+static volatile uint8_t LampStates[RPU_NUM_LAMP_BANKS], LampDim1[RPU_NUM_LAMP_BANKS], LampDim2[RPU_NUM_LAMP_BANKS];
+static volatile uint8_t LampFlashPeriod[RPU_MAX_LAMPS];
+static uint8_t DimDivisor1 = 2;
+static uint8_t DimDivisor2 = 3;
 
 volatile uint8_t SwitchesMinus2[NUM_SWITCH_BYTES];
 volatile uint8_t SwitchesMinus1[NUM_SWITCH_BYTES];
 volatile uint8_t SwitchesNow[NUM_SWITCH_BYTES];
 #ifdef RPU_OS_USE_DIP_SWITCHES
-uint8_t DipSwitches[4];
+static uint8_t DipSwitches[4];
 #endif
 
 #if (RPU_OS_HARDWARE_REV > 2)
@@ -118,13 +117,13 @@ uint8_t DipSwitches[4];
 #define SOLENOID_STACK_SIZE 60
 #endif
 #define SOLENOID_STACK_EMPTY 0xFF
-volatile uint8_t SolenoidStackFirst;
-volatile uint8_t SolenoidStackLast;
-volatile uint8_t SolenoidStack[SOLENOID_STACK_SIZE];
-bool SolenoidStackEnabled = true;
-volatile uint8_t CurrentSolenoidByte = 0xFF;
-volatile uint8_t RevertSolenoidBit = 0x00;
-volatile uint8_t NumCyclesBeforeRevertingSolenoidByte = 0;
+static volatile uint8_t SolenoidStackFirst;
+static volatile uint8_t SolenoidStackLast;
+static volatile uint8_t SolenoidStack[SOLENOID_STACK_SIZE];
+static bool SolenoidStackEnabled = true;
+static volatile uint8_t CurrentSolenoidByte = 0xFF;
+static volatile uint8_t RevertSolenoidBit = 0x00;
+static volatile uint8_t NumCyclesBeforeRevertingSolenoidByte = 0;
 
 #define TIMED_SOLENOID_STACK_SIZE 30
 struct TimedSolenoidEntry {
@@ -134,13 +133,13 @@ struct TimedSolenoidEntry {
    uint8_t numPushes;
    uint8_t disableOverride;
 };
-TimedSolenoidEntry TimedSolenoidStack[TIMED_SOLENOID_STACK_SIZE] = {0, 0, 0, 0, 0};
+static TimedSolenoidEntry TimedSolenoidStack[TIMED_SOLENOID_STACK_SIZE] = {0, 0, 0, 0, 0};
 
 #define SWITCH_STACK_SIZE 60
 #define SWITCH_STACK_EMPTY 0xFF
-volatile uint8_t SwitchStackFirst;
-volatile uint8_t SwitchStackLast;
-volatile uint8_t SwitchStack[SWITCH_STACK_SIZE];
+static volatile uint8_t SwitchStackFirst;
+static volatile uint8_t SwitchStackLast;
+static volatile uint8_t SwitchStack[SWITCH_STACK_SIZE];
 
 // The WTYPE1 and WTYPE2 sound cards can only play one sound at a time,
 // so these structures allow the app to send in as many calls as they
@@ -152,9 +151,9 @@ volatile uint8_t SwitchStack[SWITCH_STACK_SIZE];
 
 #define SOUND_STACK_SIZE 64
 #define SOUND_STACK_EMPTY 0x0000
-volatile uint8_t SoundStackFirst;
-volatile uint8_t SoundStackLast;
-volatile unsigned short SoundStack[SOUND_STACK_SIZE];
+static volatile uint8_t SoundStackFirst;
+static volatile uint8_t SoundStackLast;
+static volatile unsigned short SoundStack[SOUND_STACK_SIZE];
 
 #define TIMED_SOUND_STACK_SIZE 20
 struct TimedSoundEntry {
@@ -163,7 +162,7 @@ struct TimedSoundEntry {
    unsigned short soundNumber;
    uint8_t numPushes;
 };
-TimedSoundEntry TimedSoundStack[TIMED_SOUND_STACK_SIZE] = {0, 0, 0, 0};
+static TimedSoundEntry TimedSoundStack[TIMED_SOUND_STACK_SIZE] = {0, 0, 0, 0};
 #endif
 
 #if (RPU_OS_HARDWARE_REV == 1) or (RPU_OS_HARDWARE_REV == 2)
@@ -2569,9 +2568,9 @@ bool CheckForMPUClock() {
 
 #if (RPU_MPU_ARCHITECTURE < 10)
 
-volatile int numberOfU10Interrupts = 0;
-volatile int numberOfU11Interrupts = 0;
-volatile uint8_t InsideZeroCrossingInterrupt = 0;
+static volatile int numberOfU10Interrupts = 0;
+static volatile int numberOfU11Interrupts = 0;
+static volatile uint8_t InsideZeroCrossingInterrupt = 0;
 
 // INTERRUPT SERVICE ROUTINE
 // for ARCH 1 (B/S)
@@ -3421,17 +3420,17 @@ bool CheckSwitchStack(uint8_t switchNum) {
    return false;
 }
 
-volatile unsigned long LampPass = 0;
-volatile uint8_t LampStrobe = 0;
-volatile uint8_t DisplayStrobe = 0;
-volatile uint8_t InterruptPass = 0;
-bool NeedToTurnOffTriggeredSolenoids = true;
+static volatile unsigned long LampPass = 0;
+static volatile uint8_t LampStrobe = 0;
+static volatile uint8_t DisplayStrobe = 0;
+static volatile uint8_t InterruptPass = 0;
+static bool NeedToTurnOffTriggeredSolenoids = true;
 #if (RPU_OS_NUM_DIGITS == 6)
-uint8_t BlankingBit[16] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x01, 0x02, 0x01, 0x02, 0x04, 0x08, 0x010, 0x20, 0x01, 0x02};
+static uint8_t BlankingBit[16] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x01, 0x02, 0x01, 0x02, 0x04, 0x08, 0x010, 0x20, 0x01, 0x02};
 #elif (RPU_OS_NUM_DIGITS == 7)
-uint8_t BlankingBit[16] = {0x01, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x02, 0x01, 0x02, 0x04, 0x08, 0x010, 0x20, 0x40};
+static uint8_t BlankingBit[16] = {0x01, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x02, 0x01, 0x02, 0x04, 0x08, 0x010, 0x20, 0x40};
 #endif
-volatile uint8_t UpDownPassCounter = 0;
+static volatile uint8_t UpDownPassCounter = 0;
 
 // INTERRUPT HANDLER
 // for ARCH 10 (WMS)
@@ -3979,7 +3978,7 @@ unsigned long RPU_InitializeMPUArch10(unsigned long initOptions, uint8_t creditR
 #endif
 
 #if (DEBUG_MESSAGES == 1)
-unsigned long LastSwitchReport = 0;
+static unsigned long LastSwitchReport = 0;
 #endif
 
 void RPU_Update(unsigned long currentTime) {
