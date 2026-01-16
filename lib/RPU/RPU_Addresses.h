@@ -18,10 +18,8 @@
     See <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RPU_ADDRESSES_H
-#define RPU_ADDRESSES_H
+#pragma once
 
-#include "RPU_config.h"
 #include <stdint.h>
 
 
@@ -166,4 +164,3 @@ constexpr uint16_t RPU_CPC_CHUTE_2_SELECTION_BYTE = 51;
 constexpr uint16_t RPU_CPC_CHUTE_3_SELECTION_BYTE = 52;
 
 
-#endif // RPU_ADDRESSES_H

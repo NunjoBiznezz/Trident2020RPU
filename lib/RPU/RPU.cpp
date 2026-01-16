@@ -18,11 +18,11 @@
     See <https://www.gnu.org/licenses/>.
  */
 
-#include "RPU.h"
 #include "RPU_config.h"
+#include "RPU.h"
+#include "RPU_Addresses.h"
 #include <Arduino.h>
 #include <EEPROM.h>
-#include "OsHardware.h"
 
 
 int NumGameSwitches = 0;

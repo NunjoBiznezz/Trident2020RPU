@@ -18,9 +18,10 @@
     See <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RPU_OS_H
+#pragma once
 
 #include "RPU_config.h"    // include this here for safety sake
+#include "RPU_Addresses.h" // RAM and EEPROM addressing
 
 #include <stdint.h>
 
@@ -181,5 +182,3 @@ void RPU_SetBoardLEDs(bool LED1, bool LED2, uint8_t BCDValue = 0xFF);
 #define DEBUG_MESSAGES 0
 #endif
 
-#define RPU_OS_H
-#endif

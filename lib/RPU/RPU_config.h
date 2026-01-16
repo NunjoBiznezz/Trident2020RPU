@@ -18,7 +18,7 @@
     See <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RPU_CONFIG_H
+#pragma once
 
 #include <stdint.h>
 
@@ -161,5 +161,3 @@ constexpr uint16_t RPU_OS_ALL_DIGITS_MASK = 0x7F;
 
 #endif
 
-#define RPU_CONFIG_H
-#endif
