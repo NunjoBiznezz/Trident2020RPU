@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include "RPU_config.h"    // include this here for safety sake
 #include "RPU_Addresses.h" // RAM and EEPROM addressing
+#include "RPU_config.h"    // include this here for safety sake
 
 #include <stdint.h>
 
@@ -178,7 +178,18 @@ void RPU_Update(unsigned long currentTime);
 void RPU_SetBoardLEDs(bool LED1, bool LED2, uint8_t BCDValue = 0xFF);
 #endif
 
-#if !defined(DEBUG_MESSAGES)
-#define DEBUG_MESSAGES 0
+#if !defined(RPU_DEBUG_MESSAGES)
+#define RPU_DEBUG_MESSAGES 0
+#define RPU_DEBUG_MESSAGE(msg)
+#define RPU_DEBUG_DELAY(ms)
+#define RPU_DEBUG_PRINTF(...)
+#else
+#define RPU_DEBUG_MESSAGE(msg) Serial.write(msg);
+#define RPU_DEBUG_DELAY(ms) delay(ms)
+#define RPU_DEBUG_PRINTF(...)           \
+   {                                 \
+      char _debug_buf[128];             \
+      sprintf(_debug_buf, __VA_ARGS__); \
+      Serial.write(_debug_buf);         \
+   }
 #endif
-

@@ -1150,13 +1150,9 @@ unsigned long RPU_TestPIAs() {
    uint8_t piaResult = RPU_DataRead(PIA_DISPLAY_CONTROL_A);
    if (piaResult != 0x3D) {
       piaErrors |= RPU_RET_PIA_1_ERROR;
-      if (DEBUG_MESSAGES) {
-         Serial.write("* Error with Display PIA\n");
-      }
+      RPU_DEBUG_MESSAGE("* Error with Display PIA\n");
    } else {
-      if (DEBUG_MESSAGES) {
-         Serial.write("* No error with Display PIA\n");
-      }
+      RPU_DEBUG_MESSAGE("* No error with Display PIA\n");
    }
    piaResult = RPU_DataRead(PIA_DISPLAY_CONTROL_B);
    if (piaResult != 0x3D) {
@@ -2866,9 +2862,7 @@ unsigned long RPU_InitializeMPUArch1(unsigned long initOptions, uint8_t creditRe
 #elif (RPU_OS_HARDWARE_REV == 3)
    (void)creditResetSwitch;
 
-   if (DEBUG_MESSAGES) {
-      Serial.write("* Starting Setup for Rev 3\n");
-   }
+   RPU_DEBUG_MESSAGE("* Starting Setup for Rev 3\n");
 
    if (initOptions &
        (RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET | RPU_CMD_BOOT_ORIGINAL_IF_NOT_CREDIT_RESET | RPU_CMD_AUTODETECT_ARCHITECTURE)) {
@@ -2889,12 +2883,8 @@ unsigned long RPU_InitializeMPUArch1(unsigned long initOptions, uint8_t creditRe
    }
 
    if (bootToOriginal) {
-      if (DEBUG_MESSAGES) {
-         Serial.write("* Asked to boot to original\n");
-      }
-      if (DEBUG_MESSAGES) {
-         delay(100);
-      }
+      RPU_DEBUG_MESSAGE("* Asked to boot to original\n");
+      RPU_DEBUG_DELAY(100);
 
       // Let the 680X run
       pinMode(14, OUTPUT); // Halt
@@ -3018,23 +3008,18 @@ unsigned long RPU_InitializeMPUArch1(unsigned long initOptions, uint8_t creditRe
 
 #endif
 
-   if (DEBUG_MESSAGES) {
-      Serial.write("* About to init Arduino ports\n");
-      delay(100);
-   }
+   RPU_DEBUG_MESSAGE("* About to init Arduino ports\n");
+   RPU_DEBUG_DELAY(100);
+
    SetupArduinoPorts();
 
    // Prep the address bus (all lines zero)
-   if (DEBUG_MESSAGES) {
-      Serial.write("* About to data read\n");
-      delay(100);
-   }
+   RPU_DEBUG_MESSAGE("* About to data read\n");
+   RPU_DEBUG_DELAY(100);
    RPU_DataRead(0);
 
-   if (DEBUG_MESSAGES) {
-      Serial.write("* DataRead(0) done\n");
-      delay(100);
-   }
+   RPU_DEBUG_MESSAGE("* DataRead(0) done\n");
+   RPU_DEBUG_DELAY(100);
 
    // Set up the PIAs
    InitializeU10PIA();
@@ -3056,10 +3041,8 @@ unsigned long RPU_InitializeMPUArch1(unsigned long initOptions, uint8_t creditRe
    RPU_DataRead(0);
    RPU_ClearVariables();
 
-   if (DEBUG_MESSAGES) {
-      Serial.write("* About to hook interrupts\n");
-      delay(100);
-   }
+   RPU_DEBUG_MESSAGE("* About to hook interrupts\n");
+   RPU_DEBUG_DELAY(100);
 
    RPU_HookInterrupts();
    RPU_DataRead(0); // Reset address bus
@@ -3472,11 +3455,7 @@ bool CheckCreditResetSwitchArch10(uint8_t creditResetButton) {
 
    // Read switch input
    uint8_t switchValues = RPU_DataRead(PIA_SWITCH_PORT_A);
-   if (DEBUG_MESSAGES) {
-      char buf[128];
-      sprintf(buf, "* switch return = 0x%02X\n", switchValues);
-      Serial.write(buf);
-   }
+   RPU_DEBUG_PRINTF("* switch return = 0x%02X\n", switchValues);
    RPU_DataWrite(PIA_SWITCH_PORT_B, 0);
 
    if (switchValues & returnLine) {
@@ -3492,9 +3471,7 @@ bool CheckCreditResetSwitchArch10(uint8_t creditResetButton) {
 unsigned long RPU_InitializeMPUArch10(unsigned long initOptions, uint8_t creditResetSwitch) {
    unsigned long retResult = RPU_RET_NO_ERRORS;
 
-   if (DEBUG_MESSAGES) {
-      Serial.write("* Init start\n");
-   }
+   RPU_DEBUG_MESSAGE("* Init start\n");
 
    // put the 680X buffers into tri-state
    pinMode(RPU_BUFFER_DISABLE, OUTPUT);
@@ -3525,14 +3502,10 @@ unsigned long RPU_InitializeMPUArch10(unsigned long initOptions, uint8_t creditR
    pinMode(RPU_RW_PIN, OUTPUT);
    if (!UsesM6800Processor) {
       pinMode(RPU_PHI2_PIN, OUTPUT);
-      if (DEBUG_MESSAGES) {
-         Serial.write("* compiled for 6802 or 6808\n");
-      }
+      RPU_DEBUG_MESSAGE("* compiled for 6802 or 6808\n");
    } else {
       pinMode(RPU_PHI2_PIN, INPUT);
-      if (DEBUG_MESSAGES) {
-         Serial.write("* compiled for 6800\n");
-      }
+      RPU_DEBUG_MESSAGE("* compiled for 6800\n");
    }
    // Make sure PIA IV (solenoid) CB2 is off so that solenoids are off
    RPU_SetAddressPinsDirection(RPU_PINS_OUTPUT);
@@ -3561,11 +3534,7 @@ unsigned long RPU_InitializeMPUArch10(unsigned long initOptions, uint8_t creditR
        (!switchStateClosed && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_NOT_SWITCH_CLOSED)) ||
        (creditResetButtonHit && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET)) ||
        (!creditResetButtonHit && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_NOT_CREDIT_RESET))) {
-      if (DEBUG_MESSAGES) {
-         char buf[128];
-         sprintf(buf, "* Booting to original (switch=%d, CR=%d)\n", switchStateClosed, creditResetButtonHit);
-         Serial.write(buf);
-      }
+      RPU_DEBUG_PRINTF("* Booting to original (switch=%d, CR=%d)\n", switchStateClosed, creditResetButtonHit);
       bootToOriginal = true;
    }
 
@@ -3609,15 +3578,11 @@ unsigned long RPU_InitializeMPUArch10(unsigned long initOptions, uint8_t creditR
       digitalWrite(RPU_RESET_PIN, 1);
 
       if (initOptions & RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN) {
-         if (DEBUG_MESSAGES) {
-            Serial.write("* original requested\n");
-         }
+         RPU_DEBUG_MESSAGE("* original requested\n");
          retResult |= RPU_RET_ORIGINAL_CODE_REQUESTED;
          return retResult;
       } else {
-         if (DEBUG_MESSAGES) {
-            Serial.write("* original requested, halting\n");
-         }
+         RPU_DEBUG_MESSAGE("* original requested, halting\n");
          while (1)
             ;
       }
@@ -3634,14 +3599,10 @@ unsigned long RPU_InitializeMPUArch10(unsigned long initOptions, uint8_t creditR
    RPU_SetAddressPinsDirection(RPU_PINS_OUTPUT);
    RPU_InitializePIAs();
    if (initOptions & RPU_CMD_PERFORM_MPU_TEST) {
-      if (DEBUG_MESSAGES) {
-         Serial.write("* Going to test PIAs\n");
-      }
+      RPU_DEBUG_MESSAGE("* Going to test PIAs\n");
       retResult |= RPU_TestPIAs();
    } else {
-      if (DEBUG_MESSAGES) {
-         Serial.write("* Not asked to test PIAs\n");
-      }
+      RPU_DEBUG_MESSAGE("* Not asked to test PIAs\n");
    }
    RPU_SetupInterrupt();
 
@@ -3650,7 +3611,7 @@ unsigned long RPU_InitializeMPUArch10(unsigned long initOptions, uint8_t creditR
 
 #endif
 
-#if (DEBUG_MESSAGES == 1)
+#if (RPU_DEBUG_MESSAGES == 1)
 static unsigned long LastSwitchReport = 0;
 #endif
 
