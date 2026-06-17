@@ -156,7 +156,6 @@ int RunBaseSelfTest(int curState, bool curStateChanged, unsigned long CurrentTim
          RPU_SetDisplayBlank(count, 0x00);
       }
 
-#if (RPU_MPU_ARCHITECTURE < 10)
       if (curState <= MACHINE_STATE_TEST_SCORE_LEVEL_1) {
          RPU_SetDisplayCredits(0, false);
          RPU_SetDisplayBallInPlay(MACHINE_STATE_TEST_SOUNDS - curState);
@@ -164,15 +163,6 @@ int RunBaseSelfTest(int curState, bool curStateChanged, unsigned long CurrentTim
          RPU_SetDisplayCredits(0 - curState, true);
          RPU_SetDisplayBallInPlay(0, false);
       }
-#else
-      if (curState <= MACHINE_STATE_TEST_HISCR) {
-         RPU_SetDisplayCredits(0, false);
-         RPU_SetDisplayBallInPlay(MACHINE_STATE_TEST_BOOT - curState, true);
-      } else {
-         RPU_SetDisplayCredits(curState - MACHINE_STATE_TEST_BOOT, true);
-         RPU_SetDisplayBallInPlay(0, false);
-      }
-#endif
    }
 
    if (curState == MACHINE_STATE_TEST_LAMPS) {
@@ -258,15 +248,9 @@ int RunBaseSelfTest(int curState, bool curStateChanged, unsigned long CurrentTim
       if ((CurrentTime - LastSolTestTime) > 1000) {
          if (SolenoidCycle) {
             SavedValue += 1;
-#if (RPU_MPU_ARCHITECTURE < 10)
             if (SavedValue > 14) {
                SavedValue = 0;
             }
-#else
-            if (SavedValue > 21) {
-               SavedValue = 0;
-            }
-#endif
          }
          RPU_PushToSolenoidStack(SavedValue, 10);
          RPU_SetDisplay(0, SavedValue, true);

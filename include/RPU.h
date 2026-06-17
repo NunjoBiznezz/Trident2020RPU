@@ -101,9 +101,6 @@ void RPU_PushToSolenoidStack(uint8_t solenoidNumber, uint8_t numPushes, bool dis
 void RPU_SetCoinLockout(bool lockoutOff = false, uint8_t solbit = CONTSOL_DISABLE_COIN_LOCKOUT);
 void RPU_SetDisableFlippers(bool disableFlippers = true, uint8_t solbit = CONTSOL_DISABLE_FLIPPERS);
 void RPU_SetContinuousSolenoidBit(bool bitOn, uint8_t solBit = 0x10);
-#if (RPU_MPU_ARCHITECTURE >= 10)
-void RPU_SetContinuousSolenoid(bool solOn, uint8_t solNum);
-#endif
 bool RPU_FireContinuousSolenoid(uint8_t solBit, uint8_t numCyclesToFire);
 uint8_t RPU_ReadContinuousSolenoids();
 void RPU_DisableSolenoidStack();
@@ -122,9 +119,6 @@ void RPU_SetDisplayFlash(int displayNumber, unsigned long value, unsigned long c
 void RPU_SetDisplayFlashCredits(unsigned long curTime, int period = 100);
 void RPU_CycleAllDisplays(unsigned long curTime, uint8_t digitNum = 0); // Self-test function
 uint8_t RPU_GetDisplayBlank(int displayNumber);
-#if (RPU_MPU_ARCHITECTURE == 15)
-uint8_t RPU_SetDisplayText(int displayNumber, char* text, bool blankByLength = true);
-#endif
 #if defined(RPU_OS_ADJUSTABLE_DISPLAY_INTERRUPT)
 void RPU_SetDisplayRefreshConstant(int intervalConstant);
 #endif
@@ -174,9 +168,6 @@ void RPU_PlayW11Music(uint8_t songNum);
 //   General
 uint8_t RPU_DataRead(int address);
 void RPU_Update(unsigned long currentTime);
-#if RPU_MPU_ARCHITECTURE >= 10
-void RPU_SetBoardLEDs(bool LED1, bool LED2, uint8_t BCDValue = 0xFF);
-#endif
 
 #if !defined(RPU_DEBUG_MESSAGES)
 #define RPU_DEBUG_MESSAGES 0

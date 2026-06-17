@@ -39,15 +39,6 @@
 #error "RPU_OS_HARDWARE_REV not defined. Please define it in platformio.ini or in RPU_config.h"
 #endif
 
-// Available Architectures (0-9 is for B/S Boards, 10-19 is for W)
-//  RPU_MPU_ARCHITECTURE 1 = -17, -35, 100, 200, or compatible
-//  RPU_MPU_ARCHITECTURE 11 = Sys 4, 6
-//  RPU_MPU_ARCHITECTURE 13 = Sys 7
-//  RPU_MPU_ARCHITECTURE 15 = Sys 11
-#if !defined(RPU_MPU_ARCHITECTURE)
-#error "RPU_MPU_ARCHITECTURE not defined. Please define it in platformio.ini or in RPU_config.h"
-#endif
-
 // Some boards will assume a 6800 is the processor (RPU_OS_HARDWARE_REV 1 through 4)
 // and some boards will try to detect the processor (RPU_OS_HARDWARE_REV 102)
 // but in other cases we can specify if we're building for a 6800.
@@ -78,11 +69,7 @@
 // #define RPU_USE_EXTENDED_SWITCHES_ON_PB7
 // #define RPU_OS_USE_W11_SOUND
 
-#if (RPU_MPU_ARCHITECTURE == 1)
-// /*******************************************************
-//  This section is only for games that use the
 // -17, -35, 100, and 200 MPU boards
-//
 // Depending on the number of digits, the RPU_OS_SOFTWARE_DISPLAY_INTERRUPT_INTERVAL
 // can be adjusted in order to change the refresh rate of the displays.
 // The original -17 / MPU-100 boards ran at 320 Hz
@@ -135,29 +122,5 @@ constexpr int RPU_MAX_LAMPS = 88;
 #else
 constexpr int RPU_NUM_LAMP_BANKS = 8;
 constexpr int RPU_MAX_LAMPS = 60;
-#endif
-
-#elif (RPU_MPU_ARCHITECTURE > 9)
-/*******************************************************
- * This section is only for games that use the
- * System 4, 6, 7, 9 or 11 / other MPU boards
- */
-
-constexpr int RPU_NUM_LAMP_BANKS = 8;
-constexpr int RPU_MAX_LAMPS = 64;
-
-constexpr int NUM_SWITCH_BYTES = 8;
-constexpr int MAX_NUM_SWITCHES = 64;
-
-#if (RPU_MPU_ARCHITECTURE < 13)
-constexpr uint16_t RPU_OS_MAX_DISPLAY_SCORE = 999999;
-#define RPU_OS_NUM_DIGITS 6
-constexpr uint16_t RPU_OS_ALL_DIGITS_MASK = 0x3F;
-#else
-constexpr unsigned long RPU_OS_MAX_DISPLAY_SCORE = 9999999;
-#define RPU_OS_NUM_DIGITS 7
-constexpr uint16_t RPU_OS_ALL_DIGITS_MASK = 0x7F;
-#endif
-
 #endif
 

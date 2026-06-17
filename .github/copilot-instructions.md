@@ -42,7 +42,6 @@ Key configuration:
 ### Critical Build Flags
 ```ini
 -DRPU_OS_HARDWARE_REV=4        # Hardware revision number
--DRPU_MPU_ARCHITECTURE=1       # Bally/Stern -17/-35 architecture
 -DRPU_MPU_BUILD_FOR_6800=1     # Target 6800 CPU (vs 6802/6808)
 -DRPU_OS_USE_DIP_SWITCHES      # Enable DIP switch reading
 -DRPU_OS_USE_SB100             # Enable SB-100 sound card support

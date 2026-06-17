@@ -58,7 +58,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 # Build flags matching platformio.ini
 target_compile_definitions(${PROJECT_NAME} PRIVATE
     RPU_OS_HARDWARE_REV=${RPU_HARDWARE_REV}
-    RPU_MPU_ARCHITECTURE=1
     RPU_MPU_BUILD_FOR_6800=1
 )
 
@@ -83,7 +82,6 @@ if(RPU_BUILD_FOR_REV102 AND ENABLE_DEBUG_MESSAGES)
 endif()
 
 # Pass required architecture configuration to RPU library
-set(RPU_MPU_ARCHITECTURE 1 CACHE STRING "" FORCE)
 set(RPU_OS_HARDWARE_REV ${RPU_HARDWARE_REV} CACHE STRING "" FORCE)
 set(RPU_MPU_BUILD_FOR_6800 1 CACHE STRING "" FORCE)
 
