@@ -34,16 +34,22 @@ static const PlayfieldAndCabinetSwitch* GameSwitches = NULL;
  *   Defines and library variables
  */
 #if !defined(RPU_MPU_BUILD_FOR_6800) || (RPU_MPU_BUILD_FOR_6800 == 1)
-static bool UsesM6800Processor = true;
+
+#if (RPU_OS_HARDWARE_REV == 102)
+static bool UsesM6800Processor = true; // Version 102 performs 6800 detection...
+#else
+constexpr bool UsesM6800Processor = true;
+#endif
+
 #if (RPU_MPU_ARCHITECTURE > 11) && (RPU_OS_HARDWARE_REV < 102)
 #error \
     "Architecture > 11 doesn't make sense with RPU_MPU_BUILD_FOR_6800=1. Set RPU_MPU_BUILD_FOR_6800 to 0 in RPU_Config.h or choose a different RPU_MPU_ARCHITECTURE"
 #endif
 #else
-static bool UsesM6800Processor = false;
+constexpr bool UsesM6800Processor = false;
 #endif
 
-#if (RPU_MPU_ARCHITECTURE < 10)
+#if (RPU_MPU_ARCHITECTURE < 10)  // Bally/Stern
 
 #ifdef RPU_USE_EXTENDED_SWITCHES_ON_PB4
 #define NUM_SWITCH_BYTES 6
@@ -109,6 +115,7 @@ static uint8_t DimDivisor2 = 3;
 volatile uint8_t SwitchesMinus2[NUM_SWITCH_BYTES];
 volatile uint8_t SwitchesMinus1[NUM_SWITCH_BYTES];
 volatile uint8_t SwitchesNow[NUM_SWITCH_BYTES];
+
 #ifdef RPU_OS_USE_DIP_SWITCHES
 static uint8_t DipSwitches[4];
 #endif
@@ -126,18 +133,25 @@ static volatile uint8_t RevertSolenoidBit = 0x00;
 static volatile uint8_t NumCyclesBeforeRevertingSolenoidByte = 0;
 
 #define TIMED_SOLENOID_STACK_SIZE 30
-struct TimedSolenoidEntry {
-   uint8_t inUse;
-   unsigned long pushTime;
-   uint8_t solenoidNumber;
-   uint8_t numPushes;
-   uint8_t disableOverride;
-};
 static TimedStack<TimedSolenoidEntry, TIMED_SOLENOID_STACK_SIZE> TimedSolenoidStack;
 
-#define SWITCH_STACK_SIZE 60
-#define SWITCH_STACK_EMPTY 0xFF
-static CircularStack<uint8_t, SWITCH_STACK_SIZE, SWITCH_STACK_EMPTY> SwitchStack;
+class SwitchStackClass : public CircularStack<uint8_t, 60, 0xff> {
+public:
+   bool push(uint8_t data) {
+
+      // Self test is a special case - there's no good way to debounce it
+      // so if it's already first on the stack, ignore it
+      if (data == SW_SELF_TEST_SWITCH) {
+         if (!isEmpty() && peek() == SW_SELF_TEST_SWITCH) {
+            return false;
+         }
+      }
+
+      return CircularStack<uint8_t, 60, 0xff>::push(data);
+   }
+};
+
+static SwitchStackClass SwitchStack;
 
 // The WTYPE1 and WTYPE2 sound cards can only play one sound at a time,
 // so these structures allow the app to send in as many calls as they
@@ -147,18 +161,11 @@ static CircularStack<uint8_t, SWITCH_STACK_SIZE, SWITCH_STACK_EMPTY> SwitchStack
 // MPU Architecture > 9
 #if (RPU_MPU_ARCHITECTURE >= 10)
 
-#define SOUND_STACK_SIZE 64
-#define SOUND_STACK_EMPTY 0x0000
-static CircularStack<unsigned short, SOUND_STACK_SIZE, SOUND_STACK_EMPTY> SoundStack;
+constexpr uint16_t SOUND_STACK_EMPTY = 0x0000;
 
-#define TIMED_SOUND_STACK_SIZE 20
-struct TimedSoundEntry {
-   uint8_t inUse;
-   unsigned long pushTime;
-   unsigned short soundNumber;
-   uint8_t numPushes;
-};
-static TimedStack<TimedSoundEntry, TIMED_SOUND_STACK_SIZE> TimedSoundStack;
+static CircularStack<unsigned short, 64, SOUND_STACK_EMPTY> SoundStack;
+
+static TimedStack<TimedSoundEntry, 20> TimedSoundStack;
 #endif
 
 #if (RPU_OS_HARDWARE_REV == 1) or (RPU_OS_HARDWARE_REV == 2)
@@ -1220,34 +1227,8 @@ void RPU_SetBoardLEDs(bool LED1, bool LED2, uint8_t BCDValue) {
  *   Switch Handling Functions
  */
 
-int SpaceLeftOnSwitchStack() {
-   return SwitchStack.spaceLeft();
-}
-
-void PushToSwitchStack(uint8_t switchNumber) {
-   // if ((switchNumber>=MAX_NUM_SWITCHES && switchNumber!=SW_SELF_TEST_SWITCH)) return;
-   if (switchNumber == SWITCH_STACK_EMPTY) {
-      return;
-   }
-
-   // If the switch stack last index is out of range, then it's an error - return
-   if (SpaceLeftOnSwitchStack() == 0) {
-      return;
-   }
-
-   // Self test is a special case - there's no good way to debounce it
-   // so if it's already first on the stack, ignore it
-   if (switchNumber == SW_SELF_TEST_SWITCH) {
-      if (!SwitchStack.isEmpty() && SwitchStack.peek() == SW_SELF_TEST_SWITCH) {
-         return;
-      }
-   }
-
-   SwitchStack.push(switchNumber);
-}
-
 void RPU_PushToSwitchStack(uint8_t switchNumber) {
-   PushToSwitchStack(switchNumber);
+   SwitchStack.push(switchNumber);
 }
 
 uint8_t RPU_PullFirstFromSwitchStack() {
@@ -2415,7 +2396,7 @@ void InterruptService3() {
    if (u10AControl & 0x80) {
       // self test switch
       if (RPU_DataRead(ADDRESS_U10_A_CONTROL) & 0x80) {
-         PushToSwitchStack(SW_SELF_TEST_SWITCH);
+         SwitchStack.push(SW_SELF_TEST_SWITCH);
       }
       RPU_DataRead(ADDRESS_U10_A);
    }
@@ -2539,7 +2520,7 @@ void InterruptService3() {
                      } // End if this is a switch in the switch table
                   } // End loop on switches in switch table
                   // Push this switch to the game rules stack
-                  PushToSwitchStack(validSwitchNum);
+                  SwitchStack.push(validSwitchNum);
                }
                validClosures = validClosures >> 1;
             }
@@ -3064,23 +3045,12 @@ unsigned long RPU_InitializeMPUArch1(unsigned long initOptions, uint8_t creditRe
 
 #if (RPU_MPU_ARCHITECTURE >= 10)
 
-bool CheckSwitchStack(uint8_t switchNum) {
-   for (uint8_t stackIndex = SwitchStackFirst; stackIndex != SwitchStackLast; stackIndex++) {
-      if (stackIndex >= SWITCH_STACK_SIZE) {
-         stackIndex = 0;
-      }
-      if (SwitchStack[stackIndex] == switchNum) {
-         return true;
-      }
-   }
-   return false;
-}
-
 static volatile unsigned long LampPass = 0;
 static volatile uint8_t LampStrobe = 0;
 static volatile uint8_t DisplayStrobe = 0;
 static volatile uint8_t InterruptPass = 0;
 static bool NeedToTurnOffTriggeredSolenoids = true;
+
 #if (RPU_OS_NUM_DIGITS == 6)
 static uint8_t BlankingBit[16] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x01, 0x02, 0x01, 0x02, 0x04, 0x08, 0x010, 0x20, 0x01, 0x02};
 #elif (RPU_OS_NUM_DIGITS == 7)
@@ -3287,8 +3257,8 @@ ISR(TIMER1_COMPA_vect) { // This is the interrupt request (running at 965.3 Hz)
       uint8_t displayControlPortA = RPU_DataRead(PIA_DISPLAY_CONTROL_A);
       if (displayControlPortA & 0x80) {
          // If the diagnostic switch isn't on the stack already, put it there
-         if (!CheckSwitchStack(SW_SELF_TEST_SWITCH)) {
-            PushToSwitchStack(SW_SELF_TEST_SWITCH);
+         if (!SwitchStack.hasValue(SW_SELF_TEST_SWITCH)) {
+            SwitchStack.push(SW_SELF_TEST_SWITCH);
          }
          // Clear the interrupt
          RPU_DataRead(PIA_DISPLAY_PORT_A);
@@ -3320,7 +3290,7 @@ ISR(TIMER1_COMPA_vect) { // This is the interrupt request (running at 965.3 Hz)
                // If this switch bit is closed
                if (validClosures & 0x01) {
                   uint8_t validSwitchNum = switchCol * 8 + bitCount;
-                  PushToSwitchStack(validSwitchNum);
+                  SwitchStack.push(validSwitchNum);
                }
                validClosures = validClosures >> 1;
             }
@@ -3376,23 +3346,6 @@ ISR(TIMER1_COMPA_vect) { // This is the interrupt request (running at 965.3 Hz)
          RPU_DataWrite(PIA_SOLENOID_CONTROL_A, 0x3C);
          RPU_DataWrite(PIA_DISPLAY_CONTROL_B, 0x3D);
       }
-
-#if defined(RPU_OS_USE_WTYPE_1_SOUND)
-      // See if any sounds need to be added
-      // (these are handled through solenoid lines)
-      unsigned short soundOn = PullFirstFromSoundStack();
-      if (soundOn != SOUND_STACK_EMPTY) {
-         portA |= (soundOn & 0xFF);
-         portB |= (soundOn / 256);
-      }
-#elif defined(RPU_OS_USE_WTYPE_2_SOUND)
-      unsigned short soundOn = PullFirstFromSoundStack();
-      if (soundOn != SOUND_STACK_EMPTY) {
-         RPU_DataWrite(PIA_SOUND_COMMA_PORT_A, (~soundOn) & 0x7F);
-      } else {
-         RPU_DataWrite(PIA_SOUND_COMMA_PORT_A, 0x7F);
-      }
-#endif
 
       RPU_DataWrite(PIA_SOLENOID_PORT_A, portA);
 #if (RPU_MPU_ARCHITECTURE == 15)

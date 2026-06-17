@@ -82,8 +82,6 @@ class AudioHandler {
    // Not used in this code
    bool QueueSoundCardCommand(uint8_t scFunction, uint8_t scRegister, uint8_t scData, unsigned long startTime);
 
-   bool PlaySoundCardWhenPossible(uint16_t soundEffectNum, unsigned long currentTime, unsigned long requestedPlayTime = 0,
-                                  unsigned long playUntil = 50, uint8_t priority = 10);
 
    bool QueuePrioritizedNotification(uint16_t notificationIndex, uint16_t notificationLength, uint8_t priority, unsigned long currentTime);
 
@@ -141,24 +139,25 @@ class AudioHandler {
    WavTrigger wTrig; // Our WAV Trigger object
 #endif
 
-   int ConvertVolumeSettingToGain(uint8_t volumeSetting);
+   int convertVolumeSettingToGain(uint8_t volumeSetting);
 
-   void InitSB300Registers();
-   void PlaySB300StartupBeep();
-   void DuckCurrentSoundEffects();
+#ifdef RPU_OS_USE_SB300
+   void initSB300Registers();
+   void playSB300StartupBeep();
+#endif
+   void duckCurrentSoundEffects();
 
-   int SpaceLeftOnNotificationStack();
-   void ClearSoundQueue();
-   void ClearSoundCardQueue();
-   void ClearNotificationStack(uint8_t priority = 10);
-   void InitSoundEffectQueue();
-   void StartNextSoundtrackSong(unsigned long currentTime);
-   void ManageBackgroundSong(unsigned long currentTime);
-   bool ServiceNotificationQueue(unsigned long currentTime);
-   void PushToNotificationStack(unsigned int notification, unsigned int duration, uint8_t priority);
-   uint8_t GetTopNotificationPriority();
-   bool ServiceSoundCardQueue(unsigned long currentTime);
-   bool ServiceSoundQueue(unsigned long currentTime);
+   int spaceLeftOnNotificationStack();
+   void clearSoundQueue();
+   void clearSoundCardQueue();
+   void clearNotificationStack(uint8_t priority = 10);
+   void startNextSoundtrackSong(unsigned long currentTime);
+   void manageBackgroundSong(unsigned long currentTime);
+   bool serviceNotificationQueue(unsigned long currentTime);
+   void pushToNotificationStack(unsigned int notification, unsigned int duration, uint8_t priority);
+   uint8_t getTopNotificationPriority();
+   bool serviceSoundCardQueue(unsigned long currentTime);
+   bool serviceSoundQueue(unsigned long currentTime);
 };
 
 #define AUDIO_HANDLER_H

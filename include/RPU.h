@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include "RPU_Addresses.h" // RAM and EEPROM addressing
-#include "RPU_config.h"    // include this here for safety sake
+#include "RPU_Addresses.h"
+#include "RPU_config.h"
 
 #include <stdint.h>
 
@@ -174,7 +174,7 @@ void RPU_PlayW11Music(uint8_t songNum);
 //   General
 uint8_t RPU_DataRead(int address);
 void RPU_Update(unsigned long currentTime);
-#if RPU_MPU_ARCHITECTURE > 9
+#if RPU_MPU_ARCHITECTURE >= 10
 void RPU_SetBoardLEDs(bool LED1, bool LED2, uint8_t BCDValue = 0xFF);
 #endif
 

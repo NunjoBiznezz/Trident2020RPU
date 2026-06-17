@@ -46,13 +46,17 @@ template <typename T, uint8_t SIZE, T EMPTY_VALUE> class CircularStack {
       }
    }
 
+   T emptyValue() const {
+      return EMPTY_VALUE;
+   }
+
    /**
     * Push a value onto the stack
     * @param value The value to push
     * @return true if successful, false if stack is full
     */
    bool push(T value) {
-      if (!spaceLeft()) {
+      if (!spaceLeft() || (value == EMPTY_VALUE)) {
          return false;
       }
       buffer[lastIndex] = value;
@@ -107,6 +111,14 @@ template <typename T, uint8_t SIZE, T EMPTY_VALUE> class CircularStack {
    }
 
    /**
+    * Check if there's space left in the stack
+    * @return true if there's at least one empty slot
+    */
+   bool isFull() const {
+      return buffer[lastIndex] != EMPTY_VALUE;
+   }
+
+   /**
     * Check if the stack is empty
     * @return true if the stack contains no elements
     */
@@ -131,5 +143,21 @@ template <typename T, uint8_t SIZE, T EMPTY_VALUE> class CircularStack {
       for (uint8_t i = 0; i < SIZE; i++) {
          buffer[i] = EMPTY_VALUE;
       }
+   }
+
+   bool hasValue(T value) const {
+      uint8_t head = firstIndex;
+      uint8_t tail = lastIndex;
+
+      while (head != tail) {
+         if (buffer[head] == value) {
+            return true;
+         }
+         head++;
+         if (head >= SIZE) {
+            head = 0;
+         }
+      }
+      return false;
    }
 };

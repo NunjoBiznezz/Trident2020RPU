@@ -1,10 +1,13 @@
-#include "RPU.h"
+#include "../include/RPU.h"
 
 /******************************************************
  *   Sound Handling Functions
  */
 
 #ifdef RPU_OS_USE_S_AND_T
+
+#include "RPU_Addresses.h"
+#include <Arduino.h>
 
 void RPU_PlaySoundSAndT(uint8_t soundByte) {
    uint8_t oldSolenoidControlByte, soundLowerNibble, soundUpperNibble;

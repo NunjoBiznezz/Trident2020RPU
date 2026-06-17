@@ -19,9 +19,9 @@
 */
 
 #include "SelfTestAndAudit.h"
-#include "RPU_config.h"
-#include "RPU.h"
+#include "../include/RPU.h"
 #include "RPU_Addresses.h"
+#include "RPU_config.h"
 #include <Arduino.h>
 
 #define MACHINE_STATE_ATTRACT 0
@@ -322,22 +322,6 @@ int RunBaseSelfTest(int curState, bool curStateChanged, unsigned long CurrentTim
          RPU_PlaySoundDash51(soundToPlay);
          SoundPlaying = soundToPlay;
          RPU_SetDisplay(0, (unsigned long)soundToPlay, true);
-         LastSolTestTime = CurrentTime; // Time the sound started to play
-      }
-#elif defined(RPU_OS_USE_WTYPE_1_SOUND)
-      uint8_t soundToPlay = (((CurrentTime - LastSelfTestChange) / 3000) % 31) + 1;
-      if (SoundPlaying != soundToPlay) {
-         RPU_PushToSoundStack(soundToPlay * 256, 8);
-         SoundPlaying = soundToPlay;
-         RPU_SetDisplay(0, (unsigned long)soundToPlay, true);
-         LastSolTestTime = CurrentTime; // Time the sound started to play
-      }
-#elif defined(RPU_OS_USE_WTYPE_2_SOUND)
-      //    uint8_t soundToPlay = (((CurrentTime-LastSelfTestChange)/1000)%32);
-      if (SoundPlaying != SoundToPlay) {
-         RPU_PushToSoundStack(SoundToPlay, 8);
-         SoundPlaying = SoundToPlay;
-         RPU_SetDisplay(0, (unsigned long)SoundToPlay, true);
          LastSolTestTime = CurrentTime; // Time the sound started to play
       }
 #endif

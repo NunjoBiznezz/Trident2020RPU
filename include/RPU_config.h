@@ -63,8 +63,8 @@
 // They will be passed as compile definitions by the build system.
 // Available options:
 //   RPU_OS_USE_DIP_SWITCHES - Enable DIP switch reading
-//   RPU_OS_USE_SB100 - Enable SB-100 sound card support
-//   RPU_OS_USE_SB300 - Enable SB-300 sound card support (requires hardware rev >= 2)
+//   RPU_OS_USE_SB100 - Enable Stern SB-100 sound card support
+//   RPU_OS_USE_SB300 - Enable Stern SB-300 sound card support (requires hardware rev >= 2)
 //   RPU_OS_USE_WAV_TRIGGER_1p3 - Enable WavTrigger 1.3 support
 //   RPU_OS_USE_7_DIGIT_DISPLAYS - Enable 7-digit displays
 //   RPU_OS_USE_6_DIGIT_CREDIT_DISPLAY_WITH_7_DIGIT_DISPLAYS - Use 6-digit credit with 7-digit displays
@@ -72,17 +72,17 @@
 //   RPU_OS_USE_S_AND_T - Enable S&T sound card support
 //   RPU_OS_USE_DASH51 - Enable Dash-51 sound card support
 //   RPU_OS_DISABLE_CPC_FOR_SPACE - Disable CPC code to save space
+
+
 // #define RPU_USE_EXTENDED_SWITCHES_ON_PB4
 // #define RPU_USE_EXTENDED_SWITCHES_ON_PB7
-// #define RPU_OS_USE_WTYPE_1_SOUND
-// #define RPU_OS_USE_WTYPE_2_SOUND
 // #define RPU_OS_USE_W11_SOUND
 
 #if (RPU_MPU_ARCHITECTURE == 1)
-/*******************************************************
- * This section is only for games that use the
- * -17, -35, 100, and 200 MPU boards
- */
+// /*******************************************************
+//  This section is only for games that use the
+// -17, -35, 100, and 200 MPU boards
+//
 // Depending on the number of digits, the RPU_OS_SOFTWARE_DISPLAY_INTERRUPT_INTERVAL
 // can be adjusted in order to change the refresh rate of the displays.
 // The original -17 / MPU-100 boards ran at 320 Hz
@@ -112,11 +112,11 @@ constexpr uint8_t RPU_OS_MASK_SHIFT_2 = 0x06;
 
 #ifdef RPU_OS_USE_7_DIGIT_DISPLAYS
 constexpr long RPU_OS_MAX_DISPLAY_SCORE = 9999999;
-constexpr int RPU_OS_NUM_DIGITS = 7;
+#define RPU_OS_NUM_DIGITS 7
 constexpr uint8_t RPU_OS_ALL_DIGITS_MASK = 0x7F;
 #else
 constexpr long RPU_OS_MAX_DISPLAY_SCORE = 999999;
-constexpr int RPU_OS_NUM_DIGITS = 6;
+#define RPU_OS_NUM_DIGITS 6
 constexpr uint8_t RPU_OS_ALL_DIGITS_MASK = 0x3F;
 #endif
 
@@ -151,11 +151,11 @@ constexpr int MAX_NUM_SWITCHES = 64;
 
 #if (RPU_MPU_ARCHITECTURE < 13)
 constexpr uint16_t RPU_OS_MAX_DISPLAY_SCORE = 999999;
-constexpr uint16_t RPU_OS_NUM_DIGITS = 6;
+#define RPU_OS_NUM_DIGITS 6
 constexpr uint16_t RPU_OS_ALL_DIGITS_MASK = 0x3F;
 #else
-constexpr uint16_t RPU_OS_MAX_DISPLAY_SCORE = 9999999;
-constexpr uint16_t RPU_OS_NUM_DIGITS = 7;
+constexpr unsigned long RPU_OS_MAX_DISPLAY_SCORE = 9999999;
+#define RPU_OS_NUM_DIGITS 7
 constexpr uint16_t RPU_OS_ALL_DIGITS_MASK = 0x7F;
 #endif
 

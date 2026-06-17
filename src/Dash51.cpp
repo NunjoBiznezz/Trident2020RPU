@@ -1,5 +1,5 @@
-#include "RPU_config.h"
-#include "RPU.h"
+#include "../include/RPU.h"
+#include "../include/RPU_config.h"
 #include "RPU_Addresses.h"
 
 #ifdef RPU_OS_USE_DASH51

@@ -21,10 +21,10 @@
 // Scores not ending in zero (wizard mode)
 // unstructured play jackpots
 // increase mode start time with new qualifier
-#include "AudioHandler.h"
 #include "RPU.h"
-#include "RPU_config.h"
+#include "AudioHandler.h"
 #include "RPU_Addresses.h"
+#include "RPU_config.h"
 #include "SelfTestAndAudit.h"
 #include "Trident2020.h"
 #include <Arduino.h>
@@ -120,35 +120,36 @@ constexpr int EEPROM_SPECIAL_SCORE_BYTE = 144;
     Machine state and options
 
 *********************************************************************/
-unsigned long HighScore = 0;
-unsigned long AwardScores[3];
-uint8_t Credits = 0;
-bool FreePlayMode = false;
+static unsigned long HighScore = 0;
+static unsigned long AwardScores[3];
+static uint8_t Credits = 0;
+static bool FreePlayMode = true;
 
 constexpr uint8_t SOUND_SELECTOR_NONE = 0;
 constexpr uint8_t SOUND_SELECTOR_ORIGINAL = 1;
 constexpr uint8_t SOUND_SELECTOR_TRIDENT2020 = 3;
-uint8_t SoundSelector = SOUND_SELECTOR_TRIDENT2020; // 0=No effects, 1=Original, 3=Trident 2020
 
-uint8_t MusicVolume = 10;
-uint8_t SoundEffectsVolume = 10;
-uint8_t CalloutsVolume = 10;
-uint8_t BallSaveNumSeconds = 0;
-unsigned long SoundSettingTimeout = 0;
-unsigned long ExtraBallValue = 0;
-unsigned long SpecialValue = 0;
-unsigned long CurrentTime = 0;
-uint8_t MaximumCredits = 40;
-uint8_t BallsPerGame = 3;
-uint8_t DimLevel = 2;
-uint8_t ScoreAwardReplay = 0;
-uint8_t ChuteCoinsInProgress[3] = {0, 0, 0};
-bool HighScoreReplay = true;
-bool MatchFeature = true;
-uint8_t SpecialLightAward = 0;
-bool TournamentScoring = false;
-bool ResetScoresToClearVersion = false;
-bool ScrollingScores = true;
+static uint8_t SoundSelector = SOUND_SELECTOR_TRIDENT2020; // 0=No effects, 1=Original, 3=Trident 2020
+
+static uint8_t MusicVolume = 10;
+static uint8_t SoundEffectsVolume = 10;
+static uint8_t CalloutsVolume = 10;
+static uint8_t BallSaveNumSeconds = 0;
+static unsigned long SoundSettingTimeout = 0;
+static unsigned long ExtraBallValue = 0;
+static unsigned long SpecialValue = 0;
+static unsigned long CurrentTime = 0;
+static uint8_t MaximumCredits = 40;
+static uint8_t BallsPerGame = 3;
+static uint8_t DimLevel = 2;
+static uint8_t ScoreAwardReplay = 0;
+static uint8_t ChuteCoinsInProgress[3] = {0, 0, 0};
+static bool HighScoreReplay = true;
+static bool MatchFeature = true;
+// static uint8_t SpecialLightAward = 0;
+static bool TournamentScoring = false;
+static bool ResetScoresToClearVersion = false;
+static bool ScrollingScores = true;
 
 // uint8_t dipBank0, dipBank1, dipBank2, dipBank3;
 // int BackgroundMusicGain = -3;
@@ -156,66 +157,66 @@ bool ScrollingScores = true;
 /*********************************************************************
  * Audio Handler
  *********************************************************************/
-AudioHandler audioHandler;
+static AudioHandler audioHandler;
 
 /*********************************************************************
     Game State
 *********************************************************************/
-uint8_t CurrentPlayer = 0;
-uint8_t CurrentBallInPlay = 1;
-uint8_t CurrentNumPlayers = 0;
-unsigned long CurrentScores[4];
-unsigned long CurrentPlayerCurrentScore = 0;
-uint8_t Bonus;
-uint8_t BonusX;
-uint8_t StandupsHit[4];
-uint8_t CurrentStandupsHit = 0;
-bool SamePlayerShootsAgain = false;
+static uint8_t CurrentPlayer = 0;
+static uint8_t CurrentBallInPlay = 1;
+static uint8_t CurrentNumPlayers = 0;
+static unsigned long CurrentScores[4];
+static unsigned long CurrentPlayerCurrentScore = 0;
+static uint8_t Bonus;
+static uint8_t BonusX;
+static uint8_t StandupsHit[4];
+static uint8_t CurrentStandupsHit = 0;
+static bool SamePlayerShootsAgain = false;
 
-bool BallSaveUsed = false;
-unsigned long BallFirstSwitchHitTime = 0;
-unsigned long BallTimeInTrough = 0;
+static bool BallSaveUsed = false;
+static unsigned long BallFirstSwitchHitTime = 0;
+static unsigned long BallTimeInTrough = 0;
 
-bool RescueFromTheDeepAvailable = true;
-bool JackpotLit = false;
-bool ExtraBallCollected = false;
-bool SpecialCollected = false;
-bool ShowingModeStats = false;
-uint8_t GameMode = GAME_MODE_SKILL_SHOT;
-uint8_t MaxTiltWarnings = 2;
-uint8_t NumTiltWarnings = 0;
-uint8_t SaucerValue = 0;
-uint8_t ShowSaucerHit = 0;
-uint8_t LastStandupTargetHit = 0;
-uint8_t CurrentDropTargetsValid = 0;
-uint8_t RolloverValue = 2;
-uint8_t LastSpinnerSide = 0; // 1=left, 2=right
-uint8_t AlternatingSpinnerCount = 0;
-uint8_t FeedingFrenzySpins[4];
-uint8_t ExploreTheDepthsHits[4];
-uint8_t SharpShooterHits[4];
-uint8_t CurrentFeedingFrenzy;
-uint8_t CurrentExploreTheDepths;
-uint8_t CurrentSharpShooter;
-uint8_t SharpShooterTarget = 0;
-uint8_t NumberOfStandupClears = 0;
-uint8_t FeedingFrenzyAlternatingStart = 4;
-uint8_t SharpShooterStartBonus = 3;
-uint8_t TargetSpecialBonus = 4;
-uint8_t StandupSpecialLevel = 2;
+static bool RescueFromTheDeepAvailable = true;
+static bool JackpotLit = false;
+static bool ExtraBallCollected = false;
+static bool SpecialCollected = false;
+static bool ShowingModeStats = false;
+static uint8_t GameMode = GAME_MODE_SKILL_SHOT;
+static uint8_t MaxTiltWarnings = 2;
+static uint8_t NumTiltWarnings = 0;
+static uint8_t SaucerValue = 0;
+static uint8_t ShowSaucerHit = 0;
+static uint8_t LastStandupTargetHit = 0;
+static uint8_t CurrentDropTargetsValid = 0;
+static uint8_t RolloverValue = 2;
+static uint8_t LastSpinnerSide = 0; // 1=left, 2=right
+static uint8_t AlternatingSpinnerCount = 0;
+static uint8_t FeedingFrenzySpins[4];
+static uint8_t ExploreTheDepthsHits[4];
+static uint8_t SharpShooterHits[4];
+static uint8_t CurrentFeedingFrenzy;
+static uint8_t CurrentExploreTheDepths;
+static uint8_t CurrentSharpShooter;
+static uint8_t SharpShooterTarget = 0;
+static uint8_t NumberOfStandupClears = 0;
+// static uint8_t FeedingFrenzyAlternatingStart = 4;
+static uint8_t SharpShooterStartBonus = 3;
+static uint8_t TargetSpecialBonus = 4;
+static uint8_t StandupSpecialLevel = 2;
 constexpr uint8_t ExploreTheDepthsStart = 1;
-uint8_t GameModeFlagsQualified = 0;
-unsigned long LastSpinnerHitTime = 0;
-unsigned long GameModeStartTime = 0;
-unsigned long GameModeEndTime = 0;
-unsigned long LastTiltWarningTime = 0;
-unsigned long NextSaucerReduction = 0;
-unsigned long SaucerHitTime = 0;
-unsigned long DropTargetClearTime = 0;
-unsigned long StandupDisplayEndTime = 0;
-unsigned long RolloverFlashEndTime = 0;
-unsigned long RescueFromTheDeepEndTime = 0;
-unsigned long LastMiniGameBonusTime = 0;
+static uint8_t GameModeFlagsQualified = 0;
+static unsigned long LastSpinnerHitTime = 0;
+static unsigned long GameModeStartTime = 0;
+static unsigned long GameModeEndTime = 0;
+static unsigned long LastTiltWarningTime = 0;
+static unsigned long NextSaucerReduction = 0;
+static unsigned long SaucerHitTime = 0;
+static unsigned long DropTargetClearTime = 0;
+static unsigned long StandupDisplayEndTime = 0;
+static unsigned long RolloverFlashEndTime = 0;
+static unsigned long RescueFromTheDeepEndTime = 0;
+static unsigned long LastMiniGameBonusTime = 0;
 
 void ReadStoredParameters() {
    HighScore = RPU_ReadULFromEEProm(RPU_HIGHSCORE_EEPROM_START_BYTE, 10000);

@@ -1,9 +1,0 @@
-{
-  "name": "RPU",
-  "version": "1.0.0",
-  "description": "Rotary Pinball Unit library",
-  "build": {
-    "includeDir": "include",
-    "srcDir": "src"
-  }
-}
