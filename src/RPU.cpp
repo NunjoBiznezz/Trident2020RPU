@@ -25,6 +25,7 @@
 #include "TimedStack.h"
 #include <Arduino.h>
 #include <EEPROM.h>
+#include "RPU_Debug.h"
 
 static int NumGameSwitches = 0;
 static int NumGamePrioritySwitches = 0;
@@ -45,29 +46,11 @@ constexpr bool UsesM6800Processor = true;
 constexpr bool UsesM6800Processor = false;
 #endif
 
-#ifdef RPU_USE_EXTENDED_SWITCHES_ON_PB4
-#define NUM_SWITCH_BYTES 6
-#define NUM_SWITCH_BYTES_ON_U10_PORT_A 5
-#define MAX_NUM_SWITCHES 48
-#define DEFAULT_SOLENOID_STATE 0x8F
-#define ST5_CONTINUOUS_SOLENOID_BIT 0x10
-#elif defined(RPU_USE_EXTENDED_SWITCHES_ON_PB7)
-#define NUM_SWITCH_BYTES 6
-#define NUM_SWITCH_BYTES_ON_U10_PORT_A 5
-#define MAX_NUM_SWITCHES 48
-#define DEFAULT_SOLENOID_STATE 0x1F
-#define ST5_CONTINUOUS_SOLENOID_BIT 0x80
-#else
 #define RPU_NUM_SOLENOIDS 15
 #define NUM_SWITCH_BYTES 5
 #define NUM_SWITCH_BYTES_ON_U10_PORT_A 5
 #define MAX_NUM_SWITCHES 40
 #define DEFAULT_SOLENOID_STATE 0x9F
-#endif
-
-#if !defined(RPU_OS_SWITCH_DELAY_IN_MICROSECONDS) || !defined(RPU_OS_TIMING_LOOP_PADDING_IN_MICROSECONDS)
-#error "Must define RPU_OS_SWITCH_DELAY_IN_MICROSECONDS and RPU_OS_TIMING_LOOP_PADDING_IN_MICROSECONDS in RPU_Config.h"
-#endif
 
 
 // Global variables
@@ -1327,28 +1310,9 @@ uint8_t RPU_GetDisplayBlank(int displayNumber) {
    return DisplayDigitEnable[displayNumber];
 }
 
-#if defined(RPU_OS_ADJUSTABLE_DISPLAY_INTERRUPT)
-void RPU_SetDisplayRefreshConstant(int intervalConstant) {
-   cli();
-   // set timer1 interrupt at 1Hz
-   TCCR1A = 0; // set entire TCCR1A register to 0
-   TCCR1B = 0; // same for TCCR1B
-   TCNT1 = 0;  // initialize counter value to 0
-   // set compare match register for selected increment
-   OCR1A = intervalConstant;
-   // turn on CTC mode
-   TCCR1B |= (1 << WGM12);
-   // Set CS10 and CS12 bits for 1024 prescaler
-   TCCR1B |= (1 << CS12) | (1 << CS10);
-   // enable timer compare interrupt
-   TIMSK1 |= (1 << OCIE1A);
-   sei();
-}
-#endif
-
-void RPU_SetDisplayFlash(int displayNumber, unsigned long value, unsigned long curTime, int period, uint8_t minDigits) {
+void RPU_SetDisplayFlash(int displayNumber, unsigned long value, unsigned long curTime, unsigned period, uint8_t minDigits) {
    // A period of zero toggles display every other time
-   if (period) {
+   if (period != 0) {
       if ((curTime / period) % 2) {
          RPU_SetDisplay(displayNumber, value, true, minDigits);
       } else {
@@ -1380,10 +1344,10 @@ void RPU_SetDimDivisor(uint8_t level, uint8_t divisor) {
    }
 }
 
-// left shift is iterative on Arduinos, so a bit array is suprisingly faster
-uint8_t BitShiftValues[8] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
+// left shift is iterative on Arduinos, so a bit array is surprisingly faster
+static const uint8_t BitShiftValues[8] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
 
-void RPU_SetLampState(int lampNum, uint8_t s_lampState, uint8_t s_lampDim, int s_lampFlashPeriod) {
+void RPU_SetLampState(int lampNum, uint8_t lampState, uint8_t lampDim, int lampFlashPeriod) {
    if (lampNum >= RPU_MAX_LAMPS || lampNum < 0) {
       return;
    }
@@ -1391,10 +1355,10 @@ void RPU_SetLampState(int lampNum, uint8_t s_lampState, uint8_t s_lampDim, int s
    uint8_t lampCol = lampNum / 8;
    uint8_t lampBit = BitShiftValues[lampRow];
 
-   if (s_lampState) {
-      int adjustedLampFlash = s_lampFlashPeriod / 50;
+   if (lampState) {
+      int adjustedLampFlash = lampFlashPeriod / 50;
 
-      if (s_lampFlashPeriod != 0 && adjustedLampFlash == 0) {
+      if (lampFlashPeriod != 0 && adjustedLampFlash == 0) {
          adjustedLampFlash = 1;
       }
       if (adjustedLampFlash > 250) {
@@ -1403,7 +1367,7 @@ void RPU_SetLampState(int lampNum, uint8_t s_lampState, uint8_t s_lampDim, int s
 
       // Only turn on the lamp if there's no flash, because if there's a flash
       // then the lamp will be turned on by the ApplyFlashToLamps function
-      if (s_lampFlashPeriod == 0) {
+      if (lampFlashPeriod == 0) {
          LampStates[lampCol] &= ~(lampBit);
       }
       LampFlashPeriod[lampNum] = adjustedLampFlash;
@@ -1412,13 +1376,13 @@ void RPU_SetLampState(int lampNum, uint8_t s_lampState, uint8_t s_lampDim, int s
       LampFlashPeriod[lampNum] = 0;
    }
 
-   if (s_lampDim & 0x01) {
+   if (lampDim & 0x01) {
       LampDim1[lampCol] |= lampBit;
    } else {
       LampDim1[lampCol] &= ~lampBit;
    }
 
-   if (s_lampDim & 0x02) {
+   if (lampDim & 0x02) {
       LampDim2[lampCol] |= lampBit;
    } else {
       LampDim2[lampCol] &= ~lampBit;
@@ -1791,15 +1755,7 @@ void InterruptService3() {
          SwitchesMinus1[switchCount] = SwitchesNow[switchCount];
 
          // Enable switch strobe
-#if defined(RPU_USE_EXTENDED_SWITCHES_ON_PB4) or defined(RPU_USE_EXTENDED_SWITCHES_ON_PB7)
-         if (switchCount < NUM_SWITCH_BYTES_ON_U10_PORT_A) {
-            RPU_DataWrite(ADDRESS_U10_A, 0x01 << switchCount);
-         } else {
-            RPU_SetContinuousSolenoidBit(true, ST5_CONTINUOUS_SOLENOID_BIT);
-         }
-#else
          RPU_DataWrite(ADDRESS_U10_A, 0x01 << switchCount);
-#endif
 
          // Turn off U10:CB2 if it's on (because it strobes the last bank of dip switches
          RPU_DataWrite(ADDRESS_U10_B_CONTROL, 0x34);
@@ -1812,9 +1768,6 @@ void InterruptService3() {
 
          // Unset the strobe
          RPU_DataWrite(ADDRESS_U10_A, 0x00);
-#if defined(RPU_USE_EXTENDED_SWITCHES_ON_PB4) or defined(RPU_USE_EXTENDED_SWITCHES_ON_PB7)
-         RPU_SetContinuousSolenoidBit(false, ST5_CONTINUOUS_SOLENOID_BIT);
-#endif
 
          // Some switches need to trigger immediate closures (bumpers & slings)
          startingClosures = (SwitchesNow[switchCount]) & (~SwitchesMinus1[switchCount]);
@@ -2037,14 +1990,6 @@ void InterruptService3() {
 
 void RPU_HookInterrupts() {
    // Hook up the interrupt
-   /*
-     cli();
-     TCCR2A|=(1<<WGM21);     //Set the CTC mode
-     OCR2A=0xBA;            //Set the value for 3ms
-     TIMSK2|=(1<<OCIE2A);   //Set the interrupt request
-     TCCR2B|=(1<<CS22);     //Set the prescale 1/64 clock
-     sei();                 //Enable interrupt
-   */
 
    cli();
    // set timer1 interrupt at 1Hz

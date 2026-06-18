@@ -23,10 +23,9 @@
 #include <stdint.h>
 
 /***
-
   Use this file to set game-specific and hardware-specific parameters
-
 ***/
+
 // Plug-in board architectures (0-99 is for J5, 100-199 is for CPU socket)
 // Hardware Rev 1 generally uses an Arduino Nano & (optional) 74125
 // Hardware Rev 2 uses an Arduino Nano, a 74155, and a 74240
@@ -65,10 +64,6 @@
 //   RPU_OS_DISABLE_CPC_FOR_SPACE - Disable CPC code to save space
 
 
-// #define RPU_USE_EXTENDED_SWITCHES_ON_PB4
-// #define RPU_USE_EXTENDED_SWITCHES_ON_PB7
-// #define RPU_OS_USE_W11_SOUND
-
 // -17, -35, 100, and 200 MPU boards
 // Depending on the number of digits, the RPU_OS_SOFTWARE_DISPLAY_INTERRUPT_INTERVAL
 // can be adjusted in order to change the refresh rate of the displays.
@@ -86,8 +81,7 @@
 //  40            381 Hz
 //  35            434 Hz     (This would probably be good for 7-digit displays)
 //  34            446.4 Hz
-#define RPU_OS_SOFTWARE_DISPLAY_INTERRUPT_INTERVAL 48
-// #define RPU_OS_ADJUSTABLE_DISPLAY_INTERRUPT
+constexpr uint16_t RPU_OS_SOFTWARE_DISPLAY_INTERRUPT_INTERVAL = 48;
 
 #ifdef RPU_OS_USE_6_DIGIT_CREDIT_DISPLAY_WITH_7_DIGIT_DISPLAYS
 constexpr uint8_t RPU_OS_MASK_SHIFT_1 = 0x60;
@@ -107,11 +101,9 @@ constexpr long RPU_OS_MAX_DISPLAY_SCORE = 999999;
 constexpr uint8_t RPU_OS_ALL_DIGITS_MASK = 0x3F;
 #endif
 
-constexpr uint8_t CONTSOL_DISABLE_FLIPPERS = 0x40;
-constexpr uint8_t CONTSOL_DISABLE_COIN_LOCKOUT = 0x20;
 
-#define RPU_OS_SWITCH_DELAY_IN_MICROSECONDS 200
-#define RPU_OS_TIMING_LOOP_PADDING_IN_MICROSECONDS 70
+constexpr int RPU_OS_SWITCH_DELAY_IN_MICROSECONDS = 200;
+constexpr int RPU_OS_TIMING_LOOP_PADDING_IN_MICROSECONDS = 70;
 
 // Fast boards might need a slower lamp strobe
 // #define RPU_OS_SLOW_DOWN_LAMP_STROBE  0

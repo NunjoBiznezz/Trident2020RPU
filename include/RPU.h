@@ -25,8 +25,8 @@
 
 #include <stdint.h>
 
-#define RPU_OS_MAJOR_VERSION 5
-#define RPU_OS_MINOR_VERSION 7
+constexpr unsigned long RPU_OS_MAJOR_VERSION = 5;
+constexpr unsigned long RPU_OS_MINOR_VERSION = 7;
 
 struct PlayfieldAndCabinetSwitch {
    uint8_t switchNum;
@@ -34,45 +34,42 @@ struct PlayfieldAndCabinetSwitch {
    uint8_t solenoidHoldTime;
 };
 
-#define SW_SELF_TEST_SWITCH 0x7F
-#define SOL_NONE 0x0F
-#define SWITCH_STACK_EMPTY 0xFF
-#define CONTSOL_DISABLE_FLIPPERS 0x40
-#define CONTSOL_DISABLE_COIN_LOCKOUT 0x20
+constexpr uint8_t SW_SELF_TEST_SWITCH = 0x7F;
+constexpr uint8_t SOL_NONE = 0x0F;
+constexpr uint8_t SWITCH_STACK_EMPTY = 0xFF;
+constexpr uint8_t CONTSOL_DISABLE_FLIPPERS = 0x40;
+constexpr uint8_t CONTSOL_DISABLE_COIN_LOCKOUT = 0x20;
 
 // RPU_InitializeMPU will always boot none of the following
 // parameters are set to force it back to original code
-#define RPU_CMD_BOOT_ORIGINAL 0x0001 /* This will boot to original unconditionally (disables new code completely for this install) */
-#define RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET \
-   0x0002 /* Only supported on Rev 4 or greater, boots original if the C/R button is held at power on */
-#define RPU_CMD_BOOT_ORIGINAL_IF_NOT_CREDIT_RESET \
-   0x0004 /* Only supported on Rev 4 or greater, boots original if the C/R button is NOT held at power on */
-#define RPU_CMD_BOOT_ORIGINAL_IF_SWITCH_CLOSED 0x0008     /* boots to original if the switch is closed at power on */
-#define RPU_CMD_BOOT_ORIGINAL_IF_NOT_SWITCH_CLOSED 0x0010 /* boots to original if the switch is NOT closed at power on */
-#define RPU_CMD_AUTODETECT_ARCHITECTURE \
-   0x0040 /* For Rev 101 and greater--the code detects architecture of board (mainly for diagnostics applications) */
-#define RPU_CMD_PERFORM_MPU_TEST 0x0080 /* perform basic tests on PIAs and return result codes */
+constexpr unsigned long RPU_CMD_BOOT_ORIGINAL = 0x0001; /* This will boot to original unconditionally (disables new code completely for this install) */
+constexpr unsigned long RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET =  0x0002; /* Only supported on Rev 4 or greater, boots original if the C/R button is held at power on */
+constexpr unsigned long RPU_CMD_BOOT_ORIGINAL_IF_NOT_CREDIT_RESET = 0x0004; /* Only supported on Rev 4 or greater, boots original if the C/R button is NOT held at power on */
+constexpr unsigned long RPU_CMD_BOOT_ORIGINAL_IF_SWITCH_CLOSED = 0x0008;     /* boots to original if the switch is closed at power on */
+constexpr unsigned long RPU_CMD_BOOT_ORIGINAL_IF_NOT_SWITCH_CLOSED = 0x0010; /* boots to original if the switch is NOT closed at power on */
+constexpr unsigned long RPU_CMD_AUTODETECT_ARCHITECTURE = 0x0040; /* For Rev 101 and greater--the code detects architecture of board (mainly for diagnostics applications) */
+constexpr unsigned long RPU_CMD_PERFORM_MPU_TEST = 0x0080; /* perform basic tests on PIAs and return result codes */
 
 // If the caller chooses this option, it's up to them
 // to honor the RPU_RET_ORIGINAL_CODE_REQUESTED return
 // flag and halt the Arduino with a while(1);
-#define RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN 0x0100
+constexpr unsigned long  RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN = 0x0100;
 
-#define RPU_RET_NO_ERRORS 0
-#define RPU_RET_U10_PIA_ERROR 0x0001
-#define RPU_RET_U11_PIA_ERROR 0x0002
-#define RPU_RET_PIA_1_ERROR 0x0004
-#define RPU_RET_PIA_2_ERROR 0x0008
-#define RPU_RET_PIA_3_ERROR 0x0010
-#define RPU_RET_PIA_4_ERROR 0x0020
-#define RPU_RET_PIA_5_ERROR 0x0040
-#define RPU_RET_OPTION_NOT_SUPPORTED 0x0080
-#define RPU_RET_6800_DETECTED 0x0100
-#define RPU_RET_6802_OR_8_DETECTED 0x0200
-#define RPU_RET_DIAGNOSTIC_REQUESTED 0x1000
-#define RPU_RET_SELECTOR_SWITCH_ON 0x2000
-#define RPU_RET_CREDIT_RESET_BUTTON_HIT 0x4000
-#define RPU_RET_ORIGINAL_CODE_REQUESTED 0x8000
+constexpr unsigned long RPU_RET_NO_ERRORS = 0;
+constexpr unsigned long RPU_RET_U10_PIA_ERROR = 0x0001;
+constexpr unsigned long RPU_RET_U11_PIA_ERROR = 0x0002;
+constexpr unsigned long RPU_RET_PIA_1_ERROR = 0x0004;
+constexpr unsigned long RPU_RET_PIA_2_ERROR = 0x0008;
+constexpr unsigned long RPU_RET_PIA_3_ERROR = 0x0010;
+constexpr unsigned long RPU_RET_PIA_4_ERROR = 0x0020;
+constexpr unsigned long RPU_RET_PIA_5_ERROR = 0x0040;
+constexpr unsigned long RPU_RET_OPTION_NOT_SUPPORTED = 0x0080;
+constexpr unsigned long RPU_RET_6800_DETECTED = 0x0100;
+constexpr unsigned long RPU_RET_6802_OR_8_DETECTED = 0x0200;
+constexpr unsigned long RPU_RET_DIAGNOSTIC_REQUESTED = 0x1000;
+constexpr unsigned long RPU_RET_SELECTOR_SWITCH_ON = 0x2000;
+constexpr unsigned long RPU_RET_CREDIT_RESET_BUTTON_HIT = 0x4000;
+constexpr unsigned long RPU_RET_ORIGINAL_CODE_REQUESTED = 0x8000;
 
 // Function Prototypes
 
@@ -115,16 +112,13 @@ void RPU_SetDisplayBlank(int displayNumber, uint8_t bitMask);
 void RPU_SetDisplayCredits(int value, bool displayOn = true, bool showBothDigits = true);
 void RPU_SetDisplayMatch(int value, bool displayOn = true, bool showBothDigits = true);
 void RPU_SetDisplayBallInPlay(int value, bool displayOn = true, bool showBothDigits = true);
-void RPU_SetDisplayFlash(int displayNumber, unsigned long value, unsigned long curTime, int period = 500, uint8_t minDigits = 2);
+void RPU_SetDisplayFlash(int displayNumber, unsigned long value, unsigned long curTime, unsigned period = 500, uint8_t minDigits = 2);
 void RPU_SetDisplayFlashCredits(unsigned long curTime, int period = 100);
 void RPU_CycleAllDisplays(unsigned long curTime, uint8_t digitNum = 0); // Self-test function
 uint8_t RPU_GetDisplayBlank(int displayNumber);
-#if defined(RPU_OS_ADJUSTABLE_DISPLAY_INTERRUPT)
-void RPU_SetDisplayRefreshConstant(int intervalConstant);
-#endif
 
 //   Lamps
-void RPU_SetLampState(int lampNum, uint8_t s_lampState, uint8_t s_lampDim = 0, int s_lampFlashPeriod = 0);
+void RPU_SetLampState(int lampNum, uint8_t lampState, uint8_t lampDim = 0, int lampFlashPeriod = 0);
 void RPU_ApplyFlashToLamps(unsigned long curTime);
 void RPU_FlashAllLamps(unsigned long curTime); // Self-test function
 void RPU_TurnOffAllLamps();
@@ -154,33 +148,8 @@ void RPU_PlaySB300SquareWave(uint8_t soundRegister, uint8_t soundByte);
 void RPU_PlaySB300Analog(uint8_t soundRegister, uint8_t soundByte);
 #endif
 
-#if defined(RPU_OS_USE_WTYPE_1_SOUND) || defined(RPU_OS_USE_WTYPE_2_SOUND)
-void RPU_SetSoundValueLimits(unsigned short lowerLimit, unsigned short upperLimit);
-void RPU_PushToSoundStack(unsigned short soundNumber, uint8_t numPushes);
-bool RPU_PushToTimedSoundStack(unsigned short soundNumber, uint8_t numPushes, unsigned long whenToPlay);
-void RPU_UpdateTimedSoundStack(unsigned long curTime);
-#endif
-#ifdef RPU_OS_USE_WTYPE_11_SOUND
-void RPU_PlayW11Sound(uint8_t soundNum);
-void RPU_PlayW11Music(uint8_t songNum);
-#endif
 
 //   General
 uint8_t RPU_DataRead(int address);
 void RPU_Update(unsigned long currentTime);
 
-#if !defined(RPU_DEBUG_MESSAGES)
-#define RPU_DEBUG_MESSAGES 0
-#define RPU_DEBUG_MESSAGE(msg)
-#define RPU_DEBUG_DELAY(ms)
-#define RPU_DEBUG_PRINTF(...)
-#else
-#define RPU_DEBUG_MESSAGE(msg) Serial.write(msg);
-#define RPU_DEBUG_DELAY(ms) delay(ms)
-#define RPU_DEBUG_PRINTF(...)           \
-   {                                 \
-      char _debug_buf[128];             \
-      sprintf(_debug_buf, __VA_ARGS__); \
-      Serial.write(_debug_buf);         \
-   }
-#endif

@@ -323,15 +323,6 @@ void setup() {
       Serial.begin(115200);
    #endif
 
-   // TODO remove the hard-coded serial port from WavTrigger
-   // #if defined(RPU_OS_USE_WAV_TRIGGER) || defined(RPU_OS_USE_WAV_TRIGGER_1p3)
-   // #  if (RPU_OS_HARDWARE_REV <= 3)
-   // #     define WTSerial Serial
-   // #  else
-   // #     define WTSerial Serial1 // Hardware serial
-   // #  endif
-   //    WTSerial.begin(57600);
-   // #endif
 
    CurrentTime = millis();
    audioHandler.InitDevices(AUDIO_PLAY_TYPE_WAV_TRIGGER | AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS);
@@ -341,8 +332,7 @@ void setup() {
    RPU_SetupGameSwitches(NUM_SWITCHES_WITH_TRIGGERS, NUM_PRIORITY_SWITCHES_WITH_TRIGGERS, TriggeredSwitches);
 
    // Set up the chips and interrupts
-   unsigned long initResult = 0;
-   initResult = RPU_InitializeMPU(
+   const auto initResult = RPU_InitializeMPU(
        RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET | RPU_CMD_BOOT_ORIGINAL_IF_NOT_SWITCH_CLOSED | RPU_CMD_PERFORM_MPU_TEST, SW_CREDIT_RESET);
 
    if (initResult & RPU_RET_SELECTOR_SWITCH_ON) {
