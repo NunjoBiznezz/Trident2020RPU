@@ -626,7 +626,7 @@ bool AudioHandler::PlayBackgroundSong(uint16_t trackIndex, bool loopTrack) {
 
    if (trackIndex != BACKGROUND_TRACK_NONE) {
       currentBackgroundTrack = trackIndex;
-#if defined(AUDIOHANDLER_USES_WAV_TRIGGER)
+#if defined(AUDIOHANDLER_USES_WAV_TRIGGER) || defined(AUDIOHANDLER_USES_WAV_TRIGGER_1P3)
 #if defined(AUDIOHANDLER_USES_WAV_TRIGGER_1P3)
       wTrig.trackPlayPoly(trackIndex, true);
       trackPlayed = true;

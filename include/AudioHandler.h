@@ -126,11 +126,6 @@ class AudioHandler {
    unsigned long nextVoiceNotificationPlayTime;
    unsigned long backgroundSongEndTime;
 
-#if defined(RPU_OS_USE_WTYPE_1_SOUND) || defined(RPU_OS_USE_WTYPE_2_SOUND)
-   SoundEffectEntry CurrentSoundPlaying;
-   SoundEffectEntry SoundEffectQueue[SOUND_EFFECT_QUEUE_SIZE];
-#endif
-
 #ifdef RPU_OS_USE_SB300
    SoundCardCommandEntry soundCardQueue[SOUND_CARD_QUEUE_SIZE];
 #endif
