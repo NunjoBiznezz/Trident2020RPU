@@ -46,11 +46,11 @@ constexpr bool UsesM6800Processor = true;
 constexpr bool UsesM6800Processor = false;
 #endif
 
-#define RPU_NUM_SOLENOIDS 15
-#define NUM_SWITCH_BYTES 5
-#define NUM_SWITCH_BYTES_ON_U10_PORT_A 5
-#define MAX_NUM_SWITCHES 40
-#define DEFAULT_SOLENOID_STATE 0x9F
+constexpr unsigned RPU_NUM_SOLENOIDS = 15;
+constexpr unsigned NUM_SWITCH_BYTES = 5;
+constexpr unsigned NUM_SWITCH_BYTES_ON_U10_PORT_A = 5;
+constexpr unsigned MAX_NUM_SWITCHES = 40;
+constexpr unsigned DEFAULT_SOLENOID_STATE = 0x9F;
 
 
 // Global variables
@@ -1703,7 +1703,7 @@ ISR(TIMER1_COMPA_vect) { // This is the interrupt request
 
 
 void InterruptService3() {
-   uint8_t u10AControl = RPU_DataRead(ADDRESS_U10_A_CONTROL);
+   const uint8_t u10AControl = RPU_DataRead(ADDRESS_U10_A_CONTROL);
    if (u10AControl & 0x80) {
       // self test switch
       if (RPU_DataRead(ADDRESS_U10_A_CONTROL) & 0x80) {
@@ -1713,13 +1713,13 @@ void InterruptService3() {
    }
 
    // If we get a weird interupt from U11B, clear it
-   uint8_t u11BControl = RPU_DataRead(ADDRESS_U11_B_CONTROL);
+   const uint8_t u11BControl = RPU_DataRead(ADDRESS_U11_B_CONTROL);
    if (u11BControl & 0x80) {
       RPU_DataRead(ADDRESS_U11_B);
    }
 
-   uint8_t u11AControl = RPU_DataRead(ADDRESS_U11_A_CONTROL);
-   uint8_t u10BControl = RPU_DataRead(ADDRESS_U10_B_CONTROL);
+   const uint8_t u11AControl = RPU_DataRead(ADDRESS_U11_A_CONTROL);
+   const uint8_t u10BControl = RPU_DataRead(ADDRESS_U10_B_CONTROL);
 
    // If the interrupt bit on the display interrupt is on, do the display refresh
    if (u11AControl & 0x80) {
@@ -1747,10 +1747,7 @@ void InterruptService3() {
       RPU_DataWrite(ADDRESS_U10_B_CONTROL, 0x30);
 
       // Copy old switch values
-      uint8_t switchCount;
-      uint8_t startingClosures;
-      uint8_t validClosures;
-      for (switchCount = 0; switchCount < NUM_SWITCH_BYTES; switchCount++) {
+      for (uint8_t switchCount = 0; switchCount < NUM_SWITCH_BYTES; switchCount++) {
          SwitchesMinus2[switchCount] = SwitchesMinus1[switchCount];
          SwitchesMinus1[switchCount] = SwitchesNow[switchCount];
 
@@ -1770,10 +1767,10 @@ void InterruptService3() {
          RPU_DataWrite(ADDRESS_U10_A, 0x00);
 
          // Some switches need to trigger immediate closures (bumpers & slings)
-         startingClosures = (SwitchesNow[switchCount]) & (~SwitchesMinus1[switchCount]);
+         uint8_t startingClosures = (SwitchesNow[switchCount]) & (~SwitchesMinus1[switchCount]);
          bool immediateSolenoidFired = false;
          // If one of the switches is starting to close (off, on)
-         if (startingClosures) {
+         if (startingClosures != 0) {
             // Loop on bits of switch uint8_t
             for (uint8_t bitCount = 0; bitCount < 8 && immediateSolenoidFired == false; bitCount++) {
                // If this switch bit is closed
@@ -1795,7 +1792,7 @@ void InterruptService3() {
          }
 
          immediateSolenoidFired = false;
-         validClosures = (SwitchesNow[switchCount] & SwitchesMinus1[switchCount]) & ~SwitchesMinus2[switchCount];
+         uint8_t validClosures = (SwitchesNow[switchCount] & SwitchesMinus1[switchCount]) & ~SwitchesMinus2[switchCount];
          // If there is a valid switch closure (off, on, on)
          if (validClosures) {
             // Loop on bits of switch uint8_t
@@ -2088,8 +2085,9 @@ bool CheckCreditResetSwitchArch1(uint8_t creditResetSwitch) {
    InitializeU10PIA();
    InitializeU11PIA();
 
-   uint8_t strobeNum = 0x01 << (creditResetSwitch / 8);
-   uint8_t switchNum = 0x01 << (creditResetSwitch % 8);
+   const uint8_t strobeNum = 0x01 << (creditResetSwitch / 8);
+   const uint8_t switchNum = 0x01 << (creditResetSwitch % 8);
+
    RPU_DataWrite(ADDRESS_U10_A, strobeNum);
    // Turn off U10:CB2 if it's on (because it strobes the last bank of dip switches
    RPU_DataWrite(ADDRESS_U10_B_CONTROL, 0x34);
@@ -2109,8 +2107,19 @@ bool CheckCreditResetSwitchArch1(uint8_t creditResetSwitch) {
    return false;
 }
 
-unsigned long RPU_InitializeMPUArch1(unsigned long initOptions, uint8_t creditResetSwitch) {
-   unsigned long retResult = RPU_RET_NO_ERRORS;
+
+void RPU_Update(unsigned long currentTime) {
+   RPU_DataRead(0);
+
+   RPU_ApplyFlashToLamps(currentTime);
+   RPU_UpdateTimedSolenoidStack(currentTime);
+}
+
+// This function should eventually support auto-detect and initialize the appropriate
+// ISRs for the detected architecture.
+unsigned long RPU_InitializeMPU(unsigned long initOptions, uint8_t creditResetSwitch) {
+   unsigned long retVal = 0;
+
    // Wait for board to boot
    delayMicroseconds(50000);
    delayMicroseconds(50000);
@@ -2120,13 +2129,13 @@ unsigned long RPU_InitializeMPUArch1(unsigned long initOptions, uint8_t creditRe
 
    if (initOptions & (RPU_CMD_BOOT_ORIGINAL | RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET | RPU_CMD_BOOT_ORIGINAL_IF_NOT_CREDIT_RESET |
                       RPU_CMD_BOOT_ORIGINAL_IF_SWITCH_CLOSED | RPU_CMD_AUTODETECT_ARCHITECTURE)) {
-      retResult |= RPU_RET_OPTION_NOT_SUPPORTED;
+      retVal |= RPU_RET_OPTION_NOT_SUPPORTED;
    }
 
    if (LookFor6800Activity()) {
       if (initOptions & RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN) {
-         retResult |= RPU_RET_ORIGINAL_CODE_REQUESTED;
-         return retResult;
+         retVal |= RPU_RET_ORIGINAL_CODE_REQUESTED;
+         return retVal;
       } else {
          while (1)
             ;
@@ -2139,7 +2148,7 @@ unsigned long RPU_InitializeMPUArch1(unsigned long initOptions, uint8_t creditRe
 
    if (initOptions &
        (RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET | RPU_CMD_BOOT_ORIGINAL_IF_NOT_CREDIT_RESET | RPU_CMD_AUTODETECT_ARCHITECTURE)) {
-      retResult |= RPU_RET_OPTION_NOT_SUPPORTED;
+      retVal |= RPU_RET_OPTION_NOT_SUPPORTED;
    }
 
    pinMode(13, INPUT);
@@ -2147,7 +2156,7 @@ unsigned long RPU_InitializeMPUArch1(unsigned long initOptions, uint8_t creditRe
    bool bootToOriginal = false;
 
    if (switchStateClosed) {
-      retResult |= RPU_RET_SELECTOR_SWITCH_ON;
+      retVal |= RPU_RET_SELECTOR_SWITCH_ON;
    }
 
    if ((initOptions & RPU_CMD_BOOT_ORIGINAL) || (switchStateClosed && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_SWITCH_CLOSED)) ||
@@ -2163,8 +2172,8 @@ unsigned long RPU_InitializeMPUArch1(unsigned long initOptions, uint8_t creditRe
       pinMode(14, OUTPUT); // Halt
       digitalWrite(14, HIGH);
       if (initOptions & RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN) {
-         retResult |= RPU_RET_ORIGINAL_CODE_REQUESTED;
-         return retResult;
+         retVal |= RPU_RET_ORIGINAL_CODE_REQUESTED;
+         return retVal;
       } else {
          while (1)
             ;
@@ -2213,7 +2222,7 @@ unsigned long RPU_InitializeMPUArch1(unsigned long initOptions, uint8_t creditRe
    pinMode(RPU_SWITCH_PIN, INPUT);
    if (digitalRead(RPU_SWITCH_PIN)) {
       switchStateClosed = true;
-      retResult |= RPU_RET_SELECTOR_SWITCH_ON;
+      retVal |= RPU_RET_SELECTOR_SWITCH_ON;
    }
 
    bool creditResetButtonHit = false;
@@ -2221,7 +2230,7 @@ unsigned long RPU_InitializeMPUArch1(unsigned long initOptions, uint8_t creditRe
       // We have to check the credit/reset button to honor the init request
       creditResetButtonHit = CheckCreditResetSwitchArch1(creditResetSwitch);
       if (creditResetButtonHit) {
-         retResult |= RPU_RET_CREDIT_RESET_BUTTON_HIT;
+         retVal |= RPU_RET_CREDIT_RESET_BUTTON_HIT;
       }
    }
 
@@ -2251,15 +2260,16 @@ unsigned long RPU_InitializeMPUArch1(unsigned long initOptions, uint8_t creditRe
          digitalWrite(RPU_DISABLE_PHI_FROM_MPU, 0);
          pinMode(RPU_DISABLE_PHI_FROM_CPU, OUTPUT);
          digitalWrite(RPU_DISABLE_PHI_FROM_CPU, 1);
-         retResult |= RPU_RET_6800_DETECTED;
+         retVal |= RPU_RET_6800_DETECTED;
       } else {
          pinMode(RPU_DISABLE_PHI_FROM_MPU, OUTPUT);
          digitalWrite(RPU_DISABLE_PHI_FROM_MPU, 1);
          pinMode(RPU_DISABLE_PHI_FROM_CPU, OUTPUT);
          digitalWrite(RPU_DISABLE_PHI_FROM_CPU, 0);
-         retResult |= RPU_RET_6802_OR_8_DETECTED;
+         retVal |= RPU_RET_6802_OR_8_DETECTED;
       }
 #endif
+
       // Set all the pins to input so they'll stay out of the way
       RPU_SetDataPinsDirection(RPU_PINS_INPUT);
       RPU_SetAddressPinsDirection(RPU_PINS_INPUT);
@@ -2270,12 +2280,12 @@ unsigned long RPU_InitializeMPUArch1(unsigned long initOptions, uint8_t creditRe
       pinMode(RPU_RESET_PIN, OUTPUT);
       digitalWrite(RPU_RESET_PIN, 1);
 
-      retResult |= RPU_RET_ORIGINAL_CODE_REQUESTED;
+      retVal |= RPU_RET_ORIGINAL_CODE_REQUESTED;
       if (!(initOptions & RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN)) {
          while (1)
             ;
       } else {
-         return retResult;
+         return retVal;
       }
    }
 
@@ -2306,7 +2316,7 @@ unsigned long RPU_InitializeMPUArch1(unsigned long initOptions, uint8_t creditRe
 #if (RPU_OS_HARDWARE_REV == 4) || (RPU_OS_HARDWARE_REV > 100)
    pinMode(RPU_DIAGNOSTIC_PIN, INPUT);
    if (digitalRead(RPU_DIAGNOSTIC_PIN) == 1) {
-      retResult |= RPU_RET_DIAGNOSTIC_REQUESTED;
+      retVal |= RPU_RET_DIAGNOSTIC_REQUESTED;
    }
 #endif
 
@@ -2326,32 +2336,9 @@ unsigned long RPU_InitializeMPUArch1(unsigned long initOptions, uint8_t creditRe
    RPU_DataRead(ADDRESS_U10_A);
    RPU_DataRead(ADDRESS_U10_B);
    if (initOptions & RPU_CMD_PERFORM_MPU_TEST) {
-      retResult |= RPU_TestPIAs();
+      retVal |= RPU_TestPIAs();
    }
    RPU_DataRead(0); // Reset address bus
-
-   return retResult;
-}
-
-
-
-#if (RPU_DEBUG_MESSAGES == 1)
-static unsigned long LastSwitchReport = 0;
-#endif
-
-void RPU_Update(unsigned long currentTime) {
-   RPU_DataRead(0);
-
-   RPU_ApplyFlashToLamps(currentTime);
-   RPU_UpdateTimedSolenoidStack(currentTime);
-}
-
-// This function should eventually support auto-detect and initialize the appropriate
-// ISRs for the detected architecture.
-unsigned long RPU_InitializeMPU(unsigned long initOptions, uint8_t creditResetSwitch) {
-   unsigned long retVal = 0;
-
-   retVal = RPU_InitializeMPUArch1(initOptions, creditResetSwitch);
 
    return retVal;
 }
