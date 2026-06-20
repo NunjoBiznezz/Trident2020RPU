@@ -55,7 +55,7 @@
 //   RPU_OS_USE_DIP_SWITCHES - Enable DIP switch reading
 //   RPU_OS_USE_SB100 - Enable Stern SB-100 sound card support
 //   RPU_OS_USE_SB300 - Enable Stern SB-300 sound card support (requires hardware rev >= 2)
-//   RPU_OS_USE_WAV_TRIGGER_1p3 - Enable WavTrigger 1.3 support
+//   RPU_OS_USE_WAV_TRIGGER - Enable WavTrigger 1.3 support
 //   RPU_OS_USE_7_DIGIT_DISPLAYS - Enable 7-digit displays
 //   RPU_OS_USE_6_DIGIT_CREDIT_DISPLAY_WITH_7_DIGIT_DISPLAYS - Use 6-digit credit with 7-digit displays
 //   RPU_OS_USE_AUX_LAMPS - Enable auxiliary lamps (88 lamps instead of 60)

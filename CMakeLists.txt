@@ -72,7 +72,7 @@ if(RPU_USE_SB300)
     target_compile_definitions(${PROJECT_NAME} PRIVATE RPU_OS_USE_SB300)
 endif()
 if(RPU_USE_WAV_TRIGGER)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE RPU_OS_USE_WAV_TRIGGER_1p3)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE RPU_OS_USE_WAV_TRIGGER)
 endif()
 
 if(RPU_BUILD_FOR_REV102 AND ENABLE_DEBUG_MESSAGES)
