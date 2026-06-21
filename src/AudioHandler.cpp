@@ -250,13 +250,13 @@ uint8_t AudioHandler::getTopNotificationPriority() {
 }
 
 void AudioHandler::duckCurrentSoundEffects() {
+#if defined(RPU_OS_USE_WAV_TRIGGER)
    // We can't duck if we don't have bi-directional communication
    // So <=3 revs have to return
-   if (RPU_OS_HARDWARE_REV <= 3) {
+   if (!WavTrigger::hasSerialRx) {
       return;
    }
 
-#if defined(RPU_OS_USE_WAV_TRIGGER)
    for (int count = 0; count < WavTrigger::maxNumVoices(); count++) {
       int trackNum = wTrig.getPlayingTrack(count);
       if (trackNum != ((int)0xFFFF) && trackNum != ((int)currentBackgroundTrack) && trackNum != ((int)currentNotificationPlaying)) {

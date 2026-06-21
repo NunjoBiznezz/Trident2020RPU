@@ -82,7 +82,8 @@ void WavTrigger::flush(void) {
 
 // **************************************************************
 void WavTrigger::update(void) {
-   if (RPU_OS_HARDWARE_REV <= 3) {
+
+   if (!hasSerialRx) {
       return;
    }
 

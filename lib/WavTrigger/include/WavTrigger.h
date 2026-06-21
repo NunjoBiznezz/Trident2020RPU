@@ -41,6 +41,13 @@ class WavTrigger {
       return MAX_NUM_VOICES;
    }
 
+   // Rev 3 board lacks an RX line; can be overridden by soldering a jumper and defining WAVTRIGGER_HAS_RX
+#if (RPU_OS_HARDWARE_REV > 3) || defined(WAVTRIGGER_HAS_RX)
+   static constexpr bool hasSerialRx = true;
+#else
+   static constexpr bool hasSerialRx = false;
+#endif
+
  private:
    static constexpr int MAX_MESSAGE_LEN = 32;
    static constexpr int MAX_NUM_VOICES = 14;
