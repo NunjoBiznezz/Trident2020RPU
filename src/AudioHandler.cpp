@@ -275,14 +275,14 @@ bool AudioHandler::serviceNotificationQueue(unsigned long currentTime) {
    }
 
    if (playNextNotification) {
-      NotificationEntry next = notificationQueue_.pull();
+      const NotificationEntry next = notificationQueue_.pull();
 
-      if (next.notificationNum != INVALID_NOTIFICATION) {
+      if (next.notificationNum != notificationQueue_.INVALID_NOTIFICATION) {
          if (currentBackgroundTrack != BACKGROUND_TRACK_NONE) {
             wTrig->trackFade(currentBackgroundTrack, musicGain - musicDucking, 500, 0);
          }
          duckCurrentSoundEffects();
-         nextVoiceNotificationPlayTime = next.duration ? currentTime + (unsigned long)next.duration : 0;
+         nextVoiceNotificationPlayTime = (next.duration > 0) ? currentTime + static_cast<unsigned long>(next.duration) : 0;
          wTrig->trackPlayPoly(next.notificationNum);
          wTrig->trackGain(next.notificationNum, notificationsGain);
          currentNotificationStartTime = currentTime;

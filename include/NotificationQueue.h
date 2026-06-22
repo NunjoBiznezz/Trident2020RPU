@@ -2,7 +2,6 @@
 #include "SimpleQueue.h"
 #include <stdint.h>
 
-constexpr uint16_t INVALID_NOTIFICATION = 0xFFFF;
 
 struct NotificationEntry {
    uint8_t priority;
@@ -17,6 +16,8 @@ class NotificationQueue : public SimpleQueue<NotificationEntry, SIZE> {
    using Base = SimpleQueue<NotificationEntry, SIZE>;
 
 public:
+   const uint16_t INVALID_NOTIFICATION = 0xFFFF;
+
    bool push(uint16_t notificationNum, unsigned int duration, uint8_t priority) {
       return Base::push({priority, notificationNum, duration});
    }
