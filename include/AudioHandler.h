@@ -1,5 +1,6 @@
 #ifndef AUDIO_HANDLER_H
 
+#include "NotificationQueue.h"
 #include "RPU.h"
 #include "RPU_config.h"
 #include <HardwareSerial.h>
@@ -97,15 +98,7 @@ class AudioHandler {
    int musicDucking;
    int soundFXDucking;
 
-   struct NotificationStackEntry {
-      uint8_t priority;
-      uint16_t notificationNum;
-      unsigned int duration;
-   };
-
-   uint8_t voiceNotificationStackFirst;
-   uint8_t voiceNotificationStackLast;
-   NotificationStackEntry voiceNotificationStack[VOICE_NOTIFICATION_STACK_SIZE];
+   NotificationQueue<VOICE_NOTIFICATION_STACK_SIZE> notificationQueue_;
    uint8_t currentNotificationPriority;
    unsigned int currentNotificationPlaying;
    unsigned long currentNotificationStartTime;
@@ -140,14 +133,10 @@ class AudioHandler {
 
    void clearSoundQueue();
    void clearSoundCardQueue();
-   void clearNotificationStack(uint8_t priority = 10);
    void startNextSoundtrackSong(unsigned long currentTime);
    void manageBackgroundSong(unsigned long currentTime);
 
    bool serviceNotificationQueue(unsigned long currentTime);
-   void pushToNotificationStack(unsigned int notification, unsigned int duration, uint8_t priority);
-   int spaceLeftOnNotificationStack() const;
-   uint8_t getTopNotificationPriority() const;
 
    bool serviceSoundCardQueue(unsigned long currentTime);
    bool serviceSoundQueue(unsigned long currentTime);

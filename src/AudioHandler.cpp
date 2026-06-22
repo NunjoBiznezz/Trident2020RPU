@@ -59,7 +59,6 @@
 
 #endif
 
-constexpr uint16_t VOICE_NOTIFICATION_STACK_EMPTY = 0xFFFF;
 constexpr uint16_t BACKGROUND_TRACK_NONE = 0xFFFF;
 constexpr uint16_t INVALID_SOUND_INDEX = 0xFFFF;
 
@@ -74,15 +73,11 @@ AudioHandler::AudioHandler() {
    musicGain = 0;
    clearSoundQueue();
    clearSoundCardQueue();
-   clearNotificationStack();
    currentBackgroundTrack = BACKGROUND_TRACK_NONE;
    soundtrackRandomOrder = true;
    nextSoundtrackPlayTime = 0;
    backgroundSongEndTime = 0;
    nextVoiceNotificationPlayTime = 0;
-
-   voiceNotificationStackFirst = 0;
-   voiceNotificationStackLast = 0;
    currentNotificationPriority = 0;
    currentNotificationPlaying = INVALID_SOUND_INDEX;
    musicDucking = 20;
@@ -177,29 +172,6 @@ bool AudioHandler::stopAllMusic() {
    return false;
 }
 
-void AudioHandler::clearNotificationStack(uint8_t priority) {
-   if (priority == 10) {
-      voiceNotificationStackFirst = 0;
-      voiceNotificationStackLast = 0;
-      for (uint8_t count = 0; count < VOICE_NOTIFICATION_STACK_SIZE; count++) {
-         voiceNotificationStack[count].notificationNum = VOICE_NOTIFICATION_STACK_EMPTY;
-         voiceNotificationStack[count].duration = 0;
-         voiceNotificationStack[count].priority = 0;
-      }
-   } else {
-      uint8_t tempFirst = voiceNotificationStackFirst;
-      uint8_t tempLast = voiceNotificationStackLast;
-      while (tempFirst != tempLast) {
-         if (voiceNotificationStack[tempFirst].priority <= priority) {
-            voiceNotificationStack[tempFirst].notificationNum = INVALID_SOUND_INDEX;
-         }
-         tempFirst += 1;
-         if (tempFirst >= VOICE_NOTIFICATION_STACK_SIZE) {
-            tempFirst = 0;
-         }
-      }
-   }
-}
 
 bool AudioHandler::stopCurrentNotification(uint8_t priority) {
    nextVoiceNotificationPlayTime = 0;
@@ -216,54 +188,6 @@ bool AudioHandler::stopCurrentNotification(uint8_t priority) {
    return false;
 }
 
-int AudioHandler::spaceLeftOnNotificationStack() const {
-   if (voiceNotificationStackFirst >= VOICE_NOTIFICATION_STACK_SIZE || voiceNotificationStackLast >= VOICE_NOTIFICATION_STACK_SIZE) {
-      return 0;
-   }
-   if (voiceNotificationStackLast >= voiceNotificationStackFirst) {
-      return ((VOICE_NOTIFICATION_STACK_SIZE - 1) - (voiceNotificationStackLast - voiceNotificationStackFirst));
-   }
-   return (voiceNotificationStackFirst - voiceNotificationStackLast) - 1;
-}
-
-void AudioHandler::pushToNotificationStack(unsigned int notification, unsigned int duration, uint8_t priority) {
-   // If the switch stack last index is out of range, then it's an error - return
-   if (spaceLeftOnNotificationStack() == 0) {
-      return;
-   }
-
-   voiceNotificationStack[voiceNotificationStackLast].notificationNum = notification;
-   voiceNotificationStack[voiceNotificationStackLast].duration = duration;
-   voiceNotificationStack[voiceNotificationStackLast].priority = priority;
-
-   voiceNotificationStackLast += 1;
-   if (voiceNotificationStackLast >= VOICE_NOTIFICATION_STACK_SIZE) {
-      // If the end index is off the end, then wrap
-      voiceNotificationStackLast = 0;
-   }
-}
-
-uint8_t AudioHandler::getTopNotificationPriority() const {
-   uint8_t startStack = voiceNotificationStackFirst;
-   uint8_t endStack = voiceNotificationStackLast;
-   if (startStack == endStack) {
-      return 0;
-   }
-
-   uint8_t topPriorityFound = 0;
-
-   while (startStack != endStack) {
-      if (voiceNotificationStack[startStack].priority > topPriorityFound) {
-         topPriorityFound = voiceNotificationStack[startStack].priority;
-      }
-      startStack += 1;
-      if (startStack >= VOICE_NOTIFICATION_STACK_SIZE) {
-         startStack = 0;
-      }
-   }
-
-   return topPriorityFound;
-}
 
 void AudioHandler::duckCurrentSoundEffects() {
 #if defined(RPU_OS_USE_WAV_TRIGGER)
@@ -286,35 +210,25 @@ void AudioHandler::duckCurrentSoundEffects() {
 bool AudioHandler::queuePrioritizedNotification(uint16_t notificationIndex, uint16_t notificationLength, uint8_t priority,
                                                 unsigned long currentTime) {
 #if defined(RPU_OS_USE_WAV_TRIGGER)
-   // if everything on the queue has a lower priority, kill all those
-   uint8_t topQueuePriority = getTopNotificationPriority();
-   if (priority > topQueuePriority) {
-      clearNotificationStack();
+   if (priority > notificationQueue_.topPriority()) {
+      notificationQueue_.clearAll();
    }
 
-   // If there's nothing playing, we can play it now
    if (currentNotificationPlaying == INVALID_SOUND_INDEX) {
       if (currentBackgroundTrack != BACKGROUND_TRACK_NONE) {
          wTrig->trackFade(currentBackgroundTrack, musicGain - musicDucking, 500, 0);
       }
       duckCurrentSoundEffects();
-      if (notificationLength) {
-         nextVoiceNotificationPlayTime = currentTime + (unsigned long)(notificationLength);
-      } else {
-         nextVoiceNotificationPlayTime = 0;
-      }
-
+      nextVoiceNotificationPlayTime = notificationLength ? currentTime + (unsigned long)notificationLength : 0;
       wTrig->trackPlayPoly(notificationIndex);
       wTrig->trackGain(notificationIndex, notificationsGain);
       currentNotificationStartTime = currentTime;
-
       currentNotificationPlaying = notificationIndex;
       currentNotificationPriority = priority;
    } else {
-      pushToNotificationStack(notificationIndex, notificationLength, priority);
+      notificationQueue_.push(notificationIndex, notificationLength, priority);
    }
 #else
-   // Phony stuff to get rid of warnings
    (void)notificationIndex;
    (void)notificationLength;
    (void)priority;
@@ -361,45 +275,20 @@ bool AudioHandler::serviceNotificationQueue(unsigned long currentTime) {
    }
 
    if (playNextNotification) {
-      uint8_t nextPriority = 0;
-      unsigned int nextNotification = VOICE_NOTIFICATION_STACK_EMPTY;
-      unsigned int nextDuration = 0;
+      NotificationEntry next = notificationQueue_.pull();
 
-      // Current notification done, see if there's another
-      if (voiceNotificationStackLast >= VOICE_NOTIFICATION_STACK_SIZE) {
-         voiceNotificationStackLast = (VOICE_NOTIFICATION_STACK_SIZE - 1);
-      }
-      while (voiceNotificationStackFirst != voiceNotificationStackLast) {
-         nextPriority = voiceNotificationStack[voiceNotificationStackFirst].priority;
-         nextNotification = voiceNotificationStack[voiceNotificationStackFirst].notificationNum;
-         nextDuration = voiceNotificationStack[voiceNotificationStackFirst].duration;
-
-         voiceNotificationStackFirst += 1;
-         if (voiceNotificationStackFirst >= VOICE_NOTIFICATION_STACK_SIZE) {
-            voiceNotificationStackFirst = 0;
-         }
-         if (nextNotification != INVALID_SOUND_INDEX) {
-            break;
-         }
-      }
-
-      if (nextNotification != VOICE_NOTIFICATION_STACK_EMPTY) {
+      if (next.notificationNum != INVALID_NOTIFICATION) {
          if (currentBackgroundTrack != BACKGROUND_TRACK_NONE) {
             wTrig->trackFade(currentBackgroundTrack, musicGain - musicDucking, 500, 0);
          }
          duckCurrentSoundEffects();
-         if (nextDuration != 0) {
-            nextVoiceNotificationPlayTime = currentTime + (unsigned long)(nextDuration);
-         } else {
-            nextVoiceNotificationPlayTime = 0;
-         }
-         wTrig->trackPlayPoly(nextNotification);
-         wTrig->trackGain(nextNotification, notificationsGain);
+         nextVoiceNotificationPlayTime = next.duration ? currentTime + (unsigned long)next.duration : 0;
+         wTrig->trackPlayPoly(next.notificationNum);
+         wTrig->trackGain(next.notificationNum, notificationsGain);
          currentNotificationStartTime = currentTime;
-         currentNotificationPlaying = nextNotification;
-         currentNotificationPriority = nextPriority;
+         currentNotificationPlaying = next.notificationNum;
+         currentNotificationPriority = next.priority;
       } else {
-         // No more notifications -- set the volume back up and clear the variable
          if (currentBackgroundTrack != BACKGROUND_TRACK_NONE) {
             wTrig->trackFade(currentBackgroundTrack, musicGain, 1500, 0);
          }
@@ -417,7 +306,11 @@ bool AudioHandler::serviceNotificationQueue(unsigned long currentTime) {
 }
 
 bool AudioHandler::stopAllNotifications(uint8_t priority) {
-   clearNotificationStack(priority);
+   if (priority >= 10) {
+      notificationQueue_.clearAll();
+   } else {
+      notificationQueue_.clearUpToPriority(priority);
+   }
    return stopCurrentNotification(priority);
 }
 

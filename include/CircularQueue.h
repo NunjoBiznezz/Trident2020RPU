@@ -23,24 +23,24 @@
 #include <stdint.h>
 
 /**
- * CircularStack - A generic circular buffer/stack implementation
+ * CircularQueue - A generic circular buffer (FIFO queue) implementation
  *
  * This template class provides a thread-safe circular buffer using volatile
- * members to support interrupt-driven code. It's used by SwitchStack,
+ * members to support interrupt-driven code. It is used by SwitchStack,
  * SolenoidStack, and SoundStack in the RPU library.
  *
- * @tparam T The type of elements stored in the stack
- * @tparam SIZE The maximum number of elements the stack can hold
+ * @tparam T The type of elements stored in the queue
+ * @tparam SIZE The maximum number of elements the queue can hold
  * @tparam EMPTY_VALUE The sentinel value used to indicate an empty slot
  */
-template <typename T, uint8_t SIZE, T EMPTY_VALUE> class CircularStack {
+template <typename T, uint8_t SIZE, T EMPTY_VALUE> class CircularQueue {
  private:
    volatile T buffer[SIZE];
-   volatile uint8_t firstIndex;
-   volatile uint8_t lastIndex;
+   volatile uint8_t head;  // read (dequeue) end
+   volatile uint8_t tail;  // write (enqueue) end
 
  public:
-   CircularStack() : firstIndex(0), lastIndex(0) {
+   CircularQueue() : head(0), tail(0) {
       for (uint8_t i = 0; i < SIZE; i++) {
          buffer[i] = EMPTY_VALUE;
       }
@@ -51,111 +51,111 @@ template <typename T, uint8_t SIZE, T EMPTY_VALUE> class CircularStack {
    }
 
    /**
-    * Push a value onto the stack
-    * @param value The value to push
-    * @return true if successful, false if stack is full
+    * Enqueue a value at the tail
+    * @param value The value to enqueue
+    * @return true if successful, false if queue is full or value equals EMPTY_VALUE
     */
    bool push(T value) {
       if (!spaceLeft() || (value == EMPTY_VALUE)) {
          return false;
       }
-      buffer[lastIndex] = value;
-      lastIndex++;
-      if (lastIndex >= SIZE) {
-         lastIndex = 0;
+      buffer[tail] = value;
+      tail++;
+      if (tail >= SIZE) {
+         tail = 0;
       }
       return true;
    }
 
    /**
-    * Push a value to the front of the stack (higher priority)
-    * @param value The value to push
-    * @return true if successful, false if stack is full
+    * Enqueue a value at the head (higher priority — will be dequeued next)
+    * @param value The value to enqueue
+    * @return true if successful, false if queue is full
     */
    bool pushFront(T value) {
       if (!spaceLeft()) {
          return false;
       }
-      if (firstIndex == 0) {
-         firstIndex = SIZE - 1;
+      if (head == 0) {
+         head = SIZE - 1;
       } else {
-         firstIndex--;
+         head--;
       }
-      buffer[firstIndex] = value;
+      buffer[head] = value;
       return true;
    }
 
    /**
-    * Pull the first value from the stack
-    * @return The first value, or EMPTY_VALUE if stack is empty
+    * Dequeue the next value from the head
+    * @return The next value, or EMPTY_VALUE if the queue is empty
     */
    T pull() {
       if (isEmpty()) {
          return EMPTY_VALUE;
       }
-      T value = buffer[firstIndex];
-      buffer[firstIndex] = EMPTY_VALUE;
-      firstIndex++;
-      if (firstIndex >= SIZE) {
-         firstIndex = 0;
+      T value = buffer[head];
+      buffer[head] = EMPTY_VALUE;
+      head++;
+      if (head >= SIZE) {
+         head = 0;
       }
       return value;
    }
 
    /**
-    * Check if there's space left in the stack
-    * @return true if there's at least one empty slot
+    * Check if there is space to enqueue at least one more element
+    * @return true if at least one slot is empty
     */
    bool spaceLeft() const {
-      return buffer[lastIndex] == EMPTY_VALUE;
+      return buffer[tail] == EMPTY_VALUE;
    }
 
    /**
-    * Check if there's space left in the stack
-    * @return true if there's at least one empty slot
+    * Check if the queue is full
+    * @return true if no slots are empty
     */
    bool isFull() const {
-      return buffer[lastIndex] != EMPTY_VALUE;
+      return buffer[tail] != EMPTY_VALUE;
    }
 
    /**
-    * Check if the stack is empty
-    * @return true if the stack contains no elements
+    * Check if the queue is empty
+    * @return true if the queue contains no elements
     */
    bool isEmpty() const {
-      return buffer[firstIndex] == EMPTY_VALUE;
+      return buffer[head] == EMPTY_VALUE;
    }
 
    /**
-    * Peek at the value that would be pulled next without removing it
-    * @return The first value, or EMPTY_VALUE if stack is empty
+    * Peek at the value that would be dequeued next without removing it
+    * @return The next value, or EMPTY_VALUE if the queue is empty
     */
    T peek() const {
-      return buffer[firstIndex];
+      return buffer[head];
    }
 
    /**
-    * Reset the stack to empty state
+    * Reset the queue to empty state
     */
    void reset() {
-      firstIndex = 0;
-      lastIndex = 0;
+      head = 0;
+      tail = 0;
       for (uint8_t i = 0; i < SIZE; i++) {
          buffer[i] = EMPTY_VALUE;
       }
    }
 
    bool hasValue(T value) const {
-      uint8_t head = firstIndex;
-      uint8_t tail = lastIndex;
+      uint8_t h = head;
+      uint8_t t = tail;
 
-      while (head != tail) {
-         if (buffer[head] == value) {
+      while (h != t) {
+         if (buffer[h] == value) {
             return true;
          }
-         head++;
-         if (head >= SIZE) {
-            head = 0;
+         h++;
+         if (h >= SIZE) {
+            h = 0;
          }
       }
       return false;

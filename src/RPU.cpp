@@ -19,7 +19,7 @@
  */
 
 #include "RPU.h"
-#include "CircularStack.h"
+#include "CircularQueue.h"
 #include "RPU_Addresses.h"
 #include "RPU_config.h"
 #include "TimedStack.h"
@@ -77,7 +77,7 @@ static uint8_t DipSwitches[4];
 #define SOLENOID_STACK_SIZE 60
 #endif
 #define SOLENOID_STACK_EMPTY 0xFF
-static CircularStack<uint8_t, SOLENOID_STACK_SIZE, SOLENOID_STACK_EMPTY> SolenoidStack;
+static CircularQueue<uint8_t, SOLENOID_STACK_SIZE, SOLENOID_STACK_EMPTY> SolenoidStack;
 static bool SolenoidStackEnabled = true;
 static volatile uint8_t CurrentSolenoidByte = 0xFF;
 static volatile uint8_t RevertSolenoidBit = 0x00;
@@ -86,7 +86,7 @@ static volatile uint8_t NumCyclesBeforeRevertingSolenoidByte = 0;
 #define TIMED_SOLENOID_STACK_SIZE 30
 static TimedStack<TimedSolenoidEntry, TIMED_SOLENOID_STACK_SIZE> TimedSolenoidStack;
 
-class SwitchStackClass : public CircularStack<uint8_t, 60, 0xff> {
+class SwitchStackClass : public CircularQueue<uint8_t, 60, 0xff> {
 public:
    bool push(uint8_t data) {
 
@@ -98,7 +98,7 @@ public:
          }
       }
 
-      return CircularStack<uint8_t, 60, 0xff>::push(data);
+      return CircularQueue<uint8_t, 60, 0xff>::push(data);
    }
 };
 
