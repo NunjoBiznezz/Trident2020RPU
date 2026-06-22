@@ -1534,6 +1534,33 @@ void RPU_PlaySB300StartupBeep() {
 
 #endif
 
+void RPU_InitNativeAudio() {
+#if (RPU_OS_HARDWARE_REV >= 2 && defined(RPU_OS_USE_SB300))
+   RPU_InitSB300();
+   RPU_PlaySB300StartupBeep();
+#endif
+}
+
+void RPU_PlayNativeSound(uint8_t soundByte) {
+#if defined(RPU_OS_USE_DASH51)
+   RPU_PlaySoundDash51(soundByte);
+#elif defined(RPU_OS_USE_S_AND_T)
+   RPU_PlaySoundSAndT(soundByte);
+#elif defined(RPU_OS_USE_SB100)
+   RPU_PlaySB100(soundByte);
+#else
+   (void)soundByte;
+#endif
+}
+
+void RPU_PlayNativeChime(uint8_t soundByte) {
+#if defined(RPU_OS_USE_SB100) && (RPU_OS_HARDWARE_REV == 2)
+   RPU_PlaySB100Chime(soundByte);
+#else
+   RPU_PlayNativeSound(soundByte);
+#endif
+}
+
 /******************************************************
  *   EEPROM Helper Functions
  */

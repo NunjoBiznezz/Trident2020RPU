@@ -47,6 +47,11 @@
 #error "RPU_MPU_BUILD_FOR_6800 not defined. Please define it in platformio.ini or in RPU_config.h"
 #endif
 
+// Enforce mutual exclusivity: at most one native sound card may be active per build.
+#if (defined(RPU_OS_USE_SB100) + defined(RPU_OS_USE_SB300) + defined(RPU_OS_USE_DASH51) + defined(RPU_OS_USE_S_AND_T)) > 1
+#  error "Only one native sound card may be defined per build (RPU_OS_USE_SB100 / RPU_OS_USE_SB300 / RPU_OS_USE_DASH51 / RPU_OS_USE_S_AND_T). Check platformio.ini or CMake options."
+#endif
+
 // These defines allow this configuration to eliminate some functions
 // to reduce program size
 // Note: These are now controlled by CMake build options. Do not define them here.

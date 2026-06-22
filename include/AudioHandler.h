@@ -9,7 +9,6 @@ constexpr uint8_t AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS = 2;
 struct SoundEntry {
    uint16_t soundIndex;
    uint8_t  audioType;
-   uint8_t  overrideVolume;
    unsigned long playTime;
 };
 
@@ -21,14 +20,9 @@ public:
 
    void initDevices();
 
-   bool playSound(uint16_t soundIndex, uint8_t audioType, uint8_t overrideVolume = 0xFF);
+   bool playSound(uint16_t soundIndex, uint8_t audioType);
 
-   bool queueSound(uint16_t soundIndex, uint8_t audioType, unsigned long timeToPlay,
-                   uint8_t overrideVolume = 0xFF);
-   inline bool queueOriginalSound(uint16_t soundIndex, unsigned long timeToPlay,
-                                   uint8_t overrideVolume = 0xFF) {
-      return queueSound(soundIndex, AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS, timeToPlay, overrideVolume);
-   }
+   bool queueSound(uint16_t soundIndex, unsigned long timeToPlay, uint8_t audioType = AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS );
 
    void stopAllSoundFX();
    void update(unsigned long currentTime);

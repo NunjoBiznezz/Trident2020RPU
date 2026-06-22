@@ -14,8 +14,8 @@ option(ENABLE_DEBUG_MESSAGES "Enable debug messages over serial" OFF)
 
 # RPU feature options
 option(RPU_USE_DIP_SWITCHES "Enable DIP switch reading" ON)
-option(RPU_USE_SB100 "Enable SB-100 sound card support" ON)
-option(RPU_USE_SB300 "Enable SB-300 sound card support" ON)
+option(RPU_USE_SB100 "Enable SB-100 sound card support" OFF)
+option(RPU_USE_SB300 "Enable SB-300 sound card support" OFF)
 option(RPU_USE_WAV_TRIGGER "Enable WavTrigger 1.3 support" ON)
 option(RPU_USE_7_DIGIT_DISPLAYS "Enable 7-digit displays" OFF)
 option(RPU_USE_6_DIGIT_CREDIT_WITH_7_DIGIT "Use 6-digit credit display with 7-digit displays" OFF)

@@ -1420,58 +1420,58 @@ void PlaySoundEffect(uint8_t soundEffectNum) {
       case SOUND_EFFECT_RIGHT_SPINNER:
       case SOUND_EFFECT_DROP_TARGET:
       case SOUND_EFFECT_BALL_OVER:
-         audioHandler.queueOriginalSound(0x02, CurrentTime);
-         audioHandler.queueOriginalSound(0x00, CurrentTime + 75);
+         audioHandler.queueSound(0x02, CurrentTime);
+         audioHandler.queueSound(0x00, CurrentTime + 75);
          break;
       case SOUND_EFFECT_LEFT_INLANE:
          for (int count = 0; count < RolloverValue; count++) {
-            audioHandler.queueOriginalSound(0x04, CurrentTime + 200 * count);
-            audioHandler.queueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
+            audioHandler.queueSound(0x04, CurrentTime + 200 * count);
+            audioHandler.queueSound(0x00, CurrentTime + 75 + (200 * count));
          }
          break;
       case SOUND_EFFECT_RIGHT_INLANE:
          for (int count = 0; count < 6; count++) {
-            audioHandler.queueOriginalSound((count < 3) ? 0x04 : 0x10, CurrentTime + 200 * count);
-            audioHandler.queueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
+            audioHandler.queueSound((count < 3) ? 0x04 : 0x10, CurrentTime + 200 * count);
+            audioHandler.queueSound(0x00, CurrentTime + 75 + (200 * count));
          }
          break;
       case SOUND_EFFECT_SAUCER_HIT_5K:
          for (int count = 0; count < 5; count++) {
-            audioHandler.queueOriginalSound(0x04, CurrentTime + 200 * count);
-            audioHandler.queueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
+            audioHandler.queueSound(0x04, CurrentTime + 200 * count);
+            audioHandler.queueSound(0x00, CurrentTime + 75 + (200 * count));
          }
          break;
       case SOUND_EFFECT_SAUCER_HIT_30K:
          for (int count = 0; count < 3; count++) {
-            audioHandler.queueOriginalSound(0x08, CurrentTime + 200 * count);
-            audioHandler.queueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
+            audioHandler.queueSound(0x08, CurrentTime + 200 * count);
+            audioHandler.queueSound(0x00, CurrentTime + 75 + (200 * count));
          }
          break;
 
       case SOUND_EFFECT_SAUCER_HIT_20K:
          for (int count = 0; count < 2; count++) {
-            audioHandler.queueOriginalSound(0x08, CurrentTime + 200 * count);
-            audioHandler.queueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
+            audioHandler.queueSound(0x08, CurrentTime + 200 * count);
+            audioHandler.queueSound(0x00, CurrentTime + 75 + (200 * count));
          }
          break;
 
       case SOUND_EFFECT_SAUCER_HIT_10K:
          for (int count = 0; count < 1; count++) {
-            audioHandler.queueOriginalSound(0x08, CurrentTime + 200 * count);
-            audioHandler.queueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
+            audioHandler.queueSound(0x08, CurrentTime + 200 * count);
+            audioHandler.queueSound(0x00, CurrentTime + 75 + (200 * count));
          }
          break;
       case SOUND_EFFECT_RIGHT_OUTLANE:
          for (int count = 0; count < 5; count++) {
-            audioHandler.queueOriginalSound(0x04, CurrentTime + 200 * count);
-            audioHandler.queueOriginalSound(0x00, CurrentTime + 75 + (200 * count));
+            audioHandler.queueSound(0x04, CurrentTime + 200 * count);
+            audioHandler.queueSound(0x00, CurrentTime + 75 + (200 * count));
          }
          break;
 
       case SOUND_EFFECT_TOP_BUMPER_HIT:
       case SOUND_EFFECT_BOTTOM_BUMPER_HIT:
-         audioHandler.queueOriginalSound(0x20, CurrentTime);
-         audioHandler.queueOriginalSound(0x00, CurrentTime + 75);
+         audioHandler.queueSound(0x20, CurrentTime);
+         audioHandler.queueSound(0x00, CurrentTime + 75);
          break;
 
       case SOUND_EFFECT_SHOOT_AGAIN:
@@ -1479,9 +1479,9 @@ void PlaySoundEffect(uint8_t soundEffectNum) {
       case SOUND_EFFECT_PLAYER_2_UP:
       case SOUND_EFFECT_PLAYER_3_UP:
       case SOUND_EFFECT_PLAYER_4_UP:
-         audioHandler.queueOriginalSound(0x08, CurrentTime);
-         audioHandler.queueOriginalSound(0x04, CurrentTime + 75);
-         audioHandler.queueOriginalSound(0x00, CurrentTime + 175);
+         audioHandler.queueSound(0x08, CurrentTime);
+         audioHandler.queueSound(0x04, CurrentTime + 75);
+         audioHandler.queueSound(0x00, CurrentTime + 175);
          break;
 
       case SOUND_EFFECT_BONUS_COUNT:
@@ -1489,21 +1489,21 @@ void PlaySoundEffect(uint8_t soundEffectNum) {
       case SOUND_EFFECT_3X_BONUS_COUNT:
       case SOUND_EFFECT_4X_BONUS_COUNT:
       case SOUND_EFFECT_5X_BONUS_COUNT:
-         audioHandler.queueOriginalSound(0x04, CurrentTime);
-         audioHandler.queueOriginalSound(0x00, CurrentTime + 75);
+         audioHandler.queueSound(0x04, CurrentTime);
+         audioHandler.queueSound(0x00, CurrentTime + 75);
          break;
 
       case SOUND_EFFECT_UPPER_SLING:
       case SOUND_EFFECT_EXTRA_BALL:
       case SOUND_EFFECT_TILT_WARNING:
-         audioHandler.queueOriginalSound(0x10, CurrentTime);
-         audioHandler.queueOriginalSound(0x00, CurrentTime + 75);
+         audioHandler.queueSound(0x10, CurrentTime);
+         audioHandler.queueSound(0x00, CurrentTime + 75);
          break;
       case SOUND_EFFECT_10PT_SWITCH:
       case SOUND_EFFECT_MATCH_SPIN:
       case SOUND_EFFECT_LOWER_SLING:
-         audioHandler.queueOriginalSound(0x01, CurrentTime);
-         audioHandler.queueOriginalSound(0x00, CurrentTime + 75);
+         audioHandler.queueSound(0x01, CurrentTime);
+         audioHandler.queueSound(0x00, CurrentTime + 75);
          break;
 
       case SOUND_EFFECT_DROP_TARGET_CLEAR_1:
@@ -1511,8 +1511,8 @@ void PlaySoundEffect(uint8_t soundEffectNum) {
       case SOUND_EFFECT_DROP_TARGET_CLEAR_3:
       case SOUND_EFFECT_DROP_TARGET_CLEAR_4:
       case SOUND_EFFECT_DROP_TARGET_CLEAR_5:
-         audioHandler.queueOriginalSound(0x08, CurrentTime);
-         audioHandler.queueOriginalSound(0x00, CurrentTime + 75);
+         audioHandler.queueSound(0x08, CurrentTime);
+         audioHandler.queueSound(0x00, CurrentTime + 75);
          break;
 
       case SOUND_EFFECT_FIRST_SU_SWITCH_HIT:
@@ -1520,21 +1520,21 @@ void PlaySoundEffect(uint8_t soundEffectNum) {
       case SOUND_EFFECT_THIRD_SU_SWITCH_HIT:
       case SOUND_EFFECT_FOURTH_SU_SWITCH_HIT:
       case SOUND_EFFECT_FIFTH_SU_SWITCH_HIT:
-         audioHandler.queueOriginalSound(0x04, CurrentTime);
-         audioHandler.queueOriginalSound(0x00, CurrentTime + 75);
+         audioHandler.queueSound(0x04, CurrentTime);
+         audioHandler.queueSound(0x00, CurrentTime + 75);
          break;
 
       case SOUND_EFFECT_ADD_CREDIT:
       case SOUND_EFFECT_GAME_OVER:
-         audioHandler.queueOriginalSound(0x08, CurrentTime);
-         audioHandler.queueOriginalSound(0x04, CurrentTime + 75);
-         audioHandler.queueOriginalSound(0x02, CurrentTime + 150);
-         audioHandler.queueOriginalSound(0x01, CurrentTime + 225);
-         audioHandler.queueOriginalSound(0x08, CurrentTime + 325);
-         audioHandler.queueOriginalSound(0x04, CurrentTime + 400);
-         audioHandler.queueOriginalSound(0x02, CurrentTime + 475);
-         audioHandler.queueOriginalSound(0x01, CurrentTime + 550);
-         audioHandler.queueOriginalSound(0x00, CurrentTime + 650);
+         audioHandler.queueSound(0x08, CurrentTime);
+         audioHandler.queueSound(0x04, CurrentTime + 75);
+         audioHandler.queueSound(0x02, CurrentTime + 150);
+         audioHandler.queueSound(0x01, CurrentTime + 225);
+         audioHandler.queueSound(0x08, CurrentTime + 325);
+         audioHandler.queueSound(0x04, CurrentTime + 400);
+         audioHandler.queueSound(0x02, CurrentTime + 475);
+         audioHandler.queueSound(0x01, CurrentTime + 550);
+         audioHandler.queueSound(0x00, CurrentTime + 650);
          break;
 
       case SOUND_EFFECT_ADD_PLAYER_1:
@@ -1543,15 +1543,15 @@ void PlaySoundEffect(uint8_t soundEffectNum) {
       case SOUND_EFFECT_ADD_PLAYER_4:
       case SOUND_EFFECT_RESCUE_FROM_THE_DEEP:
       case SOUND_EFFECT_TRIDENT_INTRO:
-         audioHandler.queueOriginalSound(0x01, CurrentTime);
-         audioHandler.queueOriginalSound(0x02, CurrentTime + 75);
-         audioHandler.queueOriginalSound(0x04, CurrentTime + 150);
-         audioHandler.queueOriginalSound(0x08, CurrentTime + 225);
-         audioHandler.queueOriginalSound(0x01, CurrentTime + 325);
-         audioHandler.queueOriginalSound(0x02, CurrentTime + 400);
-         audioHandler.queueOriginalSound(0x04, CurrentTime + 475);
-         audioHandler.queueOriginalSound(0x08, CurrentTime + 550);
-         audioHandler.queueOriginalSound(0x00, CurrentTime + 650);
+         audioHandler.queueSound(0x01, CurrentTime);
+         audioHandler.queueSound(0x02, CurrentTime + 75);
+         audioHandler.queueSound(0x04, CurrentTime + 150);
+         audioHandler.queueSound(0x08, CurrentTime + 225);
+         audioHandler.queueSound(0x01, CurrentTime + 325);
+         audioHandler.queueSound(0x02, CurrentTime + 400);
+         audioHandler.queueSound(0x04, CurrentTime + 475);
+         audioHandler.queueSound(0x08, CurrentTime + 550);
+         audioHandler.queueSound(0x00, CurrentTime + 650);
          break;
       }
       break;

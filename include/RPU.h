@@ -150,6 +150,12 @@ void RPU_InitSB300();
 void RPU_PlaySB300StartupBeep();
 #endif
 
+// Unified native sound dispatch — routes to whichever single card is compiled in.
+// SB300 is excluded from PlayNativeSound: it uses multi-register writes, not a simple sound-number API.
+// RPU_PlayNativeChime falls back to RPU_PlayNativeSound on hardware that has no chime channel.
+void RPU_InitNativeAudio();
+void RPU_PlayNativeSound(uint8_t soundByte);
+void RPU_PlayNativeChime(uint8_t soundByte);
 
 //   General
 uint8_t RPU_DataRead(int address);
