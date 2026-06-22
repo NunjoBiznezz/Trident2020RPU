@@ -2,11 +2,15 @@
 
 #if defined(RPU_OS_USE_WAV_TRIGGER)
 
-#include "AudioTypes.h"
 #include "NotificationQueue.h"
 #include <stdint.h>
 
 class WavTrigger;
+
+struct AudioSoundtrack {
+   uint16_t TrackIndex;
+   uint16_t TrackLength;
+};
 
 // Owns the WavTrigger driver and all WAV-specific audio management:
 // background music, voice notification queue, ducking, and gain control.
