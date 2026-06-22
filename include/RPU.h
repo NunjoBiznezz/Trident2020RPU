@@ -146,6 +146,8 @@ void RPU_PlaySoundDash51(uint8_t soundByte);
 #if (RPU_OS_HARDWARE_REV >= 2 && defined(RPU_OS_USE_SB300))
 void RPU_PlaySB300SquareWave(uint8_t soundRegister, uint8_t soundByte);
 void RPU_PlaySB300Analog(uint8_t soundRegister, uint8_t soundByte);
+void RPU_InitSB300();
+void RPU_PlaySB300StartupBeep();
 #endif
 
 

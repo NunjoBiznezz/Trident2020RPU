@@ -38,6 +38,7 @@ find_package(Arduino REQUIRED)
 set(SOURCES
     src/main.cpp
     src/AudioHandler.cpp
+    src/WavTriggerHandler.cpp
     src/SelfTestAndAudit.cpp
 )
 

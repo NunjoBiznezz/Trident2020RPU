@@ -23,6 +23,9 @@
 // increase mode start time with new qualifier
 #include "RPU.h"
 #include "AudioHandler.h"
+#if defined(RPU_OS_USE_WAV_TRIGGER)
+#include "WavTriggerHandler.h"
+#endif
 #include "RPU_Addresses.h"
 #include "RPU_config.h"
 #include "SelfTestAndAudit.h"
@@ -155,9 +158,19 @@ static bool ScrollingScores = true;
 // int BackgroundMusicGain = -3;
 
 /*********************************************************************
- * Audio Handler
+ * Audio
  *********************************************************************/
 static AudioHandler audioHandler;
+#if defined(RPU_OS_USE_WAV_TRIGGER)
+static WavTriggerHandler wavHandler;
+#endif
+
+static void StopAllAudio() {
+#if defined(RPU_OS_USE_WAV_TRIGGER)
+   wavHandler.stopAllAudio();
+#endif
+   audioHandler.stopAllSoundFX();
+}
 
 /*********************************************************************
     Game State
@@ -263,9 +276,11 @@ void ReadStoredParameters() {
       CalloutsVolume = 10;
    }
 
-   audioHandler.setMusicVolume(MusicVolume);
-   audioHandler.setSoundFXVolume(SoundEffectsVolume);
-   audioHandler.setNotificationsVolume(CalloutsVolume);
+#if defined(RPU_OS_USE_WAV_TRIGGER)
+   wavHandler.setMusicVolume(MusicVolume);
+   wavHandler.setSoundFXVolume(SoundEffectsVolume);
+   wavHandler.setNotificationsVolume(CalloutsVolume);
+#endif
 
    TournamentScoring = (ReadSetting(EEPROM_TOURNAMENT_SCORING_BYTE, 0)) ? true : false;
 
@@ -315,7 +330,11 @@ void QueueDIAGNotification(unsigned short notificationNum) {
    // This is optional, but the machine can play an audio message at boot
    // time to indicate any errors and whether it's going to boot to original
    // or new code.
-   audioHandler.queuePrioritizedNotification(notificationNum, 0, 10, CurrentTime);
+#if defined(RPU_OS_USE_WAV_TRIGGER)
+   wavHandler.queuePrioritizedNotification(notificationNum, 0, 10, CurrentTime);
+#else
+   (void)notificationNum;
+#endif
 }
 
 void setup() {
@@ -325,8 +344,11 @@ void setup() {
 
 
    CurrentTime = millis();
-   audioHandler.initDevices(AUDIO_PLAY_TYPE_WAV_TRIGGER | AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS);
-   audioHandler.stopAllAudio();
+   audioHandler.initDevices();
+#if defined(RPU_OS_USE_WAV_TRIGGER)
+   wavHandler.init();
+#endif
+   StopAllAudio();
 
    // Tell the OS about game-specific lights and switches
    RPU_SetupGameSwitches(NUM_SWITCHES_WITH_TRIGGERS, NUM_PRIORITY_SWITCHES_WITH_TRIGGERS, TriggeredSwitches);
@@ -352,8 +374,10 @@ void setup() {
    if (initResult & RPU_RET_ORIGINAL_CODE_REQUESTED) {
       delay(100);
       QueueDIAGNotification(SOUND_EFFECT_DIAG_STARTING_ORIGINAL_CODE);
-      while (audioHandler.update(millis()))
+#if defined(RPU_OS_USE_WAV_TRIGGER)
+      while (wavHandler.update(millis()))
          ;
+#endif
       // Arduino should hang if original code is running
       while (1)
          ;
@@ -374,8 +398,10 @@ void setup() {
    ResetScoresToClearVersion = true;
 
    CurrentTime = millis();
-   audioHandler.setMusicDuckingGain(16);
-   audioHandler.queueWavTriggerSound(SOUND_EFFECT_TRIDENT_INTRO, CurrentTime + 5000);
+#if defined(RPU_OS_USE_WAV_TRIGGER)
+   wavHandler.setMusicDuckingGain(16);
+   wavHandler.queueSound(SOUND_EFFECT_TRIDENT_INTRO, CurrentTime + 5000);
+#endif
 }
 
 uint8_t ReadSetting(int setting, uint8_t defaultValue) {
@@ -1104,14 +1130,18 @@ int RunSelfTest(int curState, bool curStateChanged) {
    if (curStateChanged) {
       // Send a stop-all command and reset the sample-rate offset, in case we have
       //  reset while the WAV Trigger was already playing.
-      audioHandler.stopAllAudio();
+      StopAllAudio();
       unsigned short modeMapping = SelfTestStateToCalloutMap[-1 - curState];
-      audioHandler.playSound(modeMapping, AUDIO_PLAY_TYPE_WAV_TRIGGER, 10);
+#if defined(RPU_OS_USE_WAV_TRIGGER)
+      wavHandler.playSound(modeMapping, 10);
+#else
+      (void)modeMapping;
+#endif
       SoundSettingTimeout = 0;
    } else {
       if (SoundSettingTimeout && CurrentTime > SoundSettingTimeout) {
          SoundSettingTimeout = 0;
-         audioHandler.stopAllAudio();
+         StopAllAudio();
       }
    }
 
@@ -1136,8 +1166,10 @@ int RunSelfTest(int curState, bool curStateChanged) {
       if (chuteNum != 0xFF) {
          if (cpcSelection != GetCPCSelection(chuteNum)) {
             uint8_t newCPC = GetCPCSelection(chuteNum);
-            audioHandler.stopAllAudio();
-            audioHandler.playSound(SOUND_EFFECT_SELF_TEST_CPC_START + newCPC, AUDIO_PLAY_TYPE_WAV_TRIGGER, 10);
+            StopAllAudio();
+#if defined(RPU_OS_USE_WAV_TRIGGER)
+            wavHandler.playSound(SOUND_EFFECT_SELF_TEST_CPC_START + newCPC, 10);
+#endif
          }
       }
    } else {
@@ -1365,7 +1397,9 @@ uint8_t CurrentBackgroundSong = SOUND_EFFECT_NONE;
 
 void PlayBackgroundSong(unsigned short songNum) {
    if ((MusicVolume != 0) && (SoundSelector == SOUND_SELECTOR_TRIDENT2020)) {
-      audioHandler.playBackgroundSong(songNum, true);
+#if defined(RPU_OS_USE_WAV_TRIGGER)
+      wavHandler.playBackgroundSong(songNum, true);
+#endif
    }
 }
 
@@ -1524,7 +1558,9 @@ void PlaySoundEffect(uint8_t soundEffectNum) {
 
    case SOUND_SELECTOR_TRIDENT2020:
    default:
-      audioHandler.playSound(soundEffectNum, AUDIO_PLAY_TYPE_WAV_TRIGGER);
+#if defined(RPU_OS_USE_WAV_TRIGGER)
+      wavHandler.playSound(soundEffectNum);
+#endif
       break;
    }
 }
@@ -2909,5 +2945,8 @@ void loop() {
    }
 
    audioHandler.update(CurrentTime);
+#if defined(RPU_OS_USE_WAV_TRIGGER)
+   wavHandler.update(CurrentTime);
+#endif
    RPU_Update(CurrentTime);
 }
