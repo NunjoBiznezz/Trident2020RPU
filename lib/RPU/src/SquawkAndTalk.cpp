@@ -1,4 +1,4 @@
-#include "../include/RPU.h"
+#include "RPU.h"
 
 /******************************************************
  *   Sound Handling Functions

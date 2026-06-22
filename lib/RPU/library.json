@@ -1,0 +1,11 @@
+{
+  "name": "RPU",
+  "version": "5.7.0",
+  "description": "Replacement Processing Unit OS for Arduino — hardware abstraction for vintage pinball MPU bus",
+  "keywords": ["pinball", "arduino", "rpu", "gottlieb", "embedded"],
+  "license": "GPL-3.0",
+  "build": {
+    "srcDir": "src",
+    "includeDir": "include"
+  }
+}

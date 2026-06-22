@@ -19,8 +19,7 @@
 */
 
 #include "SelfTestAndAudit.h"
-#include "../include/RPU.h"
-#include "RPU_Addresses.h"
+#include "RPU.h"
 #include "RPU_config.h"
 #include <Arduino.h>
 
