@@ -1,8 +1,13 @@
-#include "../include/RPU.h"
-#include "../include/RPU_config.h"
+#include "RPU.h"
+#include "RPU_config.h"
 #include "RPU_Addresses.h"
+#include <Arduino.h>
 
 #ifdef RPU_OS_USE_DASH51
+
+extern void RPU_DataWrite(int address, uint8_t data);
+extern uint8_t RPU_DataRead(int address);
+
 void RPU_PlaySoundDash51(uint8_t soundByte) {
    // This device has 32 possible sounds, but they're mapped to
    // 0 - 15 and then 128 - 143 on the original card, with bits b4, b5, and b6 reserved
