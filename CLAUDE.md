@@ -14,6 +14,7 @@ pio run                              # build (default: rev3)
 pio run -e rpu_os_hardware_rev4      # build for specific hardware rev
 pio run -t upload                    # compile and flash to board
 pio run -t upload -e rpu_os_hardware_rev4
+pio device monitor -b 115200         # monitor serial debug output
 ```
 
 **CMake (secondary — useful for IDE integration):**
@@ -26,11 +27,13 @@ cmake --build --preset rev4
 
 All supported revisions target the Arduino MEGA 2560. Select the right one via `-e` in PlatformIO or `--preset` in CMake:
 
-| Rev | Board | Notes                                    |
-|-----|-------|------------------------------------------|
-| 3 | MEGA 2560 Pro | WAV Trigger on `Serial` (with RX added)  |
-| 4 | MEGA 2560 Pro (larger) | WAV Trigger on `Serial1` (bidirectional) |
-| 102 | MEGA 2560 w/ display+WiFi | Enables `DEBUG_MESSAGES`                 |
+| Env | Board | Notes |
+|-----|-------|-------|
+| `rpu_os_hardware_rev3` | MEGA 2560 Pro | WAV Trigger on `Serial` (RX added) |
+| `rpu_os_hardware_rev4` | MEGA 2560 Pro (larger) | WAV Trigger on `Serial1` (bidirectional) |
+| `rpu_os_hardware_rev102` | MEGA 2560 w/ display+WiFi | Enables `DEBUG_MESSAGES` |
+| `dash51` | MEGA 2560 | Stub env to test Dash-51 sound card |
+| `sb100` / `sb300` | MEGA 2560 | Stub envs to test original sound cards |
 
 Rev 3 vs Rev 4 matters for audio: `WavTrigger::hasSerialRx` is false on Rev 3, which disables sound-effect ducking during callouts (`duckCurrentSoundEffects()` returns early).
 
@@ -41,6 +44,7 @@ All `RPU_OS_USE_*` defines are set by `platformio.ini` or CMake options — neve
 - `RPU_OS_USE_WAV_TRIGGER` — enables WAV Trigger audio path
 - `RPU_OS_USE_SB100` / `RPU_OS_USE_SB300` — original Stern sound card paths
 - `RPU_OS_USE_DIP_SWITCHES` — read physical DIP switches at boot
+- `DEBUG_MESSAGES` — enables `DEBUG_MESSAGE(x)` macro → `Serial.write(x)`
 
 ## Architecture
 
@@ -50,7 +54,9 @@ All `RPU_OS_USE_*` defines are set by `platformio.ini` or CMake options — neve
 
 **`lib/WavTrigger/`** — Serial driver for the WAV Trigger board.
 
-**`src/AudioHandler.cpp`** — Three independent audio channels (sound FX, background music, voice notifications) unified over whatever backends are compiled in. Called once per loop via `audioHandler.update(CurrentTime)`.
+**`src/AudioHandler.cpp`** — Manages native sound card output (SB-100, SB-300, Dash-51, Squawk & Talk) via a timed queue. Does **not** handle WAV Trigger. Called once per loop via `audioHandler.update(CurrentTime)`.
+
+**`src/WavTriggerHandler.cpp`** — Owns the WAV Trigger driver. Three independent audio channels (sound FX, background music, voice notifications) with volume control 0–10 per channel, automatic music/FX ducking during callouts, and a priority `NotificationQueue`. Called once per loop via `wavHandler.update(CurrentTime)`.
 
 **`src/SelfTestAndAudit.cpp`** — Coin-door button menu: hardware tests (lamps, displays, solenoids, switches, sounds) and 29 operator-adjustable settings. Runs when `MachineState < 0`.
 
@@ -62,7 +68,7 @@ All `RPU_OS_USE_*` defines are set by `platformio.ini` or CMake options — neve
 // Every loop() tick:
 CurrentTime = millis();
 // ...service switches, audio, solenoids via RPU...
-if (MachineState < 0)      RunSelfTest(...);
+if (MachineState < 0)       RunSelfTest(...);
 else if (MachineState == 0) RunAttractMode(...);
 else                        RunGamePlay(...);
 ```
@@ -71,14 +77,14 @@ else                        RunGamePlay(...);
 
 ### Machine state values
 
-- **Negative** — self-test / operator adjust (defined in `SelfTestAndAudit.h`)
+- **Negative** — self-test / operator adjust (defined in `SelfTestAndAudit.h`, accessed via `MachineState.h`)
 - **0** — attract mode
 - **1–4** — game play phases (`INIT_GAMEPLAY`, `INIT_NEW_BALL`, `NORMAL_GAMEPLAY`)
 - **99–110** — end-of-ball sequence (`COUNTDOWN_BONUS`, `BALL_OVER`, `MATCH_MODE`)
 
 ### Game modes (within normal gameplay)
 
-Stored in the `GameMode` byte using flags:
+Stored in the `GameMode` byte using flags. **Always check with `(GameMode & FLAG)`, not `(GameMode == FLAG)`** — wizard mode sets multiple flags simultaneously.
 
 - `GAME_MODE_SKILL_SHOT` (0), `UNSTRUCTURED_PLAY` (1), `MINI_GAME_*` (2–4)
 - `GAME_MODE_FEEDING_FRENZY_FLAG` (0x10), `SHARP_SHOOTER_FLAG` (0x20), `EXPLORE_THE_DEPTHS_FLAG` (0x40)
@@ -86,16 +92,18 @@ Stored in the `GameMode` byte using flags:
 
 ### EEPROM layout
 
-Settings are stored at fixed byte offsets 100–144 in EEPROM. The constants are defined at the top of `main.cpp` (`EEPROM_*_BYTE`). Use `ReadSetting(offset, default)` to read; write via `EEPROM.write()`.
+Settings are stored at fixed byte offsets 100–144 in EEPROM. Constants defined at the top of `main.cpp` (`EEPROM_*_BYTE`). Use `ReadSetting(offset, default)` to read; write via `EEPROM.write()`.
 
 ### Audio
 
-`AudioHandler` wraps all audio backends. Three volume channels, each settable 0–10:
-- **Sound FX** — one-shot effects via `PlaySoundEffect()` → `audioHandler.playSound()`
-- **Background music** — looping track or auto-advancing soundtrack via `audioHandler.playBackgroundSong()`
-- **Notifications** (voice callouts) — FIFO queue with priority via `audioHandler.queuePrioritizedNotification()`; music and FX auto-duck while a notification plays
+Two handlers run in parallel each loop:
+
+- `audioHandler.update(CurrentTime)` — fires time-queued native sound card commands
+- `wavHandler.update(CurrentTime)` — manages WAV Trigger: ducking, notification queue, soundtrack advancement
 
 Sound effect numbers are defined in `SoundEffects.h`. WAV files on the SD card are referenced by track number = sound effect number.
+
+For WAV Trigger audio: `wavHandler.playSound()` for one-shot FX, `wavHandler.playBackgroundSong()` for looping music, `wavHandler.queuePrioritizedNotification()` for voice callouts.
 
 ### Data structure hierarchy
 
@@ -115,3 +123,29 @@ CircularQueue<T, SIZE, EMPTY> — sentinel-based FIFO, volatile members for ISR 
 `NotificationQueue` uses `INVALID_NOTIFICATION = 0xFFFF` as a tombstone: `clearUpToPriority()` marks entries in-place; `pull()` skips tombstoned entries automatically.
 
 `CircularStack.h` and `SimpleStack.h` are redirect shims to their renamed counterparts — do not use them for new code.
+
+## Code conventions
+
+### Naming patterns
+
+- **Hardware constants**: `SW_*` (switches), `SOL_*` (solenoids), lamp numbers as bare `constexpr` (e.g., `BONUS_1`)
+- **Game state constants**: `GAME_MODE_*`, `MACHINE_STATE_*`
+- **EEPROM addresses**: `EEPROM_*_BYTE`
+- **Timing values**: suffix with `_TIME` or `_DURATION`, in milliseconds
+- **Bitwise masks**: suffix with `_MASK` (e.g., `STANDUP_PURPLE_MASK`)
+
+### Adding auto-triggered solenoids
+
+Pop bumpers and slings are wired in `TriggeredSwitches[]` in `Trident2020.h` — they fire their solenoid automatically without game-loop switch handling. The array entry specifies `{switchNum, solenoidNum, durationIn120ths}`.
+
+### Memory constraints (ATmega2560)
+
+- Prefer `constexpr` over `#define` — type-safe and avoids macro pitfalls
+- Use `uint8_t`/`uint16_t`/`unsigned long` for explicit sizing
+- Store string literals in PROGMEM when possible
+- Never use dynamic allocation (`new`, `malloc`) — preallocate all arrays
+- The display interrupt runs at ~320 Hz — keep ISR-adjacent code minimal
+
+### Formatting
+
+The project uses clang-format with 3-space indentation, 140-column limit, LLVM style with `InsertBraces: true`. Run `clang-format -i <file>` to auto-format. clang-tidy is configured for readability and bugprone checks (see `.clang-tidy`).
