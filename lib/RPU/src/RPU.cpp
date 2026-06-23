@@ -22,10 +22,10 @@
 #include "CircularQueue.h"
 #include "RPU_Addresses.h"
 #include "RPU_config.h"
+#include "RPU_Debug.h"
 #include "TimedStack.h"
 #include <Arduino.h>
 #include <EEPROM.h>
-#include "RPU_Debug.h"
 
 static int NumGameSwitches = 0;
 static int NumGamePrioritySwitches = 0;
