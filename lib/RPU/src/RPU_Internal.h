@@ -26,6 +26,14 @@
 extern void RPU_DataWrite(int address, uint8_t data);
 extern uint8_t RPU_DataRead(int address);
 
+// Applies GCC speed optimization to ISR-called methods.
+// __has_attribute evaluates to 0 on clang, which does not support "optimize".
+#if __has_attribute(optimize)
+#define RPU_OPTIMIZE_SPEED __attribute__((optimize("O3")))
+#else
+#define RPU_OPTIMIZE_SPEED
+#endif
+
 #if (RPU_OS_HARDWARE_REV == 1)
 constexpr uint16_t ADDRESS_U10_A = 0x14;
 constexpr uint16_t ADDRESS_U10_A_CONTROL = 0x15;

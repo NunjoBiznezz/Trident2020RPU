@@ -72,7 +72,7 @@ bool SwitchManager::getUpDown() const {
 /**
  * Switch processing called from ISR
  */
-void SwitchManager::service() {
+RPU_OPTIMIZE_SPEED void SwitchManager::service() {
    // Backup contents of U10A
    const uint8_t backup10A = RPU_DataRead(ADDRESS_U10_A);
 
@@ -93,7 +93,7 @@ void SwitchManager::service() {
    RPU_DataWrite(ADDRESS_U10_A, backup10A);
 }
 
-void SwitchManager::serviceBank(uint8_t switchCount) {
+RPU_OPTIMIZE_SPEED void SwitchManager::serviceBank(uint8_t switchCount) {
    minus2_[switchCount] = minus1_[switchCount];
    minus1_[switchCount] = now_[switchCount];
 
