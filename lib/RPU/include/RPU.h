@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include "RPU_Addresses.h"
 #include "RPU_config.h"
+#include "RPU_Internal.h"
 
 #include <stdint.h>
 
@@ -152,11 +152,12 @@ void RPU_PlaySB300StartupBeep();
 
 // Unified native sound dispatch — routes to whichever single card is compiled in.
 // SB300 is excluded from PlayNativeSound: it uses multi-register writes, not a simple sound-number API.
-// RPU_PlayNativeChime falls back to RPU_PlayNativeSound on hardware that has no chime channel.
 void RPU_InitNativeAudio();
 void RPU_PlayNativeSound(uint8_t soundByte);
-void RPU_PlayNativeChime(uint8_t soundByte);
 
+#if defined(RPU_OS_USE_SB100) && (RPU_OS_HARDWARE_REV == 2)
+void RPU_PlayNativeChime(uint8_t soundByte);
+#endif
 //   General
 uint8_t RPU_DataRead(int address);
 void RPU_Update(unsigned long currentTime);

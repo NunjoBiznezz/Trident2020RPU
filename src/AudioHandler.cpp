@@ -12,8 +12,14 @@ void AudioHandler::initDevices() {
 
 bool AudioHandler::playSound(uint16_t soundIndex, uint8_t audioType) {
    switch (audioType) {
-   case AUDIO_PLAY_TYPE_CHIMES:        RPU_PlayNativeChime((uint8_t)soundIndex); return true;
-   case AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS: RPU_PlayNativeSound((uint8_t)soundIndex); return true;
+   case AUDIO_PLAY_TYPE_CHIMES:
+#if defined(RPU_OS_USE_SB100) && (RPU_OS_HARDWARE_REV == 2)
+      RPU_PlayNativeChime((uint8_t)soundIndex);
+      return true;
+#endif
+   case AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS:
+      RPU_PlayNativeSound((uint8_t)soundIndex);
+      return true;
    default: break;
    }
    return false;

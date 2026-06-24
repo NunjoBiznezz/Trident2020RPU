@@ -14,7 +14,7 @@ if(RPU_ENABLE_S_AND_T)
     list(APPEND RPU_SOURCES src/SquawkAndTalk.cpp)
 endif()
 if(RPU_ENABLE_DASH51)
-    list(APPEND RPU_SOURCES src/Dash51.cpp)
+    list(APPEND RPU_SOURCES src/Dash51Sound.cpp)
 endif()
 
 add_library(RPU STATIC ${RPU_SOURCES})

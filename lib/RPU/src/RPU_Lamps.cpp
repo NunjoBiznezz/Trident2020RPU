@@ -19,7 +19,7 @@
  */
 
 #include "RPU.h"
-#include "RPU_Addresses.h"
+#include "RPU_Internal.h"
 #include "RPU_Lamps.h"
 #include <Arduino.h>
 

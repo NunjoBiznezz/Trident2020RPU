@@ -1,5 +1,6 @@
 #include "RPU.h"
 #include "RPU_config.h"
+#include "RPU_Internal.h"
 #include <Arduino.h>
 
 extern void RPU_DataWrite(int address, uint8_t data);

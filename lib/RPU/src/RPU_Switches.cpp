@@ -18,7 +18,7 @@
     See <https://www.gnu.org/licenses/>.
  */
 
-#include "RPU_Addresses.h"
+#include "RPU_Internal.h"
 #include "RPU_Solenoids.h"
 #include "RPU_Switches.h"
 #include <Arduino.h>

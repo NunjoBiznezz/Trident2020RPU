@@ -22,28 +22,9 @@
 
 #include <stdint.h>
 
-
-/******************************************************
- *   Hardware Interface Functions
- *
- *   These functions have conditional compilation for different RPU_OS_HARDWARE_REVs
- *
- *   RPU_OS_HARDWARE_REV 1 - Nano board that plugs into J5 (only works on -17, -35, 100, and 200 MPUs)
- *   RPU_OS_HARDWARE_REV 2 - Nano board that plugs into J5 (only works on -17, -35, 100, and 200 MPUs)
- *                           adds support for SB300 sound cards
- *   RPU_OS_HARDWARE_REV 3 - MEGA2560 PRO board that plugs into J5 (only works on -17, -35, 100, and 200 MPUs)
- *                           adds support for full address space
- *   RPU_OS_HARDWARE_REV 4 - MEGA2560 PRO board that plugs into J5 (only works on -17, -35, 100, and 200 MPUs)
- *                           adds support for OLED display, WIFI, and multiple serial ports
- *   RPU_OS_HARDWARE_REV 4 - MEGA2560 PRO board that plugs into J5 (only works on -17, -35, 100, and 200 MPUs)
- *                           adds support for OLED display, WIFI, and multiple serial ports
- *   RPU_OS_HARDWARE_REV 100 - MEGA2560 PRO board that plugs into processor socket (prototype)
- *   RPU_OS_HARDWARE_REV 101 - MEGA2560 PRO board that plugs into processor socket
- *                             adds support for multiple serial ports (limited release)
- *   RPU_OS_HARDWARE_REV 102 - MEGA2560 PRO board that plugs into processor socket (prototype)
- *                             adds support for OLED display, WIFI, autodetection of processor type
- *
- */
+// Internal methods needed by controllers
+extern void RPU_DataWrite(int address, uint8_t data);
+extern uint8_t RPU_DataRead(int address);
 
 #if (RPU_OS_HARDWARE_REV == 1)
 constexpr uint16_t ADDRESS_U10_A = 0x14;
@@ -118,3 +99,18 @@ constexpr uint16_t RPU_CPC_CHUTE_2_SELECTION_BYTE = 51;
 constexpr uint16_t RPU_CPC_CHUTE_3_SELECTION_BYTE = 52;
 
 
+#if !defined(RPU_DEBUG_MESSAGES)
+#define RPU_DEBUG_MESSAGES 0
+#define RPU_DEBUG_MESSAGE(msg)
+#define RPU_DEBUG_DELAY(ms)
+#define RPU_DEBUG_PRINTF(...)
+#else
+#define RPU_DEBUG_MESSAGE(msg) Serial.write(msg);
+#define RPU_DEBUG_DELAY(ms) delay(ms)
+#define RPU_DEBUG_PRINTF(...)           \
+{                                 \
+char _debug_buf[128];             \
+sprintf(_debug_buf, __VA_ARGS__); \
+Serial.write(_debug_buf);         \
+}
+#endif

@@ -18,9 +18,9 @@
     See <https://www.gnu.org/licenses/>.
  */
 
-#include "RPU.h"
-#include "RPU_Addresses.h"
 #include "RPU_Display.h"
+#include "RPU.h"
+#include "RPU_Internal.h"
 #include <Arduino.h>
 
 DisplayManager display;

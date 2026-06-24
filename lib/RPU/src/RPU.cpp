@@ -19,11 +19,10 @@
  */
 
 #include "RPU.h"
-#include "RPU_Addresses.h"
 #include "RPU_config.h"
-#include "RPU_Debug.h"
 #include "RPU_DipSwitches.h"
 #include "RPU_Display.h"
+#include "RPU_Internal.h"
 #include "RPU_Lamps.h"
 #include "RPU_Solenoids.h"
 #include "RPU_Switches.h"
@@ -48,8 +47,8 @@ constexpr bool UsesM6800Processor = false;
 
 #if (RPU_OS_HARDWARE_REV == 1) or (RPU_OS_HARDWARE_REV == 2)
 
-#if defined(__AVR_ATmega2560__)
-#error "ATMega requires RPU_OS_HARDWARE_REV of 3, check RPU_Config.h and adjust settings"
+#if !defined(__AVR_ATmega328P__)
+#error "Versions 1 & 2 use the Arduino Nano 328, check your compiler settings"
 #endif
 
 void RPU_DataWrite(int address, uint8_t data) {
@@ -160,7 +159,7 @@ uint8_t RPU_DataRead(int address) {
    return inputData;
 }
 
-void WaitClockCycle(int numCycles = 1) {
+static void WaitClockCycle(int numCycles = 1) {
    for (int count = 0; count < numCycles; count++) {
       // Wait while clock is low
       while (!(PIND & 0x10))
@@ -174,6 +173,10 @@ void WaitClockCycle(int numCycles = 1) {
 
 #elif (RPU_OS_HARDWARE_REV == 3)
 
+#if !defined(__AVR_ATmega2560__)
+#error "RPU_OS_HARDWARE_REV 3 requires ATMega2560, check RPU_Config.h and adjust settings"
+#endif
+
 // Rev 3 connections
 // Pin D2 = IRQ
 // Pin D3 = CLOCK
@@ -185,9 +188,6 @@ void WaitClockCycle(int numCycles = 1) {
 // Pin D15 = D7
 // Pin D16-30 = A0-A14
 
-#if defined(__AVR_ATmega328P__)
-#error "RPU_OS_HARDWARE_REV 3 requires ATMega2560, check RPU_Config.h and adjust settings"
-#endif
 
 void RPU_DataWrite(int address, uint8_t data) {
    // Set data pins to output
@@ -310,19 +310,23 @@ uint8_t RPU_DataRead(int address) {
    return inputData;
 }
 
-void WaitClockCycle(int numCycles = 1) {
-   for (int count = 0; count < numCycles; count++) {
-      // Wait while clock is low
-      while (!(PINE & 0x20))
-         ;
-
-      // Wait for a falling edge of the clock
-      while ((PINE & 0x20))
-         ;
-   }
-}
+// static void WaitClockCycle(int numCycles = 1) {
+//    for (int count = 0; count < numCycles; count++) {
+//       // Wait while clock is low
+//       while (!(PINE & 0x20))
+//          ;
+//
+//       // Wait for a falling edge of the clock
+//       while ((PINE & 0x20))
+//          ;
+//    }
+// }
 
 #elif (RPU_OS_HARDWARE_REV == 4)
+
+#if !defined(__AVR_ATmega2560__)
+#error "RPU_OS_HARDWARE_REV 4 requires ATMega2560, check RPU_Config.h and adjust settings"
+#endif
 
 // Rev 3 connections
 // Pin D2 = IRQ
@@ -335,10 +339,6 @@ void WaitClockCycle(int numCycles = 1) {
 // Pin D15 = D7
 // Pin D16-30 = A0-A14
 
-#if defined(__AVR_ATmega328P__)
-#error "RPU_OS_HARDWARE_REV 4 requires ATMega2560, check RPU_Config.h and adjust settings"
-#endif
-
 #define RPU_VMA_PIN 40
 #define RPU_RW_PIN 3
 #define RPU_PHI2_PIN 39
@@ -350,13 +350,13 @@ void WaitClockCycle(int numCycles = 1) {
 #define RPU_PINS_OUTPUT true
 #define RPU_PINS_INPUT false
 
-void RPU_SetAddressPinsDirection(bool pinsOutput) {
+static void RPU_SetAddressPinsDirection(bool pinsOutput) {
    for (int count = 0; count < 16; count++) {
       pinMode(A0 + count, pinsOutput ? OUTPUT : INPUT);
    }
 }
 
-void RPU_SetDataPinsDirection(bool pinsOutput) {
+static void RPU_SetDataPinsDirection(bool pinsOutput) {
    for (int count = 0; count < 8; count++) {
       pinMode(22 + count, pinsOutput ? OUTPUT : INPUT);
    }
@@ -495,7 +495,7 @@ uint8_t RPU_DataRead(int address) {
 
 #elif (RPU_OS_HARDWARE_REV == 100)
 
-#if defined(__AVR_ATmega328P__)
+#if !defined(__AVR_ATmega2560__)
 #error "RPU_OS_HARDWARE_REV 100 requires ATMega2560, check RPU_Config.h and adjust settings"
 #endif
 
@@ -634,7 +634,7 @@ uint8_t RPU_DataRead(int address) {
    return inputData;
 }
 
-void WaitClockCycle(int numCycles = 1) {
+static void WaitClockCycle(int numCycles = 1) {
    for (int count = 0; count < numCycles; count++) {
       // Wait while clock is low
       while (!(PINE & 0x20))
@@ -648,7 +648,7 @@ void WaitClockCycle(int numCycles = 1) {
 
 #elif (RPU_OS_HARDWARE_REV == 101) || (RPU_OS_HARDWARE_REV == 102)
 
-#if defined(__AVR_ATmega328P__)
+#if !defined(__AVR_ATmega2560__)
 #error "RPU_OS_HARDWARE_REV >100 requires ATMega2560, check RPU_Config.h and adjust settings"
 #endif
 
@@ -670,13 +670,13 @@ void WaitClockCycle(int numCycles = 1) {
 #define RPU_PINS_OUTPUT true
 #define RPU_PINS_INPUT false
 
-void RPU_SetAddressPinsDirection(bool pinsOutput) {
+static void RPU_SetAddressPinsDirection(bool pinsOutput) {
    for (int count = 0; count < 16; count++) {
       pinMode(A0 + count, pinsOutput ? OUTPUT : INPUT);
    }
 }
 
-void RPU_SetDataPinsDirection(bool pinsOutput) {
+static void RPU_SetDataPinsDirection(bool pinsOutput) {
    for (int count = 0; count < 8; count++) {
       pinMode(22 + count, pinsOutput ? OUTPUT : INPUT);
    }
@@ -797,8 +797,7 @@ uint8_t RPU_DataRead(int address) {
       PORTG |= 0x04;
    }
 
-   uint8_t inputData;
-   inputData = PINA;
+   const uint8_t inputData = PINA;
 
    // Set VMA OFF
    PORTG = PORTG & 0xFD;
@@ -817,15 +816,15 @@ uint8_t RPU_DataRead(int address) {
 #error "RPU Hardware Definition Not Recognized"
 #endif
 
-void TestLightOn() {
-   RPU_DataWrite(ADDRESS_U11_A_CONTROL, RPU_DataRead(ADDRESS_U11_A_CONTROL) | 0x08);
-}
+// static void TestLightOn() {
+//    RPU_DataWrite(ADDRESS_U11_A_CONTROL, RPU_DataRead(ADDRESS_U11_A_CONTROL) | 0x08);
+// }
 
-void TestLightOff() {
-   RPU_DataWrite(ADDRESS_U11_A_CONTROL, RPU_DataRead(ADDRESS_U11_A_CONTROL) & 0xF7);
-}
+// static void TestLightOff() {
+//    RPU_DataWrite(ADDRESS_U11_A_CONTROL, RPU_DataRead(ADDRESS_U11_A_CONTROL) & 0xF7);
+// }
 
-void InitializeU10PIA() {
+static void InitializeU10PIA() {
    // CA1 - Self Test Switch
    // CB1 - zero crossing detector
    // CA2 - NOR'd with display latch strobe
@@ -848,7 +847,7 @@ void InitializeU10PIA() {
    RPU_DataWrite(ADDRESS_U10_B_CONTROL, RPU_DataRead(ADDRESS_U10_B_CONTROL) | 0x04);
 }
 
-void InitializeU11PIA() {
+static void InitializeU11PIA() {
    // CA1 - Display interrupt generator
    // CB1 - test connector pin 32
    // CA2 - lamp strobe 2
@@ -873,7 +872,7 @@ void InitializeU11PIA() {
    solenoids.initDefault();
 }
 
-unsigned long RPU_TestPIAs() {
+static unsigned long RPU_TestPIAs() {
    unsigned long piaErrors = 0;
 
    uint8_t piaResult = RPU_DataRead(ADDRESS_U10_A_CONTROL);
@@ -909,34 +908,6 @@ void RPU_ClearVariables() {
    lamps.reset();
 }
 
-#if (RPU_OS_HARDWARE_REV >= 2 && defined(RPU_OS_USE_SB300))
-
-void RPU_PlaySB300SquareWave(uint8_t soundRegister, uint8_t soundByte) {
-   RPU_DataWrite(ADDRESS_SB300_SQUARE_WAVES + soundRegister, soundByte);
-}
-
-void RPU_PlaySB300Analog(uint8_t soundRegister, uint8_t soundByte) {
-   RPU_DataWrite(ADDRESS_SB300_ANALOG + soundRegister, soundByte);
-}
-
-void RPU_InitSB300() {
-   RPU_PlaySB300SquareWave(1, 0x00); // CR2: Timer 2 off, continuous, 16-bit, C2 clock, CR3 set
-   RPU_PlaySB300SquareWave(0, 0x00); // CR3: Timer 3 off, continuous, 16-bit, C3 clock
-   RPU_PlaySB300SquareWave(1, 0x01); // CR2: Timer 2 off, continuous, 16-bit, C2 clock, CR1 set
-   RPU_PlaySB300SquareWave(0, 0x00); // CR1: Timer 1 off, continuous, 16-bit, C1 clock
-}
-
-void RPU_PlaySB300StartupBeep() {
-   RPU_PlaySB300SquareWave(1, 0x92); // CR2: Timer 2 on, continuous, 16-bit, E clock, CR3 set
-   RPU_PlaySB300SquareWave(0, 0x92); // CR3: Timer 3 on, continuous, 16-bit, E clock
-   RPU_PlaySB300SquareWave(4, 0x02); // Timer 2 = 0x0200
-   RPU_PlaySB300SquareWave(5, 0x00);
-   RPU_PlaySB300SquareWave(6, 0x80); // Timer 3 = 0x8000
-   RPU_PlaySB300SquareWave(7, 0x00);
-   RPU_PlaySB300Analog(0, 0x02);
-}
-
-#endif
 
 void RPU_InitNativeAudio() {
 #if (RPU_OS_HARDWARE_REV >= 2 && defined(RPU_OS_USE_SB300))
@@ -957,13 +928,11 @@ void RPU_PlayNativeSound(uint8_t soundByte) {
 #endif
 }
 
-void RPU_PlayNativeChime(uint8_t soundByte) {
 #if defined(RPU_OS_USE_SB100) && (RPU_OS_HARDWARE_REV == 2)
+void RPU_PlayNativeChime(uint8_t soundByte) {
    RPU_PlaySB100Chime(soundByte);
-#else
-   RPU_PlayNativeSound(soundByte);
-#endif
 }
+#endif
 
 /******************************************************
  *   EEPROM Helper Functions
@@ -1058,7 +1027,7 @@ bool CheckForMPUClock() {
 static volatile int numberOfU11Interrupts = 0;
 static volatile uint8_t InsideZeroCrossingInterrupt = 0;
 
-void InterruptService3() {
+static void InterruptService3() {
    const uint8_t u10AControl = RPU_DataRead(ADDRESS_U10_A_CONTROL);
    if (u10AControl & 0x80) {
       // self test switch
@@ -1123,7 +1092,7 @@ void InterruptService3() {
    }
 }
 
-void RPU_HookInterrupts() {
+static void RPU_HookInterrupts() {
    // Hook up the interrupt
 
    cli();
@@ -1144,7 +1113,8 @@ void RPU_HookInterrupts() {
    attachInterrupt(digitalPinToInterrupt(2), InterruptService3, LOW);
 }
 
-bool LookFor6800Activity() {
+#if (RPU_OS_HARDWARE_REV == 1) or (RPU_OS_HARDWARE_REV == 2)
+static bool LookFor6800Activity() {
    // Assume Arduino pins all start as input
    unsigned long startTime = millis();
    bool sawHigh = false;
@@ -1165,8 +1135,9 @@ bool LookFor6800Activity() {
    }
    return false;
 }
+#endif
 
-void SetupArduinoPorts() {
+static void SetupArduinoPorts() {
 #if (RPU_OS_HARDWARE_REV == 1)
    // Arduino A0 = MPU A0
    // Arduino A1 = MPU A1

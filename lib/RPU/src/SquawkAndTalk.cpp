@@ -6,7 +6,7 @@
 
 #ifdef RPU_OS_USE_S_AND_T
 
-#include "RPU_Addresses.h"
+#include "RPU_Internal.h"
 #include <Arduino.h>
 
 void RPU_PlaySoundSAndT(uint8_t soundByte) {

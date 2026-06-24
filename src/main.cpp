@@ -26,8 +26,8 @@
 #if defined(RPU_OS_USE_WAV_TRIGGER)
 #include "WavTriggerHandler.h"
 #endif
-#include "RPU_Addresses.h"
 #include "RPU_config.h"
+#include "RPU_Internal.h"
 #include "SelfTestAndAudit.h"
 #include "Trident2020.h"
 #include <Arduino.h>
