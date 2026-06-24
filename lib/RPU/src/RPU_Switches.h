@@ -15,7 +15,7 @@ constexpr unsigned MAX_NUM_SWITCHES = 40;
 class SwitchManager {
 public:
    void reset();
-   void serviceBank(uint8_t switchCount);
+   void serviceSwitches();
 
    void pushToStack(uint8_t switchNumber);
    uint8_t pullFromStack();
@@ -35,6 +35,8 @@ private:
    volatile uint8_t now_[NUM_SWITCH_BYTES] = {};
 
    CircularQueue<uint8_t, 60, 0xFF> switchStack_;
+
+   void serviceBank(uint8_t switchCount);
 };
 
 extern SwitchManager switches;

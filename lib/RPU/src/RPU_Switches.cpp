@@ -69,6 +69,12 @@ bool SwitchManager::getUpDown() const {
    return true;
 }
 
+void SwitchManager::serviceSwitches() {
+   for (uint8_t switchCount = 0; switchCount < NUM_SWITCH_BYTES; switchCount++) {
+      serviceBank(switchCount);
+   }
+}
+
 void SwitchManager::serviceBank(uint8_t switchCount) {
    minus2_[switchCount] = minus1_[switchCount];
    minus1_[switchCount] = now_[switchCount];
@@ -81,8 +87,8 @@ void SwitchManager::serviceBank(uint8_t switchCount) {
 
    // Starting closures (off→on): fire immediate solenoids
    uint8_t startingClosures = now_[switchCount] & (~minus1_[switchCount]);
-   bool immediateSolenoidFired = false;
    if (startingClosures != 0) {
+      bool immediateSolenoidFired = false;
       for (uint8_t bitCount = 0; bitCount < 8 && !immediateSolenoidFired; bitCount++) {
          if ((startingClosures & 0x01) != 0) {
             uint8_t switchNum = switchCount * 8 + bitCount;
@@ -98,7 +104,6 @@ void SwitchManager::serviceBank(uint8_t switchCount) {
    }
 
    // Valid closures (off→on→on): push solenoids and notify game rules
-   immediateSolenoidFired = false;
    uint8_t validClosures = (now_[switchCount] & minus1_[switchCount]) & ~minus2_[switchCount];
    if (validClosures != 0) {
       for (uint8_t bitCount = 0; bitCount < 8; bitCount++) {
@@ -107,7 +112,7 @@ void SwitchManager::serviceBank(uint8_t switchCount) {
             for (int i = 0; i < numGameSwitches_; i++) {
                if (gameSwitches_ != nullptr && gameSwitches_[i].switchNum == switchNum) {
                   if (gameSwitches_[i].solenoid != SOL_NONE) {
-                     if (i < numPrioritySwitches_ && !immediateSolenoidFired) {
+                     if (i < numPrioritySwitches_) {
                         solenoids.pushToFront(gameSwitches_[i].solenoid, gameSwitches_[i].solenoidHoldTime);
                      } else {
                         solenoids.push(gameSwitches_[i].solenoid, gameSwitches_[i].solenoidHoldTime);

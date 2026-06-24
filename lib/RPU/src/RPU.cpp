@@ -27,7 +27,6 @@
 #include "RPU_Solenoids.h"
 #include "RPU_Switches.h"
 #include <Arduino.h>
-#include <EEPROM.h>
 
 /******************************************************
  *   Defines and library variables
@@ -339,16 +338,17 @@ uint8_t RPU_DataRead(int address) {
 // Pin D15 = D7
 // Pin D16-30 = A0-A14
 
-#define RPU_VMA_PIN 40
-#define RPU_RW_PIN 3
-#define RPU_PHI2_PIN 39
-#define RPU_SWITCH_PIN 38
-#define RPU_BUFFER_DISABLE 5
-#define RPU_HALT_PIN 41
-#define RPU_RESET_PIN 42
-#define RPU_DIAGNOSTIC_PIN 44
-#define RPU_PINS_OUTPUT true
-#define RPU_PINS_INPUT false
+constexpr uint8_t RPU_VMA_PIN = 40;
+constexpr uint8_t RPU_RW_PIN = 3;
+constexpr uint8_t RPU_PHI2_PIN = 39;
+constexpr uint8_t RPU_SWITCH_PIN = 38;
+constexpr uint8_t RPU_BUFFER_DISABLE = 5;
+constexpr uint8_t RPU_HALT_PIN = 41;
+constexpr uint8_t RPU_RESET_PIN = 42;
+constexpr uint8_t RPU_DIAGNOSTIC_PIN = 44;
+
+constexpr bool RPU_PINS_OUTPUT = true;
+constexpr bool RPU_PINS_INPUT = false;
 
 static void RPU_SetAddressPinsDirection(bool pinsOutput) {
    for (int count = 0; count < 16; count++) {
@@ -499,15 +499,15 @@ uint8_t RPU_DataRead(int address) {
 #error "RPU_OS_HARDWARE_REV 100 requires ATMega2560, check RPU_Config.h and adjust settings"
 #endif
 
-#define RPU_VMA_PIN 4
-#define RPU_RW_PIN 5
-#define RPU_PHI2_PIN 3
-#define RPU_SWITCH_PIN 13
-#define RPU_BUFFER_DISABLE 2
-#define RPU_HALT_PIN 14
-#define RPU_RESET_PIN 14
-#define RPU_PINS_OUTPUT true
-#define RPU_PINS_INPUT false
+constexpr uint8_t RPU_VMA_PIN = 4;
+constexpr uint8_t RPU_RW_PIN = 5;
+constexpr uint8_t RPU_PHI2_PIN = 3;
+constexpr uint8_t RPU_SWITCH_PIN = 13;
+constexpr uint8_t RPU_BUFFER_DISABLE = 2;
+constexpr uint8_t RPU_HALT_PIN = 14;
+constexpr uint8_t RPU_RESET_PIN = 14;
+constexpr bool RPU_PINS_OUTPUT = true;
+constexpr bool RPU_PINS_INPUT = false;
 
 void RPU_SetAddressPinsDirection(bool pinsOutput) {
    for (int count = 0; count < 16; count++) {
@@ -634,17 +634,17 @@ uint8_t RPU_DataRead(int address) {
    return inputData;
 }
 
-static void WaitClockCycle(int numCycles = 1) {
-   for (int count = 0; count < numCycles; count++) {
-      // Wait while clock is low
-      while (!(PINE & 0x20))
-         ;
-
-      // Wait for a falling edge of the clock
-      while ((PINE & 0x20))
-         ;
-   }
-}
+// static void WaitClockCycle(int numCycles = 1) {
+//    for (int count = 0; count < numCycles; count++) {
+//       // Wait while clock is low
+//       while (!(PINE & 0x20))
+//          ;
+//
+//       // Wait for a falling edge of the clock
+//       while ((PINE & 0x20))
+//          ;
+//    }
+// }
 
 #elif (RPU_OS_HARDWARE_REV == 101) || (RPU_OS_HARDWARE_REV == 102)
 
@@ -935,45 +935,6 @@ void RPU_PlayNativeChime(uint8_t soundByte) {
 #endif
 
 /******************************************************
- *   EEPROM Helper Functions
- */
-
-void RPU_WriteByteToEEProm(unsigned short startByte, uint8_t value) {
-   EEPROM.write(startByte, value);
-}
-
-uint8_t RPU_ReadByteFromEEProm(unsigned short startByte) {
-   uint8_t value = EEPROM.read(startByte);
-
-   // If this value is unset, set it
-   if (value == 0xFF) {
-      value = 0;
-      RPU_WriteByteToEEProm(startByte, value);
-   }
-   return value;
-}
-
-unsigned long RPU_ReadULFromEEProm(unsigned short startByte, unsigned long defaultValue) {
-   unsigned long value;
-
-   value = (((unsigned long)EEPROM.read(startByte + 3)) << 24) | ((unsigned long)(EEPROM.read(startByte + 2)) << 16) |
-           ((unsigned long)(EEPROM.read(startByte + 1)) << 8) | ((unsigned long)(EEPROM.read(startByte)));
-
-   if (value == 0xFFFFFFFF) {
-      value = defaultValue;
-      RPU_WriteULToEEProm(startByte, value);
-   }
-   return value;
-}
-
-void RPU_WriteULToEEProm(unsigned short startByte, unsigned long value) {
-   EEPROM.write(startByte + 3, (uint8_t)(value >> 24));
-   EEPROM.write(startByte + 2, (uint8_t)((value >> 16) & 0x000000FF));
-   EEPROM.write(startByte + 1, (uint8_t)((value >> 8) & 0x000000FF));
-   EEPROM.write(startByte, (uint8_t)(value & 0x000000FF));
-}
-
-/******************************************************
  *   Initialization and ISR Functions
  */
 #if (RPU_OS_HARDWARE_REV == 102)
@@ -1071,9 +1032,8 @@ static void InterruptService3() {
       // Turn off U10BControl interrupts
       RPU_DataWrite(ADDRESS_U10_B_CONTROL, 0x30);
 
-      for (uint8_t switchCount = 0; switchCount < NUM_SWITCH_BYTES; switchCount++) {
-         switches.serviceBank(switchCount);
-      }
+      switches.serviceSwitches();
+
       RPU_DataWrite(ADDRESS_U10_A, backup10A);
 
       solenoids.service();
