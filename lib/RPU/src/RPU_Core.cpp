@@ -18,8 +18,8 @@
     See <https://www.gnu.org/licenses/>.
  */
 
-#include "RPU.h"
 #include "RPU_config.h"
+#include "RPU_Core.h"
 #include "RPU_DipSwitches.h"
 #include "RPU_Display.h"
 #include "RPU_Internal.h"
@@ -652,23 +652,23 @@ RPU_OPTIMIZE_SPEED uint8_t RPU_DataRead(int address) {
 #error "RPU_OS_HARDWARE_REV >100 requires ATMega2560, check RPU_Config.h and adjust settings"
 #endif
 
-#define RPU_VMA_PIN 40
-#define RPU_RW_PIN 3
-#define RPU_PHI2_PIN 39
-#define RPU_SWITCH_PIN 38
-#define RPU_BUFFER_DISABLE 5
-#define RPU_HALT_PIN 41
-#define RPU_RESET_PIN 42
-#define RPU_BA_PIN 43
-#define RPU_DIAGNOSTIC_PIN 44
-#define RPU_DISABLE_PHI_FROM_MPU 7
-#define RPU_DISABLE_PHI_FROM_CPU 6
-#define RPU_BOARD_SEL_0 30
-#define RPU_BOARD_SEL_1 31
-#define RPU_BOARD_SEL_2 32
-#define RPU_BOARD_SEL_3 33
-#define RPU_PINS_OUTPUT true
-#define RPU_PINS_INPUT false
+constexpr uint8_t RPU_VMA_PIN = 40;
+constexpr uint8_t RPU_RW_PIN = 3;
+constexpr uint8_t RPU_PHI2_PIN = 39;
+constexpr uint8_t RPU_SWITCH_PIN = 38;
+constexpr uint8_t RPU_BUFFER_DISABLE = 5;
+constexpr uint8_t RPU_HALT_PIN = 41;
+constexpr uint8_t RPU_RESET_PIN = 42;
+constexpr uint8_t RPU_BA_PIN = 43;
+constexpr uint8_t RPU_DIAGNOSTIC_PIN = 44;
+constexpr uint8_t RPU_DISABLE_PHI_FROM_MPU = 7;
+constexpr uint8_t RPU_DISABLE_PHI_FROM_CPU = 6;
+constexpr uint8_t RPU_BOARD_SEL_0 = 30;
+constexpr uint8_t RPU_BOARD_SEL_1 = 31;
+constexpr uint8_t RPU_BOARD_SEL_2 = 32;
+constexpr uint8_t RPU_BOARD_SEL_3 = 33;
+constexpr bool RPU_PINS_OUTPUT = true;
+constexpr bool RPU_PINS_INPUT = false;
 
 static void RPU_SetAddressPinsDirection(bool pinsOutput) {
    for (int count = 0; count < 16; count++) {

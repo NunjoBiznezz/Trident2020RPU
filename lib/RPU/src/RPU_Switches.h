@@ -1,7 +1,7 @@
 #pragma once
 #include "CircularQueue.h"
-#include "RPU.h"
 #include "RPU_config.h"
+#include "RPU_Core.h"
 #include <stdint.h>
 
 // Forward declarations of internal RPU bus functions defined in RPU.cpp

@@ -2,12 +2,11 @@
 // Created by Douglas Bercot on 6/24/26.
 //
 
-#include "RPU.h"
 #include "RPU_config.h"
+#include "RPU_Core.h"
 #include "RPU_Internal.h"
 #include <Arduino.h>
 #include <EEPROM.h>
-
 
 /******************************************************
  *   EEPROM Helper Functions

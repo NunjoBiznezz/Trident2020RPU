@@ -18,9 +18,9 @@
     See <https://www.gnu.org/licenses/>.
  */
 
-#include "RPU.h"
-#include "RPU_Internal.h"
 #include "RPU_Lamps.h"
+#include "RPU_Core.h"
+#include "RPU_Internal.h"
 #include <Arduino.h>
 
 LampManager lamps;

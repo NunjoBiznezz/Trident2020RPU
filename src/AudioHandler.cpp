@@ -1,6 +1,6 @@
 #include "AudioHandler.h"
-#include "RPU.h"
 #include "RPU_config.h"
+#include "RPU_Core.h"
 
 AudioHandler::AudioHandler() {
    clearSoundQueue();

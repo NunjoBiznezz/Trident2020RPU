@@ -1,8 +1,8 @@
 //
 // Created by Douglas Bercot on 6/24/26.
 //
-#include "RPU.h"
 #include "RPU_config.h"
+#include "RPU_Core.h"
 #include "RPU_Internal.h"
 
 #if (RPU_OS_HARDWARE_REV >= 2 && defined(RPU_OS_USE_SB300))

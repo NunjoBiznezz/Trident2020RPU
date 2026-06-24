@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.20)
 project(RPU)
 
 set(RPU_SOURCES
-    src/RPU.cpp
+        src/RPU_Core.cpp
 )
 
 # Conditionally include native sound card implementations

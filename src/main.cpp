@@ -21,8 +21,8 @@
 // Scores not ending in zero (wizard mode)
 // unstructured play jackpots
 // increase mode start time with new qualifier
-#include "RPU.h"
 #include "AudioHandler.h"
+#include "RPU_Core.h"
 #if defined(RPU_OS_USE_WAV_TRIGGER)
 #include "WavTriggerHandler.h"
 #endif
