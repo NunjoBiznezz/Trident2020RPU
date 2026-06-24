@@ -18,155 +18,138 @@
     See <https://www.gnu.org/licenses/>.
  */
 
-#include "CircularQueue.h"
-#include "RPU.h"
 #include "RPU_Addresses.h"
 #include "RPU_Solenoids.h"
 #include "RPU_Switches.h"
-#include "RPU_config.h"
 #include <Arduino.h>
 
-/******************************************************
- *   Switch State
- */
-static int NumGameSwitches = 0;
-static int NumGamePrioritySwitches = 0;
-static const PlayfieldAndCabinetSwitch* GameSwitches = nullptr;
+SwitchManager switches;
 
-volatile uint8_t SwitchesMinus2[NUM_SWITCH_BYTES];
-volatile uint8_t SwitchesMinus1[NUM_SWITCH_BYTES];
-volatile uint8_t SwitchesNow[NUM_SWITCH_BYTES];
-
-class SwitchStackClass : public CircularQueue<uint8_t, 60, 0xff> {
-public:
-   bool push(uint8_t data) {
-      // Self test is a special case — if it's already first on the stack, ignore it
-      if (data == SW_SELF_TEST_SWITCH) {
-         if (!isEmpty() && peek() == SW_SELF_TEST_SWITCH) {
-            return false;
-         }
-      }
-      return CircularQueue<uint8_t, 60, 0xff>::push(data);
-   }
-};
-
-static SwitchStackClass SwitchStack;
-
-void RPU_ResetSwitchState() {
-   SwitchStack.reset();
-   for (uint8_t switchCount = 0; switchCount < NUM_SWITCH_BYTES; switchCount++) {
-      SwitchesMinus2[switchCount] = 0xFF;
-      SwitchesMinus1[switchCount] = 0xFF;
-      SwitchesNow[switchCount] = 0xFF;
+void SwitchManager::reset() {
+   switchStack_.reset();
+   for (uint8_t i = 0; i < NUM_SWITCH_BYTES; i++) {
+      minus2_[i] = 0xFF;
+      minus1_[i] = 0xFF;
+      now_[i] = 0xFF;
    }
 }
 
-/******************************************************
- *   Switch Handling Functions
- */
-
-void RPU_PushToSwitchStack(uint8_t switchNumber) {
-   SwitchStack.push(switchNumber);
+void SwitchManager::setup(int numSwitches, int numPrioritySwitches, const PlayfieldAndCabinetSwitch* switchArray) {
+   numGameSwitches_ = numSwitches;
+   numPrioritySwitches_ = numPrioritySwitches;
+   gameSwitches_ = switchArray;
 }
 
-uint8_t RPU_PullFirstFromSwitchStack() {
-   return SwitchStack.pull();
+void SwitchManager::pushToStack(uint8_t switchNumber) {
+   if (switchNumber == SW_SELF_TEST_SWITCH && !switchStack_.isEmpty() && switchStack_.peek() == SW_SELF_TEST_SWITCH) {
+      return;
+   }
+   switchStack_.push(switchNumber);
 }
 
-bool RPU_ReadSingleSwitchState(uint8_t switchNum) {
+uint8_t SwitchManager::pullFromStack() {
+   return switchStack_.pull();
+}
+
+bool SwitchManager::readState(uint8_t switchNum) const {
    if (switchNum >= MAX_NUM_SWITCHES) {
       return false;
    }
    int switchByte = switchNum / 8;
    int switchBit = switchNum % 8;
-   if (((SwitchesNow[switchByte]) >> switchBit) & 0x01) {
-      return true;
-   } else {
-      return false;
-   }
+   return ((now_[switchByte] >> switchBit) & 0x01) != 0;
 }
 
-void RPU_SetupGameSwitches(int s_numSwitches, int s_numPrioritySwitches, const PlayfieldAndCabinetSwitch* s_gameSwitchArray) {
-   NumGameSwitches = s_numSwitches;
-   NumGamePrioritySwitches = s_numPrioritySwitches;
-   GameSwitches = s_gameSwitchArray;
-}
-
-void RPU_ClearUpDownSwitchState() {
+void SwitchManager::clearUpDown() {
    // Bally/Stern does not have an up/down switch
 }
 
-bool RPU_GetUpDownSwitchState() {
+bool SwitchManager::getUpDown() const {
    // Bally/Stern does not have an up/down switch
    return true;
 }
 
-/******************************************************
- *   Switch ISR Service (called from zero-crossing ISR in RPU.cpp)
- *
- *   Reads one bank of switches, debounces over three samples, and
- *   fires immediate solenoids and pushes validated closures to the
- *   game switch stack. Called once per bank per zero-crossing tick.
- */
-void RPU_ServiceSwitchBank(uint8_t switchCount) {
-   SwitchesMinus2[switchCount] = SwitchesMinus1[switchCount];
-   SwitchesMinus1[switchCount] = SwitchesNow[switchCount];
+void SwitchManager::serviceBank(uint8_t switchCount) {
+   minus2_[switchCount] = minus1_[switchCount];
+   minus1_[switchCount] = now_[switchCount];
 
-   // Enable switch strobe for this bank
    RPU_DataWrite(ADDRESS_U10_A, 0x01 << switchCount);
-   // Turn off U10:CB2 (strobes the last bank of DIP switches)
    RPU_DataWrite(ADDRESS_U10_B_CONTROL, 0x34);
    delayMicroseconds(RPU_OS_SWITCH_DELAY_IN_MICROSECONDS);
-   SwitchesNow[switchCount] = RPU_DataRead(ADDRESS_U10_B);
+   now_[switchCount] = RPU_DataRead(ADDRESS_U10_B);
    RPU_DataWrite(ADDRESS_U10_A, 0x00);
 
-   // Starting closures (off→on): trigger immediate solenoids
-   uint8_t startingClosures = SwitchesNow[switchCount] & (~SwitchesMinus1[switchCount]);
+   // Starting closures (off→on): fire immediate solenoids
+   uint8_t startingClosures = now_[switchCount] & (~minus1_[switchCount]);
    bool immediateSolenoidFired = false;
    if (startingClosures != 0) {
       for (uint8_t bitCount = 0; bitCount < 8 && !immediateSolenoidFired; bitCount++) {
          if ((startingClosures & 0x01) != 0) {
-            uint8_t startingSwitchNum = switchCount * 8 + bitCount;
-            for (int immediateSwitchCount = 0; immediateSwitchCount < NumGamePrioritySwitches && !immediateSolenoidFired;
-                 immediateSwitchCount++) {
-               if ((GameSwitches != nullptr) && (startingSwitchNum == GameSwitches[immediateSwitchCount].switchNum)) {
-                  PushToFrontOfSolenoidStack(GameSwitches[immediateSwitchCount].solenoid, 1);
+            uint8_t switchNum = switchCount * 8 + bitCount;
+            for (int i = 0; i < numPrioritySwitches_ && !immediateSolenoidFired; i++) {
+               if (gameSwitches_ != nullptr && switchNum == gameSwitches_[i].switchNum) {
+                  solenoids.pushToFront(gameSwitches_[i].solenoid, 1);
                   immediateSolenoidFired = true;
                }
             }
          }
-         startingClosures = startingClosures >> 1;
+         startingClosures >>= 1;
       }
    }
 
    // Valid closures (off→on→on): push solenoids and notify game rules
    immediateSolenoidFired = false;
-   uint8_t validClosures = (SwitchesNow[switchCount] & SwitchesMinus1[switchCount]) & ~SwitchesMinus2[switchCount];
+   uint8_t validClosures = (now_[switchCount] & minus1_[switchCount]) & ~minus2_[switchCount];
    if (validClosures != 0) {
       for (uint8_t bitCount = 0; bitCount < 8; bitCount++) {
          if ((validClosures & 0x01) != 0) {
-            uint8_t validSwitchNum = switchCount * 8 + bitCount;
-            for (int validSwitchCount = 0; validSwitchCount < NumGameSwitches; validSwitchCount++) {
-               if (GameSwitches != nullptr && GameSwitches[validSwitchCount].switchNum == validSwitchNum) {
-                  if (GameSwitches[validSwitchCount].solenoid != SOL_NONE) {
-                     if (validSwitchCount < NumGamePrioritySwitches && !immediateSolenoidFired) {
-                        PushToFrontOfSolenoidStack(GameSwitches[validSwitchCount].solenoid,
-                                                   GameSwitches[validSwitchCount].solenoidHoldTime);
+            uint8_t switchNum = switchCount * 8 + bitCount;
+            for (int i = 0; i < numGameSwitches_; i++) {
+               if (gameSwitches_ != nullptr && gameSwitches_[i].switchNum == switchNum) {
+                  if (gameSwitches_[i].solenoid != SOL_NONE) {
+                     if (i < numPrioritySwitches_ && !immediateSolenoidFired) {
+                        solenoids.pushToFront(gameSwitches_[i].solenoid, gameSwitches_[i].solenoidHoldTime);
                      } else {
-                        RPU_PushToSolenoidStack(GameSwitches[validSwitchCount].solenoid,
-                                                GameSwitches[validSwitchCount].solenoidHoldTime);
+                        solenoids.push(gameSwitches_[i].solenoid, gameSwitches_[i].solenoidHoldTime);
                      }
                   }
                }
             }
-            SwitchStack.push(validSwitchNum);
+            switchStack_.push(switchNum);
          }
-         validClosures = validClosures >> 1;
+         validClosures >>= 1;
       }
    }
 
-   // Allow display interrupt to fire between banks, then pad timing
    interrupts();
    delayMicroseconds(RPU_OS_TIMING_LOOP_PADDING_IN_MICROSECONDS);
    noInterrupts();
+}
+
+/******************************************************
+ *   Public API
+ */
+
+void RPU_PushToSwitchStack(uint8_t switchNumber) {
+   switches.pushToStack(switchNumber);
+}
+
+uint8_t RPU_PullFirstFromSwitchStack() {
+   return switches.pullFromStack();
+}
+
+bool RPU_ReadSingleSwitchState(uint8_t switchNum) {
+   return switches.readState(switchNum);
+}
+
+void RPU_SetupGameSwitches(int s_numSwitches, int s_numPrioritySwitches, const PlayfieldAndCabinetSwitch* s_gameSwitchArray) {
+   switches.setup(s_numSwitches, s_numPrioritySwitches, s_gameSwitchArray);
+}
+
+void RPU_ClearUpDownSwitchState() {
+   switches.clearUpDown();
+}
+
+bool RPU_GetUpDownSwitchState() {
+   return switches.getUpDown();
 }

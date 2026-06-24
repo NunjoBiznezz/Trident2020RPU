@@ -20,246 +20,195 @@
 
 #include "RPU.h"
 #include "RPU_Addresses.h"
-#include "RPU_config.h"
 #include "RPU_Lamps.h"
 #include <Arduino.h>
 
-/******************************************************
- *   Lamp State
- */
-static volatile uint8_t LampStates[RPU_NUM_LAMP_BANKS];
-static volatile uint8_t LampDim1[RPU_NUM_LAMP_BANKS];
-static volatile uint8_t LampDim2[RPU_NUM_LAMP_BANKS];
-static volatile uint8_t LampFlashPeriod[RPU_MAX_LAMPS];
-static uint8_t DimDivisor1 = 2;
-static uint8_t DimDivisor2 = 3;
-static volatile int numberOfU10Interrupts = 0;
+LampManager lamps;
 
-void RPU_ResetLampState() {
-   for (int lampBankCounter = 0; lampBankCounter < RPU_NUM_LAMP_BANKS; lampBankCounter++) {
-      LampStates[lampBankCounter] = 0xFF;
-      LampDim1[lampBankCounter] = 0x00;
-      LampDim2[lampBankCounter] = 0x00;
+// left shift is iterative on Arduinos, so a bit array is faster
+const uint8_t LampManager::BIT_SHIFT[8] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
+
+void LampManager::reset() {
+   for (int i = 0; i < RPU_NUM_LAMP_BANKS; i++) {
+      states_[i] = 0xFF;
+      dim1_[i] = 0x00;
+      dim2_[i] = 0x00;
    }
-   for (int lampFlashCount = 0; lampFlashCount < RPU_MAX_LAMPS; lampFlashCount++) {
-      LampFlashPeriod[lampFlashCount] = 0;
+   for (int i = 0; i < RPU_MAX_LAMPS; i++) {
+      flashPeriod_[i] = 0;
    }
 }
 
-/******************************************************
- *   Lamp Handling Functions
- */
-
-void RPU_SetDimDivisor(uint8_t level, uint8_t divisor) {
+void LampManager::setDimDivisor(uint8_t level, uint8_t divisor) {
    if (level == 1) {
-      DimDivisor1 = divisor;
-   }
-   if (level == 2) {
-      DimDivisor2 = divisor;
+      dimDivisor1_ = divisor;
+   } else if (level == 2) {
+      dimDivisor2_ = divisor;
    }
 }
 
-// left shift is iterative on Arduinos, so a bit array is surprisingly faster
-static const uint8_t BitShiftValues[8] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
-
-void RPU_SetLampState(int lampNum, bool lampState, uint8_t lampDim, int lampFlashPeriod) {
+void LampManager::setState(int lampNum, bool lampState, uint8_t lampDim, int lampFlashPeriod) {
    if (lampNum >= RPU_MAX_LAMPS || lampNum < 0) {
       return;
    }
-   uint8_t lampRow = lampNum % 8;
+   uint8_t lampBit = BIT_SHIFT[lampNum % 8];
    uint8_t lampCol = lampNum / 8;
-   uint8_t lampBit = BitShiftValues[lampRow];
 
    if (lampState) {
-      int adjustedLampFlash = lampFlashPeriod / 50;
-
-      if (lampFlashPeriod != 0 && adjustedLampFlash == 0) {
-         adjustedLampFlash = 1;
+      int adjustedFlash = lampFlashPeriod / 50;
+      if (lampFlashPeriod != 0 && adjustedFlash == 0) {
+         adjustedFlash = 1;
       }
-      if (adjustedLampFlash > 250) {
-         adjustedLampFlash = 250;
+      if (adjustedFlash > 250) {
+         adjustedFlash = 250;
       }
-
-      // Only turn on the lamp if there's no flash, because if there's a flash
-      // then the lamp will be turned on by the ApplyFlashToLamps function
       if (lampFlashPeriod == 0) {
-         LampStates[lampCol] &= ~(lampBit);
+         states_[lampCol] &= ~lampBit;
       }
-      LampFlashPeriod[lampNum] = adjustedLampFlash;
+      flashPeriod_[lampNum] = adjustedFlash;
    } else {
-      LampStates[lampCol] |= lampBit;
-      LampFlashPeriod[lampNum] = 0;
+      states_[lampCol] |= lampBit;
+      flashPeriod_[lampNum] = 0;
    }
 
    if (lampDim & 0x01) {
-      LampDim1[lampCol] |= lampBit;
+      dim1_[lampCol] |= lampBit;
    } else {
-      LampDim1[lampCol] &= ~lampBit;
+      dim1_[lampCol] &= ~lampBit;
    }
-
    if (lampDim & 0x02) {
-      LampDim2[lampCol] |= lampBit;
+      dim2_[lampCol] |= lampBit;
    } else {
-      LampDim2[lampCol] &= ~lampBit;
+      dim2_[lampCol] &= ~lampBit;
    }
 }
 
-uint8_t RPU_ReadLampState(int lampNum) {
+uint8_t LampManager::readState(int lampNum) const {
    if (lampNum >= RPU_MAX_LAMPS || lampNum < 0) {
       return 0x00;
    }
-   uint8_t lampStateByte = LampStates[lampNum / 8];
-   return (lampStateByte & (0x01 << (lampNum % 8))) ? 0 : 1;
+   uint8_t stateByte = states_[lampNum / 8];
+   return (stateByte & (0x01 << (lampNum % 8))) ? 0 : 1;
 }
 
-uint8_t RPU_ReadLampDim(int lampNum) {
+uint8_t LampManager::readDim(int lampNum) const {
    if (lampNum >= RPU_MAX_LAMPS || lampNum < 0) {
       return 0x00;
    }
    uint8_t lampDim = 0;
-   uint8_t lampDimByte = LampDim1[lampNum / 8];
-   if ((lampDimByte & (0x01 << (lampNum % 8))) != 0) {
+   uint8_t shift = 0x01 << (lampNum % 8);
+   if ((dim1_[lampNum / 8] & shift) != 0) {
       lampDim |= 1;
    }
-
-   lampDimByte = LampDim2[lampNum / 8];
-   if ((lampDimByte & (0x01 << (lampNum % 8))) != 0) {
+   if ((dim2_[lampNum / 8] & shift) != 0) {
       lampDim |= 2;
    }
-
    return lampDim;
 }
 
-int RPU_ReadLampFlash(int lampNum) {
+int LampManager::readFlash(int lampNum) const {
    if (lampNum >= RPU_MAX_LAMPS || lampNum < 0) {
       return 0;
    }
-   return LampFlashPeriod[lampNum] * 50;
+   return flashPeriod_[lampNum] * 50;
 }
 
-void RPU_ApplyFlashToLamps(unsigned long curTime) {
-   int curLampByte = 0;
-   uint8_t curLampBit = 0;
+void LampManager::applyFlash(unsigned long curTime) {
    int curLampNum = 0;
-
-   for (curLampByte = 0; curLampByte < RPU_NUM_LAMP_BANKS; curLampByte++) {
-      curLampBit = 0x01;
-      for (uint8_t curBit = 0; curBit < 8; curBit++) {
-         if (LampFlashPeriod[curLampNum] != 0) {
-            unsigned long adjustedLampFlash = (unsigned long)LampFlashPeriod[curLampNum] * (unsigned long)50;
-            if ((curTime / adjustedLampFlash) % 2 != 0) {
-               LampStates[curLampByte] &= ~(curLampBit);
+   for (int bank = 0; bank < RPU_NUM_LAMP_BANKS; bank++) {
+      uint8_t curBit = 0x01;
+      for (uint8_t bit = 0; bit < 8; bit++) {
+         if (flashPeriod_[curLampNum] != 0) {
+            unsigned long period = (unsigned long)flashPeriod_[curLampNum] * 50UL;
+            if ((curTime / period) % 2 != 0) {
+               states_[bank] &= ~curBit;
             } else {
-               LampStates[curLampByte] |= (curLampBit);
+               states_[bank] |= curBit;
             }
          }
-
-         curLampBit *= 2;
-         curLampNum += 1;
+         curBit *= 2;
+         curLampNum++;
       }
    }
 }
 
-void RPU_FlashAllLamps(unsigned long curTime) {
-   for (int count = 0; count < RPU_MAX_LAMPS; count++) {
-      RPU_SetLampState(count, true, 0, 500);
+void LampManager::flashAll(unsigned long curTime) {
+   for (int i = 0; i < RPU_MAX_LAMPS; i++) {
+      setState(i, true, 0, 500);
    }
-   RPU_ApplyFlashToLamps(curTime);
+   applyFlash(curTime);
 }
 
-void RPU_TurnOffAllLamps() {
-   for (int count = 0; count < RPU_MAX_LAMPS; count++) {
-      RPU_SetLampState(count, false, 0, 0);
+void LampManager::turnOffAll() {
+   for (int i = 0; i < RPU_MAX_LAMPS; i++) {
+      setState(i, false, 0, 0);
    }
 }
 
-/******************************************************
- *   Lamp Strobe (called from zero-crossing ISR in RPU.cpp)
- *
- *   Drives all lamp banks through the U10 PIA's multiplexed
- *   address/data lines, then parks the lamp board. Also manages
- *   the dim-divisor cycle counter used for two-level dimming.
- */
-void RPU_StrobeLamps() {
-   for (int lampByteCount = 0; lampByteCount < 8; lampByteCount++) {
-      for (uint8_t nibbleCount = 0; nibbleCount < 2; nibbleCount++) {
-         // We skip iteration number 16 because the last position is to park the lamps
-         if (lampByteCount == 7 && nibbleCount != 0) {
+void LampManager::strobe() {
+   for (int bank = 0; bank < 8; bank++) {
+      for (uint8_t nibble = 0; nibble < 2; nibble++) {
+         // Skip the last position — used to park the lamp board
+         if (bank == 7 && nibble != 0) {
             continue;
          }
 
-         uint8_t lampData = 0xF0 + (lampByteCount * 2) + nibbleCount;
+         uint8_t lampData = 0xF0 + (bank * 2) + nibble;
 
          interrupts();
          RPU_DataWrite(ADDRESS_U10_A, 0xFF);
          noInterrupts();
 
-         // Latch address & strobe
          RPU_DataWrite(ADDRESS_U10_A, lampData);
 #ifdef RPU_SLOW_DOWN_LAMP_STROBE
          delayMicroseconds(2);
 #endif
-
          RPU_DataWrite(ADDRESS_U10_B_CONTROL, 0x38);
 #ifdef RPU_SLOW_DOWN_LAMP_STROBE
          delayMicroseconds(2);
 #endif
-
          RPU_DataWrite(ADDRESS_U10_B_CONTROL, 0x30);
 #ifdef RPU_SLOW_DOWN_LAMP_STROBE
          delayMicroseconds(2);
 #endif
 
-         // Use the inhibit lines to set the actual data to the lamp SCRs
-         // (here, we don't care about the lower nibble because the address was already latched)
-         uint8_t nibbleOffset = (nibbleCount != 0) ? 1 : 16;
-         uint8_t lampOutput = (LampStates[lampByteCount] * nibbleOffset);
-         // Every other time through the cycle, we OR in the dim variable
-         // in order to dim those lights
-         if (numberOfU10Interrupts % DimDivisor1 != 0) {
-            lampOutput |= (LampDim1[lampByteCount] * nibbleOffset);
+         uint8_t nibbleOffset = (nibble != 0) ? 1 : 16;
+         uint8_t lampOutput = states_[bank] * nibbleOffset;
+         if (numInterrupts_ % dimDivisor1_ != 0) {
+            lampOutput |= dim1_[bank] * nibbleOffset;
          }
-         if (numberOfU10Interrupts % DimDivisor2 != 0) {
-            lampOutput |= (LampDim2[lampByteCount] * nibbleOffset);
+         if (numInterrupts_ % dimDivisor2_ != 0) {
+            lampOutput |= dim2_[bank] * nibbleOffset;
          }
 
          RPU_DataWrite(ADDRESS_U10_A, lampOutput | 0x0F);
 #ifdef RPU_SLOW_DOWN_LAMP_STROBE
          delayMicroseconds(2);
 #endif
-      } // end loop on nibble
-   }   // end loop on lamp bytes
+      }
+   }
 
 #ifdef RPU_OS_USE_AUX_LAMPS
-   // Latch 0xFF separately without interrupt clear
-   // to park 0xFF in main lamp board
+   // Park the primary lamp board before switching to aux
    RPU_DataWrite(ADDRESS_U10_A, 0xFF);
    RPU_DataWrite(ADDRESS_U10_B_CONTROL, RPU_DataRead(ADDRESS_U10_B_CONTROL) | 0x08);
    RPU_DataWrite(ADDRESS_U10_B_CONTROL, RPU_DataRead(ADDRESS_U10_B_CONTROL) & 0xF7);
 
-   // For the first four bits of lamps, we're going to look at LampStates[7] again
-   // and use those top 4 bits that we didn't use before. Then we're going
-   // to move on with bytes 8, 9, and 10 for the remaining 24 bits of data
    uint8_t auxBankNum = 0;
-   for (int lampByteCount = 7; lampByteCount < RPU_NUM_LAMP_BANKS; lampByteCount++) {
-      for (uint8_t nibbleCount = 0; nibbleCount < 2; nibbleCount++) {
-         if (lampByteCount == 7) {
-            nibbleCount = 1; // skip the first nibble of uint8_t 7 because it belongs to primary lamps
+   for (int bank = 7; bank < RPU_NUM_LAMP_BANKS; bank++) {
+      for (uint8_t nibble = 0; nibble < 2; nibble++) {
+         if (bank == 7) {
+            nibble = 1; // first nibble of bank 7 belongs to primary lamps
          }
-         uint8_t nibbleOffset = (nibbleCount != 0) ? 1 : 16;
-         uint8_t lampOutput = (LampStates[lampByteCount] * nibbleOffset);
-         // Every other time through the cycle, we OR in the dim variable
-         // in order to dim those lights
-         if (numberOfU10Interrupts % DimDivisor1 != 0) {
-            lampOutput |= (LampDim1[lampByteCount] * nibbleOffset);
+         uint8_t nibbleOffset = (nibble != 0) ? 1 : 16;
+         uint8_t lampOutput = states_[bank] * nibbleOffset;
+         if (numInterrupts_ % dimDivisor1_ != 0) {
+            lampOutput |= dim1_[bank] * nibbleOffset;
          }
-         if (numberOfU10Interrupts % DimDivisor2 != 0) {
-            lampOutput |= (LampDim2[lampByteCount] * nibbleOffset);
+         if (numInterrupts_ % dimDivisor2_ != 0) {
+            lampOutput |= dim2_[bank] * nibbleOffset;
          }
-
-         // The data will be in the upper nibble, but we need the bank count in the lower
-         lampOutput &= 0xF0;
-         lampOutput += auxBankNum;
+         lampOutput = (lampOutput & 0xF0) + auxBankNum;
 
          interrupts();
          RPU_DataWrite(ADDRESS_U10_A, 0xFF);
@@ -270,7 +219,7 @@ void RPU_StrobeLamps() {
          RPU_DataWrite(ADDRESS_U11_A_CONTROL, RPU_DataRead(ADDRESS_U11_A_CONTROL) & 0xF7);
          RPU_DataWrite(ADDRESS_U10_A, lampOutput);
 
-         auxBankNum += 1;
+         auxBankNum++;
       }
    }
 #endif
@@ -280,5 +229,41 @@ void RPU_StrobeLamps() {
    RPU_DataWrite(ADDRESS_U10_B_CONTROL, RPU_DataRead(ADDRESS_U10_B_CONTROL) | 0x08);
    RPU_DataWrite(ADDRESS_U10_B_CONTROL, RPU_DataRead(ADDRESS_U10_B_CONTROL) & 0xF7);
 
-   numberOfU10Interrupts += 1;
+   numInterrupts_++;
+}
+
+/******************************************************
+ *   Public API
+ */
+
+void RPU_SetDimDivisor(uint8_t level, uint8_t divisor) {
+   lamps.setDimDivisor(level, divisor);
+}
+
+void RPU_SetLampState(int lampNum, bool lampState, uint8_t lampDim, int lampFlashPeriod) {
+   lamps.setState(lampNum, lampState, lampDim, lampFlashPeriod);
+}
+
+uint8_t RPU_ReadLampState(int lampNum) {
+   return lamps.readState(lampNum);
+}
+
+uint8_t RPU_ReadLampDim(int lampNum) {
+   return lamps.readDim(lampNum);
+}
+
+int RPU_ReadLampFlash(int lampNum) {
+   return lamps.readFlash(lampNum);
+}
+
+void RPU_ApplyFlashToLamps(unsigned long curTime) {
+   lamps.applyFlash(curTime);
+}
+
+void RPU_FlashAllLamps(unsigned long curTime) {
+   lamps.flashAll(curTime);
+}
+
+void RPU_TurnOffAllLamps() {
+   lamps.turnOffAll();
 }

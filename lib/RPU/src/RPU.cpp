@@ -870,7 +870,7 @@ void InitializeU11PIA() {
    // Set bit 3 so future reads will read data
    RPU_DataWrite(ADDRESS_U11_B_CONTROL, RPU_DataRead(ADDRESS_U11_B_CONTROL) | 0x04);
    // Store 9F in U11B Output and initialize solenoid state
-   RPU_InitSolenoidDefault();
+   solenoids.initDefault();
 }
 
 unsigned long RPU_TestPIAs() {
@@ -903,10 +903,10 @@ unsigned long RPU_TestPIAs() {
  */
 
 void RPU_ClearVariables() {
-   RPU_ResetSolenoidState();
-   RPU_ResetSwitchState();
-   RPU_ResetDisplayState();
-   RPU_ResetLampState();
+   solenoids.reset();
+   switches.reset();
+   display.reset();
+   lamps.reset();
 }
 
 #if (RPU_OS_HARDWARE_REV >= 2 && defined(RPU_OS_USE_SB300))
@@ -1103,13 +1103,13 @@ void InterruptService3() {
       RPU_DataWrite(ADDRESS_U10_B_CONTROL, 0x30);
 
       for (uint8_t switchCount = 0; switchCount < NUM_SWITCH_BYTES; switchCount++) {
-         RPU_ServiceSwitchBank(switchCount);
+         switches.serviceBank(switchCount);
       }
       RPU_DataWrite(ADDRESS_U10_A, backup10A);
 
-      RPU_ServiceSolenoids();
+      solenoids.service();
 
-      RPU_StrobeLamps();
+      lamps.strobe();
 
       interrupts();
       noInterrupts();
@@ -1249,8 +1249,8 @@ bool CheckCreditResetSwitchArch1(uint8_t creditResetSwitch) {
 void RPU_Update(unsigned long currentTime) {
    RPU_DataRead(0);
 
-   RPU_ApplyFlashToLamps(currentTime);
-   RPU_UpdateTimedSolenoidStack(currentTime);
+   lamps.applyFlash(currentTime);
+   solenoids.updateTimed(currentTime);
 }
 
 // This function should eventually support auto-detect and initialize the appropriate
@@ -1447,7 +1447,7 @@ unsigned long RPU_InitializeMPU(unsigned long initOptions, uint8_t creditResetSw
    InitializeU11PIA();
 
    // Read values from MPU dip switches
-   RPU_ReadDipSwitches();
+   dipSwitches.read();
 
 #if (RPU_OS_HARDWARE_REV == 4) || (RPU_OS_HARDWARE_REV > 100)
    pinMode(RPU_DIAGNOSTIC_PIN, INPUT);

@@ -20,160 +20,132 @@
 
 #include "RPU.h"
 #include "RPU_Addresses.h"
-#include "RPU_config.h"
 #include "RPU_Solenoids.h"
-#include "TimedStack.h"
 #include <Arduino.h>
 
-/******************************************************
- *   Solenoid State
- */
-#if (RPU_OS_HARDWARE_REV > 2)
-#define SOLENOID_STACK_SIZE 150
-#else
-#define SOLENOID_STACK_SIZE 60
-#endif
+SolenoidManager solenoids;
 
-#include "CircularQueue.h"
-static CircularQueue<uint8_t, SOLENOID_STACK_SIZE, SOLENOID_STACK_EMPTY> SolenoidStack;
-static bool SolenoidStackEnabled = true;
-static volatile uint8_t CurrentSolenoidByte = 0xFF;
-static volatile uint8_t RevertSolenoidBit = 0x00;
-static volatile uint8_t NumCyclesBeforeRevertingSolenoidByte = 0;
-
-#define TIMED_SOLENOID_STACK_SIZE 30
-static TimedStack<TimedSolenoidEntry, TIMED_SOLENOID_STACK_SIZE> TimedSolenoidStack;
-
-void RPU_ResetSolenoidState() {
-   SolenoidStack.reset();
-   TimedSolenoidStack.reset();
+void SolenoidManager::reset() {
+   stack_.reset();
+   timedStack_.reset();
 }
 
-void RPU_InitSolenoidDefault() {
+void SolenoidManager::initDefault() {
    RPU_DataWrite(ADDRESS_U11_B, DEFAULT_SOLENOID_STATE);
-   CurrentSolenoidByte = DEFAULT_SOLENOID_STATE;
+   currentByte_ = DEFAULT_SOLENOID_STATE;
 }
 
-/******************************************************
- *   Solenoid Handling Functions
- */
+void SolenoidManager::writeContinuousByte() {
+   RPU_DataWrite(ADDRESS_U11_B, currentByte_);
+}
 
-void RPU_PushToSolenoidStack(uint8_t solenoidNumber, uint8_t numPushes, bool disableOverride) {
+void SolenoidManager::push(uint8_t solenoidNumber, uint8_t numPushes, bool disableOverride) {
    if (solenoidNumber >= RPU_NUM_SOLENOIDS) {
       return;
    }
-
-   if (!disableOverride && !SolenoidStackEnabled) {
+   if (!disableOverride && !stackEnabled_) {
       return;
    }
-
    for (int count = 0; count < numPushes; count++) {
-      if (!SolenoidStack.push(solenoidNumber)) {
+      if (!stack_.push(solenoidNumber)) {
          return;
       }
    }
 }
 
-void PushToFrontOfSolenoidStack(uint8_t solenoidNumber, uint8_t numPushes) {
-   if (!SolenoidStackEnabled) {
+void SolenoidManager::pushToFront(uint8_t solenoidNumber, uint8_t numPushes) {
+   if (!stackEnabled_) {
       return;
    }
-
    for (int count = 0; count < numPushes; count++) {
-      if (!SolenoidStack.pushFront(solenoidNumber)) {
+      if (!stack_.pushFront(solenoidNumber)) {
          return;
       }
    }
 }
 
-uint8_t PullFirstFromSolenoidStack() {
-   return SolenoidStack.pull();
+uint8_t SolenoidManager::pullFirst() {
+   return stack_.pull();
 }
 
-bool RPU_PushToTimedSolenoidStack(uint8_t solenoidNumber, uint8_t numPushes, unsigned long whenToFire, bool disableOverride) {
-   uint8_t slot = TimedSolenoidStack.findFreeSlot();
-   if (slot >= TimedSolenoidStack.getSize()) {
+bool SolenoidManager::pushTimed(uint8_t solenoidNumber, uint8_t numPushes, unsigned long whenToFire, bool disableOverride) {
+   uint8_t slot = timedStack_.findFreeSlot();
+   if (slot >= timedStack_.getSize()) {
       return false;
    }
-   TimedSolenoidStack.entries[slot].inUse = true;
-   TimedSolenoidStack.entries[slot].pushTime = whenToFire;
-   TimedSolenoidStack.entries[slot].disableOverride = disableOverride;
-   TimedSolenoidStack.entries[slot].solenoidNumber = solenoidNumber;
-   TimedSolenoidStack.entries[slot].numPushes = numPushes;
+   timedStack_.entries[slot].inUse = true;
+   timedStack_.entries[slot].pushTime = whenToFire;
+   timedStack_.entries[slot].disableOverride = disableOverride;
+   timedStack_.entries[slot].solenoidNumber = solenoidNumber;
+   timedStack_.entries[slot].numPushes = numPushes;
    return true;
 }
 
-void RPU_UpdateTimedSolenoidStack(unsigned long curTime) {
-   for (int count = 0; count < TimedSolenoidStack.getSize(); count++) {
-      if (TimedSolenoidStack.entries[count].inUse && TimedSolenoidStack.entries[count].pushTime < curTime) {
-         RPU_PushToSolenoidStack(TimedSolenoidStack.entries[count].solenoidNumber, TimedSolenoidStack.entries[count].numPushes,
-                                 TimedSolenoidStack.entries[count].disableOverride);
-         TimedSolenoidStack.entries[count].inUse = false;
+void SolenoidManager::updateTimed(unsigned long curTime) {
+   for (int count = 0; count < timedStack_.getSize(); count++) {
+      if (timedStack_.entries[count].inUse && timedStack_.entries[count].pushTime < curTime) {
+         push(timedStack_.entries[count].solenoidNumber, timedStack_.entries[count].numPushes,
+              timedStack_.entries[count].disableOverride);
+         timedStack_.entries[count].inUse = false;
       }
    }
 }
 
-void RPU_SetCoinLockout(bool lockoutOff, uint8_t solbit) {
+void SolenoidManager::setCoinLockout(bool lockoutOff, uint8_t solbit) {
    if (!lockoutOff) {
-      CurrentSolenoidByte = CurrentSolenoidByte & ~solbit;
+      currentByte_ &= ~solbit;
    } else {
-      CurrentSolenoidByte = CurrentSolenoidByte | solbit;
+      currentByte_ |= solbit;
    }
-   RPU_DataWrite(ADDRESS_U11_B, CurrentSolenoidByte);
+   writeContinuousByte();
 }
 
-void RPU_SetDisableFlippers(bool disableFlippers, uint8_t solbit) {
+void SolenoidManager::setDisableFlippers(bool disableFlippers, uint8_t solbit) {
    if (disableFlippers) {
-      CurrentSolenoidByte = CurrentSolenoidByte | solbit;
+      currentByte_ |= solbit;
    } else {
-      CurrentSolenoidByte = CurrentSolenoidByte & ~solbit;
+      currentByte_ &= ~solbit;
    }
-   RPU_DataWrite(ADDRESS_U11_B, CurrentSolenoidByte);
+   writeContinuousByte();
 }
 
-void RPU_SetContinuousSolenoidBit(bool bitOn, uint8_t solbit) {
+void SolenoidManager::setContinuousBit(bool bitOn, uint8_t solbit) {
    if (bitOn) {
-      CurrentSolenoidByte = CurrentSolenoidByte | solbit;
+      currentByte_ |= solbit;
    } else {
-      CurrentSolenoidByte = CurrentSolenoidByte & ~solbit;
+      currentByte_ &= ~solbit;
    }
-   RPU_DataWrite(ADDRESS_U11_B, CurrentSolenoidByte);
+   writeContinuousByte();
 }
 
-bool RPU_FireContinuousSolenoid(uint8_t solBit, uint8_t numCyclesToFire) {
-   if (NumCyclesBeforeRevertingSolenoidByte != 0) {
+bool SolenoidManager::fireContinuous(uint8_t solBit, uint8_t numCyclesToFire) {
+   if (numCyclesBeforeRevert_ != 0) {
       return false;
    }
-   NumCyclesBeforeRevertingSolenoidByte = numCyclesToFire;
-   RevertSolenoidBit = solBit;
-   RPU_SetContinuousSolenoidBit(false, solBit);
+   numCyclesBeforeRevert_ = numCyclesToFire;
+   revertBit_ = solBit;
+   setContinuousBit(false, solBit);
    return true;
 }
 
-uint8_t RPU_ReadContinuousSolenoids() {
+uint8_t SolenoidManager::readContinuous() const {
    return RPU_DataRead(ADDRESS_U11_B);
 }
 
-void RPU_DisableSolenoidStack() {
-   SolenoidStackEnabled = false;
+void SolenoidManager::enable() {
+   stackEnabled_ = true;
 }
 
-void RPU_EnableSolenoidStack() {
-   SolenoidStackEnabled = true;
+void SolenoidManager::disable() {
+   stackEnabled_ = false;
 }
 
-/******************************************************
- *   Solenoid ISR Service (called from zero-crossing ISR in RPU.cpp)
- *
- *   Manages the continuous-solenoid revert countdown, then pulls
- *   one entry from the stack and fires it via the U11B PIA.
- */
-void RPU_ServiceSolenoids() {
-   if (NumCyclesBeforeRevertingSolenoidByte != 0) {
-      NumCyclesBeforeRevertingSolenoidByte -= 1;
-      if (NumCyclesBeforeRevertingSolenoidByte == 0) {
-         CurrentSolenoidByte |= RevertSolenoidBit;
-         RevertSolenoidBit = 0x00;
+void SolenoidManager::service() {
+   if (numCyclesBeforeRevert_ != 0) {
+      numCyclesBeforeRevert_ -= 1;
+      if (numCyclesBeforeRevert_ == 0) {
+         currentByte_ |= revertBit_;
+         revertBit_ = 0x00;
       }
    }
 
@@ -182,22 +154,66 @@ void RPU_ServiceSolenoids() {
    RPU_DataWrite(ADDRESS_U11_A, curDisplayDigitEnableByte | 0x02);
 #endif
 
-   uint8_t momentarySolenoidAtStart = PullFirstFromSolenoidStack();
-   if (momentarySolenoidAtStart != SOLENOID_STACK_EMPTY) {
-      CurrentSolenoidByte = (CurrentSolenoidByte & 0xF0) | momentarySolenoidAtStart;
-      RPU_DataWrite(ADDRESS_U11_B, CurrentSolenoidByte);
+   uint8_t momentarySolenoid = pullFirst();
+   if (momentarySolenoid != SOLENOID_STACK_EMPTY) {
+      currentByte_ = (currentByte_ & 0xF0) | momentarySolenoid;
+      RPU_DataWrite(ADDRESS_U11_B, currentByte_);
 #ifdef RPU_OS_USE_DASH32
       RPU_DataWrite(ADDRESS_U11_B_CONTROL, 0x3C);
-      RPU_DataWrite(ADDRESS_U11_B, CurrentSolenoidByte | SOL_NONE);
+      RPU_DataWrite(ADDRESS_U11_B, currentByte_ | SOL_NONE);
       RPU_DataWrite(ADDRESS_U11_B_CONTROL, 0x34);
-      RPU_DataWrite(ADDRESS_U11_B, CurrentSolenoidByte);
+      RPU_DataWrite(ADDRESS_U11_B, currentByte_);
 #endif
    } else {
-      CurrentSolenoidByte = (CurrentSolenoidByte & 0xF0) | SOL_NONE;
-      RPU_DataWrite(ADDRESS_U11_B, CurrentSolenoidByte);
+      currentByte_ = (currentByte_ & 0xF0) | SOL_NONE;
+      RPU_DataWrite(ADDRESS_U11_B, currentByte_);
    }
 
 #ifdef RPU_OS_USE_DASH32
    RPU_DataWrite(ADDRESS_U11_A, curDisplayDigitEnableByte);
 #endif
+}
+
+/******************************************************
+ *   Public API
+ */
+
+void RPU_PushToSolenoidStack(uint8_t solenoidNumber, uint8_t numPushes, bool disableOverride) {
+   solenoids.push(solenoidNumber, numPushes, disableOverride);
+}
+
+bool RPU_PushToTimedSolenoidStack(uint8_t solenoidNumber, uint8_t numPushes, unsigned long whenToFire, bool disableOverride) {
+   return solenoids.pushTimed(solenoidNumber, numPushes, whenToFire, disableOverride);
+}
+
+void RPU_UpdateTimedSolenoidStack(unsigned long curTime) {
+   solenoids.updateTimed(curTime);
+}
+
+void RPU_SetCoinLockout(bool lockoutOff, uint8_t solbit) {
+   solenoids.setCoinLockout(lockoutOff, solbit);
+}
+
+void RPU_SetDisableFlippers(bool disableFlippers, uint8_t solbit) {
+   solenoids.setDisableFlippers(disableFlippers, solbit);
+}
+
+void RPU_SetContinuousSolenoidBit(bool bitOn, uint8_t solBit) {
+   solenoids.setContinuousBit(bitOn, solBit);
+}
+
+bool RPU_FireContinuousSolenoid(uint8_t solBit, uint8_t numCyclesToFire) {
+   return solenoids.fireContinuous(solBit, numCyclesToFire);
+}
+
+uint8_t RPU_ReadContinuousSolenoids() {
+   return solenoids.readContinuous();
+}
+
+void RPU_DisableSolenoidStack() {
+   solenoids.disable();
+}
+
+void RPU_EnableSolenoidStack() {
+   solenoids.enable();
 }

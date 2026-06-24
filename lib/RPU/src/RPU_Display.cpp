@@ -20,66 +20,53 @@
 
 #include "RPU.h"
 #include "RPU_Addresses.h"
-#include "RPU_config.h"
 #include "RPU_Display.h"
 #include <Arduino.h>
 
-/******************************************************
- *   Display State
- */
-static volatile uint8_t DisplayDigits[5][RPU_OS_NUM_DIGITS];
-static volatile uint8_t DisplayDigitEnable[5];
-static volatile bool DisplayOffCycle = false;
-static volatile uint8_t CurrentDisplayDigit = 0;
+DisplayManager display;
 
-void RPU_ResetDisplayState() {
-   CurrentDisplayDigit = 0;
-   for (int displayCount = 0; displayCount < 5; displayCount++) {
-      for (int digitCount = 0; digitCount < RPU_OS_NUM_DIGITS; digitCount++) {
-         DisplayDigits[displayCount][digitCount] = 0;
+void DisplayManager::reset() {
+   currentDigit_ = 0;
+   for (int d = 0; d < 5; d++) {
+      for (int dig = 0; dig < RPU_OS_NUM_DIGITS; dig++) {
+         digits_[d][dig] = 0;
       }
-      DisplayDigitEnable[displayCount] = 0x00;
+      digitEnable_[d] = 0x00;
    }
 }
 
-/******************************************************
- *   Display Handling Functions
- */
-uint8_t RPU_SetDisplay(int displayNumber, unsigned long value, bool blankByMagnitude, uint8_t minDigits, bool showCommasByMagnitude) {
+uint8_t DisplayManager::setDisplay(int displayNumber, unsigned long value, bool blankByMagnitude, uint8_t minDigits,
+                                   bool showCommasByMagnitude) {
    if (displayNumber < 0 || displayNumber > 4) {
       return 0;
    }
 
    uint8_t blank = 0x00;
-
    for (int count = 0; count < RPU_OS_NUM_DIGITS; count++) {
       blank = blank * 2;
       if (value != 0 || count < minDigits) {
          blank |= 1;
       }
-
       (void)showCommasByMagnitude;
-
-      DisplayDigits[displayNumber][(RPU_OS_NUM_DIGITS - 1) - count] = value % 10;
+      digits_[displayNumber][(RPU_OS_NUM_DIGITS - 1) - count] = value % 10;
       value /= 10;
    }
 
    if (blankByMagnitude) {
-      DisplayDigitEnable[displayNumber] = blank;
+      digitEnable_[displayNumber] = blank;
    }
-
    return blank;
 }
 
-void RPU_SetDisplayCredits(int value, bool displayOn, bool showBothDigits) {
+void DisplayManager::setCredits(int value, bool displayOn, bool showBothDigits) {
 #ifdef RPU_OS_USE_6_DIGIT_CREDIT_DISPLAY_WITH_7_DIGIT_DISPLAYS
-   DisplayDigits[4][2] = (value % 100) / 10;
-   DisplayDigits[4][3] = (value % 10);
+   digits_[4][2] = (value % 100) / 10;
+   digits_[4][3] = (value % 10);
 #else
-   DisplayDigits[4][1] = (value % 100) / 10;
-   DisplayDigits[4][2] = (value % 10);
+   digits_[4][1] = (value % 100) / 10;
+   digits_[4][2] = (value % 10);
 #endif
-   uint8_t enableMask = DisplayDigitEnable[4] & RPU_OS_MASK_SHIFT_1;
+   uint8_t enableMask = digitEnable_[4] & RPU_OS_MASK_SHIFT_1;
 
    if (displayOn) {
       if (value > 9 || showBothDigits) {
@@ -88,19 +75,18 @@ void RPU_SetDisplayCredits(int value, bool displayOn, bool showBothDigits) {
          enableMask |= 0x04;
       }
    }
-
-   DisplayDigitEnable[4] = enableMask;
+   digitEnable_[4] = enableMask;
 }
 
-void RPU_SetDisplayBallInPlay(int value, bool displayOn, bool showBothDigits) {
+void DisplayManager::setBallInPlay(int value, bool displayOn, bool showBothDigits) {
 #ifdef RPU_OS_USE_6_DIGIT_CREDIT_DISPLAY_WITH_7_DIGIT_DISPLAYS
-   DisplayDigits[4][5] = (value % 100) / 10;
-   DisplayDigits[4][6] = (value % 10);
+   digits_[4][5] = (value % 100) / 10;
+   digits_[4][6] = (value % 10);
 #else
-   DisplayDigits[4][4] = (value % 100) / 10;
-   DisplayDigits[4][5] = (value % 10);
+   digits_[4][4] = (value % 100) / 10;
+   digits_[4][5] = (value % 10);
 #endif
-   uint8_t enableMask = DisplayDigitEnable[4] & RPU_OS_MASK_SHIFT_2;
+   uint8_t enableMask = digitEnable_[4] & RPU_OS_MASK_SHIFT_2;
 
    if (displayOn) {
       if (value > 9 || showBothDigits) {
@@ -109,11 +95,10 @@ void RPU_SetDisplayBallInPlay(int value, bool displayOn, bool showBothDigits) {
          enableMask |= 0x20;
       }
    }
-
-   DisplayDigitEnable[4] = enableMask;
+   digitEnable_[4] = enableMask;
 }
 
-void RPU_CycleAllDisplays(unsigned long curTime, uint8_t digitNum) {
+void DisplayManager::cycleAll(unsigned long curTime, uint8_t digitNum) {
    int displayDigit = (curTime / 250) % 10;
    unsigned long value;
 #if (RPU_OS_NUM_DIGITS == 7)
@@ -129,13 +114,11 @@ void RPU_CycleAllDisplays(unsigned long curTime, uint8_t digitNum) {
 #if (RPU_OS_NUM_DIGITS == 7)
       displayNumToShow = (digitNum - 1) / 7;
       displayBlank = (0x40) >> ((digitNum - 1) % 7);
-
 #ifdef RPU_OS_USE_6_DIGIT_CREDIT_DISPLAY_WITH_7_DIGIT_DISPLAYS
       if (displayNumToShow == 4) {
          displayBlank = (0x20) >> ((digitNum - 1) % 6);
       }
 #endif
-
 #else
       displayNumToShow = (digitNum - 1) / 6;
       displayBlank = (0x20) >> ((digitNum - 1) % 6);
@@ -144,69 +127,59 @@ void RPU_CycleAllDisplays(unsigned long curTime, uint8_t digitNum) {
 
    for (int count = 0; count < 5; count++) {
       if (digitNum != 0) {
-         RPU_SetDisplay(count, value);
-         if (count == displayNumToShow) {
-            RPU_SetDisplayBlank(count, displayBlank);
-         } else {
-            RPU_SetDisplayBlank(count, 0);
-         }
+         setDisplay(count, value);
+         setBlank(count, count == displayNumToShow ? displayBlank : 0);
       } else {
-         RPU_SetDisplay(count, value, false);
+         setDisplay(count, value, false);
       }
    }
 }
 
-void RPU_SetDisplayMatch(int value, bool displayOn, bool showBothDigits) {
-   RPU_SetDisplayBallInPlay(value, displayOn, showBothDigits);
+void DisplayManager::setMatch(int value, bool displayOn, bool showBothDigits) {
+   setBallInPlay(value, displayOn, showBothDigits);
 }
 
-// Digit mask layout (left to right on display):
-//   digit=  1  2  3  4  5  6
-//   bit=   b0 b1 b2 b3 b4 b5
-void RPU_SetDisplayBlank(int displayNumber, uint8_t bitMask) {
+void DisplayManager::setBlank(int displayNumber, uint8_t bitMask) {
    if (displayNumber < 0 || displayNumber > 4) {
       return;
    }
-
-   DisplayDigitEnable[displayNumber] = bitMask;
+   digitEnable_[displayNumber] = bitMask;
 }
 
-uint8_t RPU_GetDisplayBlank(int displayNumber) {
+uint8_t DisplayManager::getBlank(int displayNumber) const {
    if (displayNumber < 0 || displayNumber > 4) {
       return 0;
    }
-   return DisplayDigitEnable[displayNumber];
+   return digitEnable_[displayNumber];
 }
 
-void RPU_SetDisplayFlash(int displayNumber, unsigned long value, unsigned long curTime, unsigned period, uint8_t minDigits) {
+void DisplayManager::setFlash(int displayNumber, unsigned long value, unsigned long curTime, unsigned period, uint8_t minDigits) {
    if (period != 0) {
       if ((curTime / period) % 2 != 0) {
-         RPU_SetDisplay(displayNumber, value, true, minDigits);
+         setDisplay(displayNumber, value, true, minDigits);
       } else {
-         RPU_SetDisplayBlank(displayNumber, 0);
+         setBlank(displayNumber, 0);
       }
    }
 }
 
-void RPU_SetDisplayFlashCredits(unsigned long curTime, int period) {
+void DisplayManager::setFlashCredits(unsigned long curTime, int period) {
    if (period != 0) {
       if ((curTime / period) % 2 != 0) {
-         DisplayDigitEnable[4] |= 0x06;
+         digitEnable_[4] |= 0x06;
       } else {
-         DisplayDigitEnable[4] &= 0x39;
+         digitEnable_[4] &= 0x39;
       }
    }
 }
 
 /******************************************************
- *   Display Interrupt Service Routine (Rev 1/2 hardware)
+ *   Display ISR (Rev 1/2 hardware, ~320 Hz via TIMER1 CTC)
  *
- *   Fires at ~320 Hz via TIMER1 CTC. Multiplexes all 5 displays
- *   one digit at a time, latching BCD data and digit-enable signals
- *   through the U10/U11 PIAs.
+ *   Multiplexes all 5 displays one digit at a time, latching BCD
+ *   data and digit-enable signals through the U10/U11 PIAs.
  */
-ISR(TIMER1_COMPA_vect) {
-   // Backup U10A
+void DisplayManager::serviceISR() {
    uint8_t backupU10A = RPU_DataRead(ADDRESS_U10_A);
 
    // Disable lamp decoders & strobe latch
@@ -214,82 +187,98 @@ ISR(TIMER1_COMPA_vect) {
    RPU_DataWrite(ADDRESS_U10_B_CONTROL, RPU_DataRead(ADDRESS_U10_B_CONTROL) | 0x08);
    RPU_DataWrite(ADDRESS_U10_B_CONTROL, RPU_DataRead(ADDRESS_U10_B_CONTROL) & 0xF7);
 #ifdef RPU_OS_USE_AUX_LAMPS
-   // Also park the aux lamp board
    RPU_DataWrite(ADDRESS_U11_A_CONTROL, RPU_DataRead(ADDRESS_U11_A_CONTROL) | 0x08);
    RPU_DataWrite(ADDRESS_U11_A_CONTROL, RPU_DataRead(ADDRESS_U11_A_CONTROL) & 0xF7);
 #endif
 
-   // Blank Displays
+   // Blank displays
    RPU_DataWrite(ADDRESS_U10_A_CONTROL, RPU_DataRead(ADDRESS_U10_A_CONTROL) & 0xF7);
-   // Set all 5 display latch strobes high
    RPU_DataWrite(ADDRESS_U11_A, (RPU_DataRead(ADDRESS_U11_A)) | 0x01);
    RPU_DataWrite(ADDRESS_U10_A, 0x0F);
 
    uint8_t displayStrobeMask = 0x01;
    uint8_t displayDigitsMask;
 #ifdef RPU_OS_USE_7_DIGIT_DISPLAYS
-   displayDigitsMask = (0x02 << CurrentDisplayDigit);
+   displayDigitsMask = (0x02 << currentDigit_);
 #else
    displayDigitsMask = RPU_DataRead(ADDRESS_U11_A) & 0x02;
-   displayDigitsMask |= (0x04 << CurrentDisplayDigit);
+   displayDigitsMask |= (0x04 << currentDigit_);
 #endif
 
-   // Write current display digits to 5 displays
-   for (int displayCount = 0; displayCount < 5; displayCount++) {
-      // The BCD for this digit is in b4-b7, and the display latch strobes are in b0-b3 (and U11A:b0)
-      uint8_t displayDataByte = ((DisplayDigits[displayCount][CurrentDisplayDigit]) << 4) | 0x0F;
-      uint8_t displayEnable = ((DisplayDigitEnable[displayCount]) >> CurrentDisplayDigit) & 0x01;
-
-      // if this digit shouldn't be displayed, then set data lines to 0xFX so digit will be blank
-      if (!displayEnable) {
-         displayDataByte = 0xFF;
+   for (int d = 0; d < 5; d++) {
+      uint8_t dataByte = (digits_[d][currentDigit_] << 4) | 0x0F;
+      uint8_t enable = (digitEnable_[d] >> currentDigit_) & 0x01;
+      if (!enable) {
+         dataByte = 0xFF;
       }
-
-      // Calculate which bit needs to be dropped
-      if (displayCount < 4) {
-         displayDataByte &= ~(displayStrobeMask);
+      if (d < 4) {
+         dataByte &= ~displayStrobeMask;
       }
-
-      // Write out the digit & strobe (if it's 0-3)
-      // The current number to display is the upper nibble of displayDataByte,
-      // and the lower nibble is the strobe lines for the four score displays.
-      // The strobe for the four score displays is high here because then the strobes
-      // are NOR'd with U10:CA2 (which mutes the signals during other actions).
-      // Only one strobe is low (from the above line.
-      RPU_DataWrite(ADDRESS_U10_A, displayDataByte);
-      if (displayCount == 4) {
-         // Strobe #5 latch on U11A:b0
+      RPU_DataWrite(ADDRESS_U10_A, dataByte);
+      if (d == 4) {
          RPU_DataWrite(ADDRESS_U11_A, displayDigitsMask & 0xFE);
       }
-
-      // Right now the "Display Latch Strobe" is high
-
-      // Put the latch strobe bits back high (low on the port)
       delayMicroseconds(16);
-
-      if (displayCount < 4) {
-         displayDataByte |= 0x0F;
-         // Need to delay a little to make sure the strobe is low (high on the port) for long enough
-         RPU_DataWrite(ADDRESS_U10_A, displayDataByte);
+      if (d < 4) {
+         RPU_DataWrite(ADDRESS_U10_A, dataByte | 0x0F);
       } else {
          RPU_DataWrite(ADDRESS_U11_A, displayDigitsMask | 0x01);
       }
-
       displayStrobeMask *= 2;
    }
 
-   // While the data is being strobed, we need to enable the current digit
    RPU_DataWrite(ADDRESS_U11_A, displayDigitsMask | 0x01);
 
-   CurrentDisplayDigit = CurrentDisplayDigit + 1;
-   if (CurrentDisplayDigit >= RPU_OS_NUM_DIGITS) {
-      CurrentDisplayDigit = 0;
-      DisplayOffCycle ^= true;
+   currentDigit_++;
+   if (currentDigit_ >= RPU_OS_NUM_DIGITS) {
+      currentDigit_ = 0;
+      offCycle_ ^= true;
    }
 
-   // Stop Blanking (current digits are all latched and ready)
    RPU_DataWrite(ADDRESS_U10_A_CONTROL, RPU_DataRead(ADDRESS_U10_A_CONTROL) | 0x08);
-
-   // Restore 10A from backup
    RPU_DataWrite(ADDRESS_U10_A, backupU10A);
+}
+
+ISR(TIMER1_COMPA_vect) {
+   display.serviceISR();
+}
+
+/******************************************************
+ *   Public API
+ */
+
+uint8_t RPU_SetDisplay(int displayNumber, unsigned long value, bool blankByMagnitude, uint8_t minDigits, bool showCommasByMagnitude) {
+   return display.setDisplay(displayNumber, value, blankByMagnitude, minDigits, showCommasByMagnitude);
+}
+
+void RPU_SetDisplayCredits(int value, bool displayOn, bool showBothDigits) {
+   display.setCredits(value, displayOn, showBothDigits);
+}
+
+void RPU_SetDisplayBallInPlay(int value, bool displayOn, bool showBothDigits) {
+   display.setBallInPlay(value, displayOn, showBothDigits);
+}
+
+void RPU_CycleAllDisplays(unsigned long curTime, uint8_t digitNum) {
+   display.cycleAll(curTime, digitNum);
+}
+
+void RPU_SetDisplayMatch(int value, bool displayOn, bool showBothDigits) {
+   display.setMatch(value, displayOn, showBothDigits);
+}
+
+void RPU_SetDisplayBlank(int displayNumber, uint8_t bitMask) {
+   display.setBlank(displayNumber, bitMask);
+}
+
+uint8_t RPU_GetDisplayBlank(int displayNumber) {
+   return display.getBlank(displayNumber);
+}
+
+void RPU_SetDisplayFlash(int displayNumber, unsigned long value, unsigned long curTime, unsigned period, uint8_t minDigits) {
+   display.setFlash(displayNumber, value, curTime, period, minDigits);
+}
+
+void RPU_SetDisplayFlashCredits(unsigned long curTime, int period) {
+   display.setFlashCredits(curTime, period);
 }
