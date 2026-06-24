@@ -49,7 +49,7 @@ uint8_t GetCPCSelection(uint8_t chuteNumber) {
       return 0xFF;
    }
 
-   if (CPCSelectionsHaveBeenRead == false) {
+   if (!CPCSelectionsHaveBeenRead) {
       CPCSelection[0] = RPU_ReadByteFromEEProm(RPU_CPC_CHUTE_1_SELECTION_BYTE);
       if (CPCSelection[0] >= NUM_CPC_PAIRS) {
          CPCSelection[0] = 4;
@@ -170,7 +170,7 @@ int RunBaseSelfTest(int curState, bool curStateChanged, unsigned long CurrentTim
          RPU_SetDisableFlippers(true);
          RPU_TurnOffAllLamps();
          for (unsigned count = 0; count < RPU_MAX_LAMPS; count++) {
-            RPU_SetLampState(count, 1, 0, 500);
+            RPU_SetLampState(count, true, 0, 500);
          }
          CurValue = 99;
          RPU_SetDisplay(0, CurValue, true);
@@ -195,11 +195,11 @@ int RunBaseSelfTest(int curState, bool curStateChanged, unsigned long CurrentTim
          }
          if (CurValue == 99) {
             for (unsigned count = 0; count < RPU_MAX_LAMPS; count++) {
-               RPU_SetLampState(count, 1, 0, 500);
+               RPU_SetLampState(count, true, 0, 500);
             }
          } else {
             RPU_TurnOffAllLamps();
-            RPU_SetLampState(CurValue, 1);
+            RPU_SetLampState(CurValue, true);
          }
          RPU_SetDisplay(0, CurValue, true);
       }
@@ -241,7 +241,7 @@ int RunBaseSelfTest(int curState, bool curStateChanged, unsigned long CurrentTim
          RPU_PushToSolenoidStack(SavedValue, 10);
       }
       if (curSwitch == resetSwitch || resetDoubleClick) {
-         SolenoidCycle = (SolenoidCycle) ? false : true;
+         SolenoidCycle = !SolenoidCycle;
       }
 
       if ((CurrentTime - LastSolTestTime) > 1000) {

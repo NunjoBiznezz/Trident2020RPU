@@ -1347,7 +1347,7 @@ void RPU_SetDimDivisor(uint8_t level, uint8_t divisor) {
 // left shift is iterative on Arduinos, so a bit array is surprisingly faster
 static const uint8_t BitShiftValues[8] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
 
-void RPU_SetLampState(int lampNum, uint8_t lampState, uint8_t lampDim, int lampFlashPeriod) {
+void RPU_SetLampState(int lampNum, bool lampState, uint8_t lampDim, int lampFlashPeriod) {
    if (lampNum >= RPU_MAX_LAMPS || lampNum < 0) {
       return;
    }
@@ -1448,7 +1448,7 @@ void RPU_ApplyFlashToLamps(unsigned long curTime) {
 
 void RPU_FlashAllLamps(unsigned long curTime) {
    for (int count = 0; count < RPU_MAX_LAMPS; count++) {
-      RPU_SetLampState(count, 1, 0, 500);
+      RPU_SetLampState(count, true, 0, 500);
    }
 
    RPU_ApplyFlashToLamps(curTime);
@@ -1456,7 +1456,7 @@ void RPU_FlashAllLamps(unsigned long curTime) {
 
 void RPU_TurnOffAllLamps() {
    for (int count = 0; count < RPU_MAX_LAMPS; count++) {
-      RPU_SetLampState(count, 0, 0, 0);
+      RPU_SetLampState(count, false, 0, 0);
    }
 }
 
@@ -1816,12 +1816,12 @@ void InterruptService3() {
          // If one of the switches is starting to close (off, on)
          if (startingClosures != 0) {
             // Loop on bits of switch uint8_t
-            for (uint8_t bitCount = 0; bitCount < 8 && immediateSolenoidFired == false; bitCount++) {
+            for (uint8_t bitCount = 0; bitCount < 8 && !immediateSolenoidFired; bitCount++) {
                // If this switch bit is closed
                if (startingClosures & 0x01) {
                   uint8_t startingSwitchNum = switchCount * 8 + bitCount;
                   // Loop on immediate switch data
-                  for (int immediateSwitchCount = 0; immediateSwitchCount < NumGamePrioritySwitches && immediateSolenoidFired == false;
+                  for (int immediateSwitchCount = 0; immediateSwitchCount < NumGamePrioritySwitches && !immediateSolenoidFired;
                        immediateSwitchCount++) {
                      // If this switch requires immediate action
                      if (GameSwitches && startingSwitchNum == GameSwitches[immediateSwitchCount].switchNum) {
@@ -1850,7 +1850,7 @@ void InterruptService3() {
                      if (GameSwitches && GameSwitches[validSwitchCount].switchNum == validSwitchNum) {
                         // If we're supposed to trigger a solenoid, then do it
                         if (GameSwitches[validSwitchCount].solenoid != SOL_NONE) {
-                           if (validSwitchCount < NumGamePrioritySwitches && immediateSolenoidFired == false) {
+                           if (validSwitchCount < NumGamePrioritySwitches && !immediateSolenoidFired) {
                               PushToFrontOfSolenoidStack(GameSwitches[validSwitchCount].solenoid,
                                                          GameSwitches[validSwitchCount].solenoidHoldTime);
                            } else {
@@ -1948,7 +1948,7 @@ void InterruptService3() {
 
             // Use the inhibit lines to set the actual data to the lamp SCRs
             // (here, we don't care about the lower nibble because the address was already latched)
-            uint8_t nibbleOffset = (nibbleCount) ? 1 : 16;
+            uint8_t nibbleOffset = (nibbleCount != 0) ? 1 : 16;
             uint8_t lampOutput = (LampStates[lampByteCount] * nibbleOffset);
             // Every other time through the cycle, we OR in the dim variable
             // in order to dim those lights
@@ -1982,7 +1982,7 @@ void InterruptService3() {
             if (lampByteCount == 7) {
                nibbleCount = 1; // skip the first nibble of uint8_t 7 because it belongs to primary lamps
             }
-            uint8_t nibbleOffset = (nibbleCount) ? 1 : 16;
+            uint8_t nibbleOffset = (nibbleCount != 0) ? 1 : 16;
             uint8_t lampOutput = (LampStates[lampByteCount] * nibbleOffset);
             // Every other time through the cycle, we OR in the dim variable
             // in order to dim those lights
@@ -2171,13 +2171,13 @@ unsigned long RPU_InitializeMPU(unsigned long initOptions, uint8_t creditResetSw
 #if (RPU_OS_HARDWARE_REV == 1) or (RPU_OS_HARDWARE_REV == 2)
    (void)creditResetSwitch;
 
-   if (initOptions & (RPU_CMD_BOOT_ORIGINAL | RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET | RPU_CMD_BOOT_ORIGINAL_IF_NOT_CREDIT_RESET |
-                      RPU_CMD_BOOT_ORIGINAL_IF_SWITCH_CLOSED | RPU_CMD_AUTODETECT_ARCHITECTURE)) {
+   if ((initOptions & (RPU_CMD_BOOT_ORIGINAL | RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET | RPU_CMD_BOOT_ORIGINAL_IF_NOT_CREDIT_RESET |
+                      RPU_CMD_BOOT_ORIGINAL_IF_SWITCH_CLOSED | RPU_CMD_AUTODETECT_ARCHITECTURE)) != 0) {
       retVal |= RPU_RET_OPTION_NOT_SUPPORTED;
    }
 
    if (LookFor6800Activity()) {
-      if (initOptions & RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN) {
+      if ((initOptions & RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN) != 0) {
          retVal |= RPU_RET_ORIGINAL_CODE_REQUESTED;
          return retVal;
       } else {
@@ -2190,21 +2190,21 @@ unsigned long RPU_InitializeMPU(unsigned long initOptions, uint8_t creditResetSw
 
    RPU_DEBUG_MESSAGE("* Starting Setup for Rev 3\n");
 
-   if (initOptions &
-       (RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET | RPU_CMD_BOOT_ORIGINAL_IF_NOT_CREDIT_RESET | RPU_CMD_AUTODETECT_ARCHITECTURE)) {
+   if ((initOptions &
+       (RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET | RPU_CMD_BOOT_ORIGINAL_IF_NOT_CREDIT_RESET | RPU_CMD_AUTODETECT_ARCHITECTURE)) != 0) {
       retVal |= RPU_RET_OPTION_NOT_SUPPORTED;
    }
 
    pinMode(13, INPUT);
-   bool switchStateClosed = digitalRead(13) ? false : true;
+   bool switchStateClosed = digitalRead(13) == 0;
    bool bootToOriginal = false;
 
    if (switchStateClosed) {
       retVal |= RPU_RET_SELECTOR_SWITCH_ON;
    }
 
-   if ((initOptions & RPU_CMD_BOOT_ORIGINAL) || (switchStateClosed && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_SWITCH_CLOSED)) ||
-       (!switchStateClosed && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_NOT_SWITCH_CLOSED))) {
+   if ((initOptions & RPU_CMD_BOOT_ORIGINAL) != 0 || (switchStateClosed && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_SWITCH_CLOSED) != 0) ||
+       (!switchStateClosed && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_NOT_SWITCH_CLOSED) != 0)) {
       bootToOriginal = true;
    }
 
@@ -2215,7 +2215,7 @@ unsigned long RPU_InitializeMPU(unsigned long initOptions, uint8_t creditResetSw
       // Let the 680X run
       pinMode(14, OUTPUT); // Halt
       digitalWrite(14, HIGH);
-      if (initOptions & RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN) {
+      if ((initOptions & RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN) != 0) {
          retVal |= RPU_RET_ORIGINAL_CODE_REQUESTED;
          return retVal;
       } else {
@@ -2279,10 +2279,10 @@ unsigned long RPU_InitializeMPU(unsigned long initOptions, uint8_t creditResetSw
    }
 
    bool bootToOriginal = false;
-   if ((initOptions & RPU_CMD_BOOT_ORIGINAL) || (switchStateClosed && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_SWITCH_CLOSED)) ||
-       (!switchStateClosed && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_NOT_SWITCH_CLOSED)) ||
-       (creditResetButtonHit && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET)) ||
-       (!creditResetButtonHit && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_NOT_CREDIT_RESET))) {
+   if ((initOptions & RPU_CMD_BOOT_ORIGINAL) != 0 || (switchStateClosed && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_SWITCH_CLOSED) != 0) ||
+       (!switchStateClosed && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_NOT_SWITCH_CLOSED) != 0) ||
+       (creditResetButtonHit && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET) != 0) ||
+       (!creditResetButtonHit && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_NOT_CREDIT_RESET) != 0)) {
       bootToOriginal = true;
    }
 
@@ -2325,7 +2325,7 @@ unsigned long RPU_InitializeMPU(unsigned long initOptions, uint8_t creditResetSw
       digitalWrite(RPU_RESET_PIN, 1);
 
       retVal |= RPU_RET_ORIGINAL_CODE_REQUESTED;
-      if (!(initOptions & RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN)) {
+      if ((initOptions & RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN) == 0) {
          while (1)
             ;
       } else {
@@ -2379,7 +2379,7 @@ unsigned long RPU_InitializeMPU(unsigned long initOptions, uint8_t creditResetSw
    RPU_DataRead(ADDRESS_U11_B);
    RPU_DataRead(ADDRESS_U10_A);
    RPU_DataRead(ADDRESS_U10_B);
-   if (initOptions & RPU_CMD_PERFORM_MPU_TEST) {
+   if ((initOptions & RPU_CMD_PERFORM_MPU_TEST) != 0) {
       retVal |= RPU_TestPIAs();
    }
    RPU_DataRead(0); // Reset address bus

@@ -118,7 +118,7 @@ void RPU_CycleAllDisplays(unsigned long curTime, uint8_t digitNum = 0); // Self-
 uint8_t RPU_GetDisplayBlank(int displayNumber);
 
 //   Lamps
-void RPU_SetLampState(int lampNum, uint8_t lampState, uint8_t lampDim = 0, int lampFlashPeriod = 0);
+void RPU_SetLampState(int lampNum, bool lampState, uint8_t lampDim = 0, int lampFlashPeriod = 0);
 void RPU_ApplyFlashToLamps(unsigned long curTime);
 void RPU_FlashAllLamps(unsigned long curTime); // Self-test function
 void RPU_TurnOffAllLamps();

@@ -227,7 +227,7 @@ bool WavTriggerHandler::queuePrioritizedNotification(uint16_t index, uint16_t le
          wTrig_->trackFade(currentBackgroundTrack_, musicGain_ - musicDucking_, 500, 0);
       }
       duckCurrentSoundEffects();
-      nextVoiceNotificationPlayTime_ = length ? currentTime + (unsigned long)length : 0;
+      nextVoiceNotificationPlayTime_ = (length != 0) ? currentTime + (unsigned long)length : 0;
       wTrig_->trackPlayPoly(index);
       wTrig_->trackGain(index, notificationsGain_);
       currentNotificationStartTime_ = currentTime;
@@ -279,7 +279,7 @@ bool WavTriggerHandler::serviceNotificationQueue(unsigned long currentTime) {
             wTrig_->trackFade(currentBackgroundTrack_, musicGain_ - musicDucking_, 500, 0);
          }
          duckCurrentSoundEffects();
-         nextVoiceNotificationPlayTime_ = next.duration ? currentTime + (unsigned long)next.duration : 0;
+         nextVoiceNotificationPlayTime_ = (next.duration != 0) ? currentTime + (unsigned long)next.duration : 0;
          wTrig_->trackPlayPoly(next.notificationNum);
          wTrig_->trackGain(next.notificationNum, notificationsGain_);
          currentNotificationStartTime_ = currentTime;

@@ -48,7 +48,7 @@
 #endif
 
 // Enforce mutual exclusivity: at most one native sound card may be active per build.
-#if (defined(RPU_OS_USE_SB100) + defined(RPU_OS_USE_SB300) + defined(RPU_OS_USE_DASH51) + defined(RPU_OS_USE_S_AND_T)) > 1
+#if (defined(RPU_OS_USE_SB100) + defined(RPU_OS_USE_SB300) + defined(RPU_OS_USE_DASH51) + defined(RPU_OS_USE_S_AND_T) + defined(RPU_OS_USE_DASH32)) > 1
 #  error "Only one native sound card may be defined per build (RPU_OS_USE_SB100 / RPU_OS_USE_SB300 / RPU_OS_USE_DASH51 / RPU_OS_USE_S_AND_T). Check platformio.ini or CMake options."
 #endif
 
