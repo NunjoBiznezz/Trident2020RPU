@@ -27,8 +27,8 @@ DipSwitchManager dipSwitches;
 
 void DipSwitchManager::read() {
 #ifdef RPU_OS_USE_DIP_SWITCHES
-   uint8_t backupU10A = RPU_DataRead(ADDRESS_U10_A);
-   uint8_t backupU10BControl = RPU_DataRead(ADDRESS_U10_B_CONTROL);
+   const uint8_t backupU10A = RPU_DataRead(ADDRESS_U10_A);
+   const uint8_t backupU10BControl = RPU_DataRead(ADDRESS_U10_B_CONTROL);
 
    RPU_DataWrite(ADDRESS_U10_A, 0x20);
    RPU_DataWrite(ADDRESS_U10_B_CONTROL, backupU10BControl & 0xF7);

@@ -150,15 +150,17 @@ void SolenoidManager::service() {
    }
 
 #ifdef RPU_OS_USE_DASH32
-   uint8_t curDisplayDigitEnableByte = RPU_DataRead(ADDRESS_U11_A);
+   // Why is this here?
+   const uint8_t curDisplayDigitEnableByte = RPU_DataRead(ADDRESS_U11_A);
    RPU_DataWrite(ADDRESS_U11_A, curDisplayDigitEnableByte | 0x02);
 #endif
 
-   uint8_t momentarySolenoid = pullFirst();
+   const uint8_t momentarySolenoid = pullFirst();
    if (momentarySolenoid != SOLENOID_STACK_EMPTY) {
       currentByte_ = (currentByte_ & 0xF0) | momentarySolenoid;
       RPU_DataWrite(ADDRESS_U11_B, currentByte_);
 #ifdef RPU_OS_USE_DASH32
+      // WTF does this do?
       RPU_DataWrite(ADDRESS_U11_B_CONTROL, 0x3C);
       RPU_DataWrite(ADDRESS_U11_B, currentByte_ | SOL_NONE);
       RPU_DataWrite(ADDRESS_U11_B_CONTROL, 0x34);

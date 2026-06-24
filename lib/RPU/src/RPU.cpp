@@ -1019,22 +1019,8 @@ static void InterruptService3() {
 
       uint8_t u10BControlLatest = RPU_DataRead(ADDRESS_U10_B_CONTROL);
 
-      // Backup contents of U10A
-      uint8_t backup10A = RPU_DataRead(ADDRESS_U10_A);
+      switches.service();
 
-      // Latch 0xFF separately without interrupt clear
-      RPU_DataWrite(ADDRESS_U10_A, 0xFF);
-      RPU_DataWrite(ADDRESS_U10_B_CONTROL, RPU_DataRead(ADDRESS_U10_B_CONTROL) | 0x08);
-      RPU_DataWrite(ADDRESS_U10_B_CONTROL, RPU_DataRead(ADDRESS_U10_B_CONTROL) & 0xF7);
-      // Read U10B to clear interrupt
-      RPU_DataRead(ADDRESS_U10_B);
-
-      // Turn off U10BControl interrupts
-      RPU_DataWrite(ADDRESS_U10_B_CONTROL, 0x30);
-
-      switches.serviceSwitches();
-
-      RPU_DataWrite(ADDRESS_U10_A, backup10A);
 
       solenoids.service();
 
@@ -1044,7 +1030,7 @@ static void InterruptService3() {
       noInterrupts();
 
       InsideZeroCrossingInterrupt = 0;
-      RPU_DataWrite(ADDRESS_U10_A, backup10A);
+      // RPU_DataWrite(ADDRESS_U10_A, backup10A);
       RPU_DataWrite(ADDRESS_U10_B_CONTROL, u10BControlLatest);
 
       // Read U10B to clear interrupt

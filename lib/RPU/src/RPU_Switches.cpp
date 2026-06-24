@@ -69,10 +69,28 @@ bool SwitchManager::getUpDown() const {
    return true;
 }
 
-void SwitchManager::serviceSwitches() {
+/**
+ * Switch processing called from ISR
+ */
+void SwitchManager::service() {
+   // Backup contents of U10A
+   const uint8_t backup10A = RPU_DataRead(ADDRESS_U10_A);
+
+   // Latch 0xFF separately without interrupt clear
+   RPU_DataWrite(ADDRESS_U10_A, 0xFF);
+   RPU_DataWrite(ADDRESS_U10_B_CONTROL, RPU_DataRead(ADDRESS_U10_B_CONTROL) | 0x08);
+   RPU_DataWrite(ADDRESS_U10_B_CONTROL, RPU_DataRead(ADDRESS_U10_B_CONTROL) & 0xF7);
+   // Read U10B to clear interrupt
+   RPU_DataRead(ADDRESS_U10_B);
+
+   // Turn off U10BControl interrupts
+   RPU_DataWrite(ADDRESS_U10_B_CONTROL, 0x30);
+
    for (uint8_t switchCount = 0; switchCount < NUM_SWITCH_BYTES; switchCount++) {
       serviceBank(switchCount);
    }
+
+   RPU_DataWrite(ADDRESS_U10_A, backup10A);
 }
 
 void SwitchManager::serviceBank(uint8_t switchCount) {

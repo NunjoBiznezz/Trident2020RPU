@@ -15,7 +15,7 @@ constexpr unsigned MAX_NUM_SWITCHES = 40;
 class SwitchManager {
 public:
    void reset();
-   void serviceSwitches();
+   void service();
 
    void pushToStack(uint8_t switchNumber);
    uint8_t pullFromStack();
