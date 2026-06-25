@@ -19,7 +19,7 @@
  */
 
 #include "RPU_Display.h"
-#include "RPU_Core.h"
+#include "RPU.h"
 #include "RPU_Internal.h"
 #include <Arduino.h>
 
@@ -179,7 +179,7 @@ void DisplayManager::setFlashCredits(unsigned long curTime, int period) {
  *   Multiplexes all 5 displays one digit at a time, latching BCD
  *   data and digit-enable signals through the U10/U11 PIAs.
  */
-RPU_OPTIMIZE_SPEED void DisplayManager::serviceISR() {
+void DisplayManager::serviceISR() {
    uint8_t backupU10A = RPU_DataRead(ADDRESS_U10_A);
 
    // Disable lamp decoders & strobe latch

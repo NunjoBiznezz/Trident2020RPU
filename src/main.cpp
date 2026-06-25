@@ -22,7 +22,7 @@
 // unstructured play jackpots
 // increase mode start time with new qualifier
 #include "AudioHandler.h"
-#include "RPU_Core.h"
+#include "RPU.h"
 #if defined(RPU_OS_USE_WAV_TRIGGER)
 #include "WavTriggerHandler.h"
 #endif
@@ -374,10 +374,10 @@ void setup() {
    if ((initResult & RPU_RET_ORIGINAL_CODE_REQUESTED) != 0) {
       delay(100);
       QueueDIAGNotification(SOUND_EFFECT_DIAG_STARTING_ORIGINAL_CODE);
-#if defined(RPU_OS_USE_WAV_TRIGGER)
-      while (wavHandler.update(millis()))
-         ;
-#endif
+//#if defined(RPU_OS_USE_WAV_TRIGGER)
+//      while (wavHandler.update(millis()))
+//         ;
+//#endif
       // Arduino should hang if original code is running
       while (1)
          ;

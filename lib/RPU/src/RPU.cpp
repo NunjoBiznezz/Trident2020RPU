@@ -18,8 +18,8 @@
     See <https://www.gnu.org/licenses/>.
  */
 
+#include "RPU.h"
 #include "RPU_config.h"
-#include "RPU_Core.h"
 #include "RPU_DipSwitches.h"
 #include "RPU_Display.h"
 #include "RPU_Internal.h"
@@ -50,7 +50,7 @@ constexpr bool UsesM6800Processor = false;
 #error "Versions 1 & 2 use the Arduino Nano 328, check your compiler settings"
 #endif
 
-RPU_OPTIMIZE_SPEED void RPU_DataWrite(int address, uint8_t data) {
+void RPU_DataWrite(int address, uint8_t data) {
    // Set data pins to output
    // Make pins 5-7 output (and pin 3 for R/W)
    DDRD = DDRD | 0xE8;
@@ -105,7 +105,7 @@ RPU_OPTIMIZE_SPEED void RPU_DataWrite(int address, uint8_t data) {
    DDRB = DDRB & 0xE0;
 }
 
-RPU_OPTIMIZE_SPEED uint8_t RPU_DataRead(int address) {
+uint8_t RPU_DataRead(int address) {
    // Set data pins to input
    // Make pins 5-7 input
    DDRD = DDRD & 0x1F;
@@ -158,7 +158,7 @@ RPU_OPTIMIZE_SPEED uint8_t RPU_DataRead(int address) {
    return inputData;
 }
 
-RPU_OPTIMIZE_SPEED static void WaitClockCycle(int numCycles = 1) {
+static void WaitClockCycle(int numCycles = 1) {
    for (int count = 0; count < numCycles; count++) {
       // Wait while clock is low
       while (!(PIND & 0x10))
@@ -188,7 +188,7 @@ RPU_OPTIMIZE_SPEED static void WaitClockCycle(int numCycles = 1) {
 // Pin D16-30 = A0-A14
 
 
-RPU_OPTIMIZE_SPEED void RPU_DataWrite(int address, uint8_t data) {
+void RPU_DataWrite(int address, uint8_t data) {
    // Set data pins to output
    DDRH = DDRH | 0x78;
    DDRB = DDRB | 0x70;
@@ -250,7 +250,7 @@ RPU_OPTIMIZE_SPEED void RPU_DataWrite(int address, uint8_t data) {
    DDRJ = DDRJ & 0xFE;
 }
 
-RPU_OPTIMIZE_SPEED uint8_t RPU_DataRead(int address) {
+uint8_t RPU_DataRead(int address) {
    // Set data pins to input
    DDRH = DDRH & 0x87;
    DDRB = DDRB & 0x8F;
@@ -363,7 +363,7 @@ static void RPU_SetDataPinsDirection(bool pinsOutput) {
 }
 
 // REVISION 4 HARDWARE
-RPU_OPTIMIZE_SPEED void RPU_DataWrite(int address, uint8_t data) {
+void RPU_DataWrite(int address, uint8_t data) {
    // Set data pins to output
    DDRA = 0xFF;
 
@@ -427,7 +427,7 @@ RPU_OPTIMIZE_SPEED void RPU_DataWrite(int address, uint8_t data) {
    DDRA = 0x00;
 }
 
-RPU_OPTIMIZE_SPEED uint8_t RPU_DataRead(int address) {
+uint8_t RPU_DataRead(int address) {
    // Set data pins to input
    DDRA = 0x00;
 
@@ -523,7 +523,7 @@ void RPU_SetDataPinsDirection(bool pinsOutput) {
 }
 
 // REV 100 HARDWARE
-RPU_OPTIMIZE_SPEED void RPU_DataWrite(int address, uint8_t data) {
+void RPU_DataWrite(int address, uint8_t data) {
    // Set data pins to output
    DDRH = DDRH | 0x78;
    DDRB = DDRB | 0x70;
@@ -581,7 +581,7 @@ RPU_OPTIMIZE_SPEED void RPU_DataWrite(int address, uint8_t data) {
    DDRJ = DDRJ & 0xFE;
 }
 
-RPU_OPTIMIZE_SPEED uint8_t RPU_DataRead(int address) {
+uint8_t RPU_DataRead(int address) {
    // Set data pins to input
    DDRH = DDRH & 0x87;
    DDRB = DDRB & 0x8F;
@@ -683,7 +683,7 @@ static void RPU_SetDataPinsDirection(bool pinsOutput) {
 }
 
 // REVISION 101/102 HARDWARE
-RPU_OPTIMIZE_SPEED void RPU_DataWrite(int address, uint8_t data) {
+void RPU_DataWrite(int address, uint8_t data) {
    // Set data pins to output
    DDRA = 0xFF;
 
@@ -747,7 +747,7 @@ RPU_OPTIMIZE_SPEED void RPU_DataWrite(int address, uint8_t data) {
    DDRA = 0x00;
 }
 
-RPU_OPTIMIZE_SPEED uint8_t RPU_DataRead(int address) {
+uint8_t RPU_DataRead(int address) {
    // Set data pins to input
    DDRA = 0x00;
 
@@ -988,7 +988,7 @@ bool CheckForMPUClock() {
 static volatile int numberOfU11Interrupts = 0;
 static volatile bool InsideZeroCrossingInterrupt = false;
 
-RPU_OPTIMIZE_SPEED static void InterruptService3() {
+static void InterruptService3() {
    const uint8_t u10AControl = RPU_DataRead(ADDRESS_U10_A_CONTROL);
    if (u10AControl & 0x80) {
       // self test switch

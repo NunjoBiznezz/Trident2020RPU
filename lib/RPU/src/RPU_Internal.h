@@ -26,14 +26,6 @@
 extern void RPU_DataWrite(int address, uint8_t data);
 extern uint8_t RPU_DataRead(int address);
 
-// Applies GCC speed optimization to ISR-called methods.
-// __has_attribute evaluates to 0 on clang, which does not support "optimize".
-#if __has_attribute(optimize)
-#define RPU_OPTIMIZE_SPEED __attribute__((optimize("O3")))
-#else
-#define RPU_OPTIMIZE_SPEED
-#endif
-
 #if (RPU_OS_HARDWARE_REV == 1)
 constexpr uint16_t ADDRESS_U10_A = 0x14;
 constexpr uint16_t ADDRESS_U10_A_CONTROL = 0x15;
@@ -91,20 +83,6 @@ constexpr uint16_t ADDRESS_SB300_ANALOG = 0xC0;
 
 #endif
 
-constexpr uint16_t RPU_CREDITS_EEPROM_BYTE = 5;
-constexpr uint16_t RPU_HIGHSCORE_EEPROM_START_BYTE = 1;
-constexpr uint16_t RPU_AWARD_SCORE_1_EEPROM_START_BYTE = 10;
-constexpr uint16_t RPU_AWARD_SCORE_2_EEPROM_START_BYTE = 14;
-constexpr uint16_t RPU_AWARD_SCORE_3_EEPROM_START_BYTE = 18;
-constexpr uint16_t RPU_TOTAL_PLAYS_EEPROM_START_BYTE = 26;
-constexpr uint16_t RPU_TOTAL_REPLAYS_EEPROM_START_BYTE = 30;
-constexpr uint16_t RPU_TOTAL_HISCORE_BEATEN_START_BYTE = 34;
-constexpr uint16_t RPU_CHUTE_2_COINS_START_BYTE = 38;
-constexpr uint16_t RPU_CHUTE_1_COINS_START_BYTE = 42;
-constexpr uint16_t RPU_CHUTE_3_COINS_START_BYTE = 46;
-constexpr uint16_t RPU_CPC_CHUTE_1_SELECTION_BYTE = 50;
-constexpr uint16_t RPU_CPC_CHUTE_2_SELECTION_BYTE = 51;
-constexpr uint16_t RPU_CPC_CHUTE_3_SELECTION_BYTE = 52;
 
 
 #if !defined(RPU_DEBUG_MESSAGES)

@@ -19,7 +19,7 @@
  */
 
 #include "RPU_Solenoids.h"
-#include "RPU_Core.h"
+#include "RPU.h"
 #include "RPU_Internal.h"
 #include <Arduino.h>
 
@@ -140,7 +140,7 @@ void SolenoidManager::disable() {
    stackEnabled_ = false;
 }
 
-RPU_OPTIMIZE_SPEED void SolenoidManager::service() {
+void SolenoidManager::service() {
    if (numCyclesBeforeRevert_ != 0) {
       numCyclesBeforeRevert_ -= 1;
       if (numCyclesBeforeRevert_ == 0) {

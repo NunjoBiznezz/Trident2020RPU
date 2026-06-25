@@ -1,11 +1,11 @@
 //
 // Created by Douglas Bercot on 6/24/26.
 //
+#include "RPU.h"
 #include "RPU_config.h"
-#include "RPU_Core.h"
 #include "RPU_Internal.h"
 
-#if (RPU_OS_HARDWARE_REV >= 2 && defined(RPU_OS_USE_SB300))
+#if ((RPU_OS_HARDWARE_REV >= 2) && defined(RPU_OS_USE_SB300))
 
 void RPU_PlaySB300SquareWave(uint8_t soundRegister, uint8_t soundByte) {
    RPU_DataWrite(ADDRESS_SB300_SQUARE_WAVES + soundRegister, soundByte);

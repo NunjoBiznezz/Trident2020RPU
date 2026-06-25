@@ -21,7 +21,6 @@
 #pragma once
 
 #include "RPU_config.h"
-#include "RPU_Internal.h"
 
 #include <stdint.h>
 

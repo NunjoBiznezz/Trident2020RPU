@@ -19,7 +19,7 @@
  */
 
 #include "RPU_Lamps.h"
-#include "RPU_Core.h"
+#include "RPU.h"
 #include "RPU_Internal.h"
 #include <Arduino.h>
 
@@ -145,7 +145,7 @@ void LampManager::turnOffAll() {
    }
 }
 
-RPU_OPTIMIZE_SPEED void LampManager::strobe() {
+void LampManager::strobe() {
    for (int bank = 0; bank < 8; bank++) {
       for (uint8_t nibble = 0; nibble < 2; nibble++) {
          // Skip the last position — used to park the lamp board

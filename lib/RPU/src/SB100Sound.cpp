@@ -1,5 +1,5 @@
+#include "RPU.h"
 #include "RPU_config.h"
-#include "RPU_Core.h"
 #include "RPU_Internal.h"
 #include <Arduino.h>
 

@@ -19,7 +19,7 @@
  */
 
 #include "RPU_DipSwitches.h"
-#include "RPU_Core.h"
+#include "RPU.h"
 #include "RPU_Internal.h"
 #include <Arduino.h>
 
