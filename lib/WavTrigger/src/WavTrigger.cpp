@@ -38,6 +38,7 @@ static constexpr uint8_t EOM = 0x55;
 void WavTrigger::start(void) {
    versionRcvd_ = false;
    sysinfoRcvd_ = false;
+   serial_.begin(57600);
    flush();
 
    requestVersion();

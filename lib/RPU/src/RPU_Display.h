@@ -2,10 +2,6 @@
 #include "RPU_config.h"
 #include <stdint.h>
 
-// Forward declarations of internal RPU bus functions defined in RPU.cpp
-void RPU_DataWrite(int address, uint8_t data);
-uint8_t RPU_DataRead(int address);
-
 class DisplayManager {
 public:
    void reset();
@@ -29,4 +25,4 @@ private:
    volatile uint8_t currentDigit_ = 0;
 };
 
-extern DisplayManager display;
+extern DisplayManager displays;

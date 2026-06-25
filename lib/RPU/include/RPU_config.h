@@ -36,15 +36,6 @@
 // Hardware Rev 102 - second RPU (with display and WIFI socket)
 #if !defined(RPU_OS_HARDWARE_REV)
 #error "RPU_OS_HARDWARE_REV not defined. Please define it in platformio.ini or in RPU_config.h"
-
-#elif (RPU_OS_HARDWARE_REV ==1) || (RPU_OS_HARDWARE_REV == 2)
-   #if defined(__AVR_ATmega328P__)
-   #error "Versions 1 & 2 require the compiler to be set to ATmega328P"
-   #endif
-#else
-#if !defined(__AVR_ATmega2560__)
-   #error "RPU hardware rev 3+ requires ATmega2560"
-   #endif
 #endif
 
 // Some boards will assume a 6800 is the processor (RPU_OS_HARDWARE_REV 1 through 4)

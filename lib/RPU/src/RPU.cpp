@@ -20,13 +20,14 @@
 
 #include "RPU.h"
 #include "RPU_config.h"
-#include "RPU_DipSwitches.h"
-#include "RPU_Display.h"
 #include "RPU_Internal.h"
+#include "RPU_DipSwitches.h"
+#include "RPU_Switches.h"
+#include "RPU_Display.h"
 #include "RPU_Lamps.h"
 #include "RPU_Solenoids.h"
-#include "RPU_Switches.h"
 #include <Arduino.h>
+
 
 /******************************************************
  *   Defines and library variables
@@ -42,6 +43,7 @@ constexpr bool UsesM6800Processor = true;
 #else
 constexpr bool UsesM6800Processor = false;
 #endif
+
 
 
 #if (RPU_OS_HARDWARE_REV == 1) or (RPU_OS_HARDWARE_REV == 2)
@@ -868,6 +870,7 @@ static void InitializeU11PIA() {
    RPU_DataWrite(ADDRESS_U11_B, 0xFF);
    // Set bit 3 so future reads will read data
    RPU_DataWrite(ADDRESS_U11_B_CONTROL, RPU_DataRead(ADDRESS_U11_B_CONTROL) | 0x04);
+   
    // Store 9F in U11B Output and initialize solenoid state
    solenoids.initDefault();
 }
@@ -896,18 +899,9 @@ static unsigned long RPU_TestPIAs() {
    return piaErrors;
 }
 
-
 /******************************************************
  *   Helper Functions
  */
-
-void RPU_ClearVariables() {
-   solenoids.reset();
-   switches.reset();
-   display.reset();
-   lamps.reset();
-}
-
 
 void RPU_InitNativeAudio() {
 #if (RPU_OS_HARDWARE_REV >= 2 && defined(RPU_OS_USE_SB300))
@@ -985,20 +979,30 @@ bool CheckForMPUClock() {
 }
 #endif
 
+static volatile int numberOfU10Interrupts = 0;
 static volatile int numberOfU11Interrupts = 0;
-static volatile bool InsideZeroCrossingInterrupt = false;
+static volatile uint8_t InsideZeroCrossingInterrupt = 0;
 
+// INTERRUPT SERVICE ROUTINE
+// for ARCH 1 (B/S)
+ISR(TIMER1_COMPA_vect) { // This is the interrupt request
+   displays.serviceISR();
+}
+
+/**
+ * This interrupt services the digital pin 2 (zero crossing)
+ */
 static void InterruptService3() {
    const uint8_t u10AControl = RPU_DataRead(ADDRESS_U10_A_CONTROL);
    if (u10AControl & 0x80) {
       // self test switch
       if (RPU_DataRead(ADDRESS_U10_A_CONTROL) & 0x80) {
-         RPU_PushToSwitchStack(SW_SELF_TEST_SWITCH);
+         switches.pushSelfTest();
       }
       RPU_DataRead(ADDRESS_U10_A);
    }
 
-   // If we get a weird interupt from U11B, clear it
+   // If we get a weird interrupt from U11B, clear it
    const uint8_t u11BControl = RPU_DataRead(ADDRESS_U11_B_CONTROL);
    if (u11BControl & 0x80) {
       RPU_DataRead(ADDRESS_U11_B);
@@ -1008,16 +1012,18 @@ static void InterruptService3() {
    const uint8_t u10BControl = RPU_DataRead(ADDRESS_U10_B_CONTROL);
 
    // If the interrupt bit on the display interrupt is on, do the display refresh
-   if ((u11AControl & 0x80) != 0) {
+   if (u11AControl & 0x80) {
       RPU_DataRead(ADDRESS_U11_A);
       numberOfU11Interrupts += 1;
    }
 
    // If the IRQ bit of U10BControl is set, do the Zero-crossing interrupt handler
-   if (((u10BControl & 0x80) != 0) && !InsideZeroCrossingInterrupt) {
-      InsideZeroCrossingInterrupt = true;
+   if ((u10BControl & 0x80) && (InsideZeroCrossingInterrupt == 0)) {
+      InsideZeroCrossingInterrupt = InsideZeroCrossingInterrupt + 1;
 
-      const uint8_t u10BControlLatest = RPU_DataRead(ADDRESS_U10_B_CONTROL);
+      // Backup contents of U10A and U10B_CONTROL
+      const uint8_t backupU10BControl = RPU_DataRead(ADDRESS_U10_B_CONTROL);
+      const uint8_t backup10A = RPU_DataRead(ADDRESS_U10_A);
 
       switches.service();
 
@@ -1028,12 +1034,13 @@ static void InterruptService3() {
       interrupts();
       noInterrupts();
 
-      InsideZeroCrossingInterrupt = false;
-      // RPU_DataWrite(ADDRESS_U10_A, backup10A);
-      RPU_DataWrite(ADDRESS_U10_B_CONTROL, u10BControlLatest);
+      InsideZeroCrossingInterrupt = 0;
+      RPU_DataWrite(ADDRESS_U10_A, backup10A);
+      RPU_DataWrite(ADDRESS_U10_B_CONTROL, backupU10BControl);
 
       // Read U10B to clear interrupt
       RPU_DataRead(ADDRESS_U10_B);
+      numberOfU10Interrupts += 1;
    }
 }
 
@@ -1181,13 +1188,13 @@ unsigned long RPU_InitializeMPU(unsigned long initOptions, uint8_t creditResetSw
 #if (RPU_OS_HARDWARE_REV == 1) or (RPU_OS_HARDWARE_REV == 2)
    (void)creditResetSwitch;
 
-   if ((initOptions & (RPU_CMD_BOOT_ORIGINAL | RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET | RPU_CMD_BOOT_ORIGINAL_IF_NOT_CREDIT_RESET |
-                      RPU_CMD_BOOT_ORIGINAL_IF_SWITCH_CLOSED | RPU_CMD_AUTODETECT_ARCHITECTURE)) != 0) {
+   if (initOptions & (RPU_CMD_BOOT_ORIGINAL | RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET | RPU_CMD_BOOT_ORIGINAL_IF_NOT_CREDIT_RESET |
+                      RPU_CMD_BOOT_ORIGINAL_IF_SWITCH_CLOSED | RPU_CMD_AUTODETECT_ARCHITECTURE)) {
       retVal |= RPU_RET_OPTION_NOT_SUPPORTED;
    }
 
    if (LookFor6800Activity()) {
-      if ((initOptions & RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN) != 0) {
+      if (initOptions & RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN) {
          retVal |= RPU_RET_ORIGINAL_CODE_REQUESTED;
          return retVal;
       } else {
@@ -1200,21 +1207,21 @@ unsigned long RPU_InitializeMPU(unsigned long initOptions, uint8_t creditResetSw
 
    RPU_DEBUG_MESSAGE("* Starting Setup for Rev 3\n");
 
-   if ((initOptions &
-       (RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET | RPU_CMD_BOOT_ORIGINAL_IF_NOT_CREDIT_RESET | RPU_CMD_AUTODETECT_ARCHITECTURE)) != 0) {
+   if (initOptions &
+       (RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET | RPU_CMD_BOOT_ORIGINAL_IF_NOT_CREDIT_RESET | RPU_CMD_AUTODETECT_ARCHITECTURE)) {
       retVal |= RPU_RET_OPTION_NOT_SUPPORTED;
    }
 
    pinMode(13, INPUT);
-   bool switchStateClosed = digitalRead(13) == 0;
+   bool switchStateClosed = digitalRead(13) ? false : true;
    bool bootToOriginal = false;
 
    if (switchStateClosed) {
       retVal |= RPU_RET_SELECTOR_SWITCH_ON;
    }
 
-   if ((initOptions & RPU_CMD_BOOT_ORIGINAL) != 0 || (switchStateClosed && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_SWITCH_CLOSED) != 0) ||
-       (!switchStateClosed && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_NOT_SWITCH_CLOSED) != 0)) {
+   if ((initOptions & RPU_CMD_BOOT_ORIGINAL) || (switchStateClosed && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_SWITCH_CLOSED)) ||
+       (!switchStateClosed && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_NOT_SWITCH_CLOSED))) {
       bootToOriginal = true;
    }
 
@@ -1225,7 +1232,7 @@ unsigned long RPU_InitializeMPU(unsigned long initOptions, uint8_t creditResetSw
       // Let the 680X run
       pinMode(14, OUTPUT); // Halt
       digitalWrite(14, HIGH);
-      if ((initOptions & RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN) != 0) {
+      if (initOptions & RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN) {
          retVal |= RPU_RET_ORIGINAL_CODE_REQUESTED;
          return retVal;
       } else {
@@ -1289,10 +1296,10 @@ unsigned long RPU_InitializeMPU(unsigned long initOptions, uint8_t creditResetSw
    }
 
    bool bootToOriginal = false;
-   if ((initOptions & RPU_CMD_BOOT_ORIGINAL) != 0 || (switchStateClosed && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_SWITCH_CLOSED) != 0) ||
-       (!switchStateClosed && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_NOT_SWITCH_CLOSED) != 0) ||
-       (creditResetButtonHit && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET) != 0) ||
-       (!creditResetButtonHit && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_NOT_CREDIT_RESET) != 0)) {
+   if ((initOptions & RPU_CMD_BOOT_ORIGINAL) || (switchStateClosed && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_SWITCH_CLOSED)) ||
+       (!switchStateClosed && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_NOT_SWITCH_CLOSED)) ||
+       (creditResetButtonHit && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET)) ||
+       (!creditResetButtonHit && (initOptions & RPU_CMD_BOOT_ORIGINAL_IF_NOT_CREDIT_RESET))) {
       bootToOriginal = true;
    }
 
@@ -1335,7 +1342,7 @@ unsigned long RPU_InitializeMPU(unsigned long initOptions, uint8_t creditResetSw
       digitalWrite(RPU_RESET_PIN, 1);
 
       retVal |= RPU_RET_ORIGINAL_CODE_REQUESTED;
-      if ((initOptions & RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN) == 0) {
+      if (!(initOptions & RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN)) {
          while (1)
             ;
       } else {
@@ -1363,7 +1370,9 @@ unsigned long RPU_InitializeMPU(unsigned long initOptions, uint8_t creditResetSw
    InitializeU11PIA();
 
    // Read values from MPU dip switches
+#ifdef RPU_OS_USE_DIP_SWITCHES
    dipSwitches.read();
+#endif
 
 #if (RPU_OS_HARDWARE_REV == 4) || (RPU_OS_HARDWARE_REV > 100)
    pinMode(RPU_DIAGNOSTIC_PIN, INPUT);
@@ -1374,7 +1383,11 @@ unsigned long RPU_InitializeMPU(unsigned long initOptions, uint8_t creditResetSw
 
    // Reset address bus
    RPU_DataRead(0);
-   RPU_ClearVariables();
+
+   solenoids.reset();
+   switches.reset();
+   displays.reset();
+   lamps.reset();
 
    RPU_DEBUG_MESSAGE("* About to hook interrupts\n");
    RPU_DEBUG_DELAY(100);
@@ -1387,7 +1400,7 @@ unsigned long RPU_InitializeMPU(unsigned long initOptions, uint8_t creditResetSw
    RPU_DataRead(ADDRESS_U11_B);
    RPU_DataRead(ADDRESS_U10_A);
    RPU_DataRead(ADDRESS_U10_B);
-   if ((initOptions & RPU_CMD_PERFORM_MPU_TEST) != 0) {
+   if (initOptions & RPU_CMD_PERFORM_MPU_TEST) {
       retVal |= RPU_TestPIAs();
    }
    RPU_DataRead(0); // Reset address bus

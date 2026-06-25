@@ -140,6 +140,9 @@ void SolenoidManager::disable() {
    stackEnabled_ = false;
 }
 
+/**
+ * Switch processing called during zero crossing
+ */
 void SolenoidManager::service() {
    if (numCyclesBeforeRevert_ != 0) {
       numCyclesBeforeRevert_ -= 1;

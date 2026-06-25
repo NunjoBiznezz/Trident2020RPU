@@ -18,12 +18,13 @@
     See <https://www.gnu.org/licenses/>.
  */
 
-#include "RPU_Display.h"
 #include "RPU.h"
+#include "RPU_config.h"
 #include "RPU_Internal.h"
+#include "RPU_Display.h"
 #include <Arduino.h>
 
-DisplayManager display;
+DisplayManager displays;
 
 void DisplayManager::reset() {
    currentDigit_ = 0;
@@ -239,46 +240,42 @@ void DisplayManager::serviceISR() {
    RPU_DataWrite(ADDRESS_U10_A, backupU10A);
 }
 
-ISR(TIMER1_COMPA_vect) {
-   display.serviceISR();
-}
-
 /******************************************************
  *   Public API
  */
 
 uint8_t RPU_SetDisplay(int displayNumber, unsigned long value, bool blankByMagnitude, uint8_t minDigits, bool showCommasByMagnitude) {
-   return display.setDisplay(displayNumber, value, blankByMagnitude, minDigits, showCommasByMagnitude);
+   return displays.setDisplay(displayNumber, value, blankByMagnitude, minDigits, showCommasByMagnitude);
 }
 
 void RPU_SetDisplayCredits(int value, bool displayOn, bool showBothDigits) {
-   display.setCredits(value, displayOn, showBothDigits);
+   displays.setCredits(value, displayOn, showBothDigits);
 }
 
 void RPU_SetDisplayBallInPlay(int value, bool displayOn, bool showBothDigits) {
-   display.setBallInPlay(value, displayOn, showBothDigits);
+   displays.setBallInPlay(value, displayOn, showBothDigits);
 }
 
 void RPU_CycleAllDisplays(unsigned long curTime, uint8_t digitNum) {
-   display.cycleAll(curTime, digitNum);
+   displays.cycleAll(curTime, digitNum);
 }
 
 void RPU_SetDisplayMatch(int value, bool displayOn, bool showBothDigits) {
-   display.setMatch(value, displayOn, showBothDigits);
+   displays.setMatch(value, displayOn, showBothDigits);
 }
 
 void RPU_SetDisplayBlank(int displayNumber, uint8_t bitMask) {
-   display.setBlank(displayNumber, bitMask);
+   displays.setBlank(displayNumber, bitMask);
 }
 
 uint8_t RPU_GetDisplayBlank(int displayNumber) {
-   return display.getBlank(displayNumber);
+   return displays.getBlank(displayNumber);
 }
 
 void RPU_SetDisplayFlash(int displayNumber, unsigned long value, unsigned long curTime, unsigned period, uint8_t minDigits) {
-   display.setFlash(displayNumber, value, curTime, period, minDigits);
+   displays.setFlash(displayNumber, value, curTime, period, minDigits);
 }
 
 void RPU_SetDisplayFlashCredits(unsigned long curTime, int period) {
-   display.setFlashCredits(curTime, period);
+   displays.setFlashCredits(curTime, period);
 }

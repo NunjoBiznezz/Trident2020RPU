@@ -145,6 +145,9 @@ void LampManager::turnOffAll() {
    }
 }
 
+/**
+ * Lamp processing called during zero crossing
+ */
 void LampManager::strobe() {
    for (int bank = 0; bank < 8; bank++) {
       for (uint8_t nibble = 0; nibble < 2; nibble++) {
@@ -224,7 +227,7 @@ void LampManager::strobe() {
    }
 #endif
 
-   // Park the lamp board
+   // Strobe the lamps??
    RPU_DataWrite(ADDRESS_U10_A, 0xFF);
    RPU_DataWrite(ADDRESS_U10_B_CONTROL, RPU_DataRead(ADDRESS_U10_B_CONTROL) | 0x08);
    RPU_DataWrite(ADDRESS_U10_B_CONTROL, RPU_DataRead(ADDRESS_U10_B_CONTROL) & 0xF7);

@@ -40,10 +40,14 @@ void SwitchManager::setup(int numSwitches, int numPrioritySwitches, const Playfi
    gameSwitches_ = switchArray;
 }
 
-void SwitchManager::pushToStack(uint8_t switchNumber) {
-   if (switchNumber == SW_SELF_TEST_SWITCH && !switchStack_.isEmpty() && switchStack_.peek() == SW_SELF_TEST_SWITCH) {
+void SwitchManager::pushSelfTest() {
+   if (!switchStack_.isEmpty() && switchStack_.peek() == SW_SELF_TEST_SWITCH) {
       return;
    }
+   switchStack_.push(SW_SELF_TEST_SWITCH);
+}
+
+void SwitchManager::pushToStack(uint8_t switchNumber) {
    switchStack_.push(switchNumber);
 }
 
@@ -70,11 +74,9 @@ bool SwitchManager::getUpDown() const {
 }
 
 /**
- * Switch processing called from ISR
+ * Switch processing called from ISR during zero crossing
  */
 void SwitchManager::service() {
-   // Backup contents of U10A
-   const uint8_t backup10A = RPU_DataRead(ADDRESS_U10_A);
 
    // Latch 0xFF separately without interrupt clear
    RPU_DataWrite(ADDRESS_U10_A, 0xFF);
@@ -90,7 +92,6 @@ void SwitchManager::service() {
       serviceBank(switchCount);
    }
 
-   RPU_DataWrite(ADDRESS_U10_A, backup10A);
 }
 
 void SwitchManager::serviceBank(uint8_t switchCount) {

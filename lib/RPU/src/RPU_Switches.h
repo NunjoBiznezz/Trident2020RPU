@@ -18,6 +18,7 @@ public:
    void service();
 
    void pushToStack(uint8_t switchNumber);
+   void pushSelfTest();
    uint8_t pullFromStack();
    bool readState(uint8_t switchNum) const;
 

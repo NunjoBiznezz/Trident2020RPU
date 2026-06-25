@@ -23,10 +23,11 @@
 #include "RPU_Internal.h"
 #include <Arduino.h>
 
+#ifdef RPU_OS_USE_DIP_SWITCHES
+
 DipSwitchManager dipSwitches;
 
 void DipSwitchManager::read() {
-#ifdef RPU_OS_USE_DIP_SWITCHES
    const uint8_t backupU10A = RPU_DataRead(ADDRESS_U10_A);
    const uint8_t backupU10BControl = RPU_DataRead(ADDRESS_U10_B_CONTROL);
 
@@ -52,18 +53,13 @@ void DipSwitchManager::read() {
 
    RPU_DataWrite(ADDRESS_U10_B_CONTROL, backupU10BControl);
    RPU_DataWrite(ADDRESS_U10_A, backupU10A);
-#endif
 }
 
 uint8_t DipSwitchManager::get(uint8_t index) const {
-#ifdef RPU_OS_USE_DIP_SWITCHES
    if (index > 3) {
       return 0x00;
    }
    return dipSwitches_[index];
-#else
-   return 0x00 & index;
-#endif
 }
 
 /******************************************************
@@ -77,3 +73,5 @@ void RPU_ReadDipSwitches() {
 uint8_t RPU_GetDipSwitches(uint8_t index) {
    return dipSwitches.get(index);
 }
+
+#endif
