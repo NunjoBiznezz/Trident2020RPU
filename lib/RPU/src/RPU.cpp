@@ -1178,8 +1178,8 @@ void RPU_Update(unsigned long currentTime) {
 
 // This function should eventually support auto-detect and initialize the appropriate
 // ISRs for the detected architecture.
-unsigned long RPU_InitializeMPU(unsigned long initOptions, uint8_t creditResetSwitch) {
-   unsigned long retVal = 0;
+uint16_t RPU_InitializeMPU(uint16_t initOptions, uint8_t creditResetSwitch) {
+   uint16_t retVal = 0;
 
    // Wait for board to boot
    delayMicroseconds(50000);
