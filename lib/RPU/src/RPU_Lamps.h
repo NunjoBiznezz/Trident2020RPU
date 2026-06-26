@@ -1,10 +1,7 @@
 #pragma once
+
 #include "RPU_config.h"
 #include <stdint.h>
-
-// Forward declaration of internal RPU bus function defined in RPU.cpp
-void RPU_DataWrite(int address, uint8_t data);
-uint8_t RPU_DataRead(int address);
 
 class LampManager {
 public:
@@ -20,6 +17,7 @@ public:
    void applyFlash(unsigned long curTime);
    void flashAll(unsigned long curTime);
    void turnOffAll();
+   void setLampAnimation(const uint8_t *lampData, unsigned count);
 
 private:
    static const uint8_t BIT_SHIFT[8];

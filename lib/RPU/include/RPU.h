@@ -20,12 +20,13 @@
 
 #pragma once
 
-#include "RPU_config.h"
+#include "RPU_config.h"    // include this here for safety sake
 
 #include <stdint.h>
 
-constexpr unsigned long RPU_OS_MAJOR_VERSION = 5;
-constexpr unsigned long RPU_OS_MINOR_VERSION = 7;
+
+constexpr uint8_t RPU_OS_MAJOR_VERSION = 5;
+constexpr uint8_t RPU_OS_MINOR_VERSION = 7;
 
 struct PlayfieldAndCabinetSwitch {
    uint8_t switchNum;
@@ -34,7 +35,6 @@ struct PlayfieldAndCabinetSwitch {
 };
 
 constexpr uint8_t SW_SELF_TEST_SWITCH = 0x7F;
-constexpr uint8_t SOL_NONE = 0x0F;
 constexpr uint8_t SWITCH_STACK_EMPTY = 0xFF;
 constexpr uint8_t CONTSOL_DISABLE_FLIPPERS = 0x40;
 constexpr uint8_t CONTSOL_DISABLE_COIN_LOCKOUT = 0x20;
@@ -49,10 +49,11 @@ constexpr unsigned long RPU_CMD_BOOT_ORIGINAL_IF_NOT_SWITCH_CLOSED = 0x0010; /* 
 constexpr unsigned long RPU_CMD_AUTODETECT_ARCHITECTURE = 0x0040; /* For Rev 101 and greater--the code detects architecture of board (mainly for diagnostics applications) */
 constexpr unsigned long RPU_CMD_PERFORM_MPU_TEST = 0x0080; /* perform basic tests on PIAs and return result codes */
 
-// If the caller chooses this option, it's up to them
-// to honor the RPU_RET_ORIGINAL_CODE_REQUESTED return
-// flag and halt the Arduino with a while(1);
-constexpr unsigned long  RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN = 0x0100;
+/*
+   If the caller chooses this option, it's up to them to honor the RPU_RET_ORIGINAL_CODE_REQUESTED return
+   flag and halt the Arduino with a while(1);
+*/
+constexpr unsigned long RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN = 0x0100;
 
 constexpr unsigned long RPU_RET_NO_ERRORS = 0;
 constexpr unsigned long RPU_RET_U10_PIA_ERROR = 0x0001;
@@ -77,13 +78,18 @@ unsigned long RPU_InitializeMPU(unsigned long initOptions = RPU_CMD_BOOT_ORIGINA
                                                             RPU_CMD_BOOT_ORIGINAL_IF_NOT_SWITCH_CLOSED | RPU_CMD_PERFORM_MPU_TEST,
                                 uint8_t creditResetSwitch = 0xFF);
 void RPU_SetupGameSwitches(int s_numSwitches, int s_numPrioritySwitches, const PlayfieldAndCabinetSwitch* s_gameSwitchArray);
+
+#ifdef RPU_OS_USE_DIP_SWITCHES
 uint8_t RPU_GetDipSwitches(uint8_t index);
+#endif
 
 // EEProm Helper Functions
-uint8_t RPU_ReadByteFromEEProm(unsigned short startByte);
-void RPU_WriteByteToEEProm(unsigned short startByte, uint8_t value);
-unsigned long RPU_ReadULFromEEProm(unsigned short startByte, unsigned long defaultValue = 0);
-void RPU_WriteULToEEProm(unsigned short startByte, unsigned long value);
+uint8_t RPU_ReadByteFromEEProm(uint16_t startByte, uint8_t defaultValue=0);
+void RPU_WriteByteToEEProm(uint16_t startByte, uint8_t value);
+uint16_t RPU_ReadShortFromEEProm(uint16_t startByte, uint16_t defaultValue = 0);
+void RPU_WriteShortToEEProm(uint16_t addr, uint16_t value);
+uint32_t RPU_ReadULFromEEProm(uint16_t startByte, uint32_t defaultValue = 0);
+void RPU_WriteULToEEProm(uint16_t startByte, uint32_t value);
 
 //   Swtiches
 uint8_t RPU_PullFirstFromSwitchStack();
@@ -117,6 +123,7 @@ void RPU_CycleAllDisplays(unsigned long curTime, uint8_t digitNum = 0); // Self-
 uint8_t RPU_GetDisplayBlank(int displayNumber);
 
 //   Lamps
+void RPU_SetLampAnimation(const uint8_t* lamps, unsigned count=8);
 void RPU_SetLampState(int lampNum, bool lampState, uint8_t lampDim = 0, int lampFlashPeriod = 0);
 void RPU_ApplyFlashToLamps(unsigned long curTime);
 void RPU_FlashAllLamps(unsigned long curTime); // Self-test function
@@ -157,7 +164,6 @@ void RPU_PlayNativeSound(uint8_t soundByte);
 #if defined(RPU_OS_USE_SB100) && (RPU_OS_HARDWARE_REV == 2)
 void RPU_PlayNativeChime(uint8_t soundByte);
 #endif
-//   General
-uint8_t RPU_DataRead(int address);
+
 void RPU_Update(unsigned long currentTime);
 

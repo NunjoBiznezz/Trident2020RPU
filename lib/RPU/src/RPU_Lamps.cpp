@@ -235,6 +235,21 @@ void LampManager::strobe() {
    numInterrupts_++;
 }
 
+/**
+ * Turn on/off a set of lamps given the input array
+ * @param lampData Array of lamp data (states)
+ * @param count Number of samples in the input array
+ */
+void LampManager::setLampAnimation(const uint8_t *lamps, unsigned count) {
+   if (count > 0 && count <= 8) {
+      for (unsigned index = 0; index < count; index++) {
+         states_[index] = lamps[index];
+         dim1_[index] = 0;
+         dim2_[index] = 0;
+      }
+   }
+}
+
 /******************************************************
  *   Public API
  */
@@ -269,4 +284,8 @@ void RPU_FlashAllLamps(unsigned long curTime) {
 
 void RPU_TurnOffAllLamps() {
    lamps.turnOffAll();
+}
+
+void RPU_SetLampAnimation(const uint8_t *lampData, unsigned count) {
+   lamps.setLampAnimation(lampData, count);
 }

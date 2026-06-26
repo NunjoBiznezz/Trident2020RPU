@@ -468,4 +468,3 @@ void WavTrigger::setTriggerBank(uint8_t bank) {
    txbuf[5] = EOM;
    serial_.write(txbuf, 6);
 }
-

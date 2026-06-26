@@ -21,7 +21,6 @@
 #include "RPU_Solenoids.h"
 #include "RPU.h"
 #include "RPU_Internal.h"
-#include <Arduino.h>
 
 SolenoidManager solenoids;
 

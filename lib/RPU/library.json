@@ -6,5 +6,7 @@
   "build": {
     "srcDir": "src",
     "includeDir": "include"
-  }
+  },
+  "frameworks": ["arduino"],
+  "platforms": ["atmelavr"]
 }
