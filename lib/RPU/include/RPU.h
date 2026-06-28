@@ -24,6 +24,23 @@
 
 #include <stdint.h>
 
+#ifdef RPU_OS_USE_AUX_LAMPS
+constexpr int RPU_NUM_LAMP_BANKS = 11;
+constexpr int RPU_MAX_LAMPS = 88;
+#else
+constexpr int RPU_NUM_LAMP_BANKS = 8;
+constexpr int RPU_MAX_LAMPS = 60;
+#endif
+
+#ifdef RPU_OS_USE_7_DIGIT_DISPLAYS
+constexpr long RPU_OS_MAX_DISPLAY_SCORE = 9999999;
+constexpr unsigned RPU_OS_NUM_DIGITS = 7;
+constexpr uint8_t RPU_OS_ALL_DIGITS_MASK = 0x7F;
+#else
+constexpr long RPU_OS_MAX_DISPLAY_SCORE = 999999;
+constexpr unsigned RPU_OS_NUM_DIGITS = 6;
+constexpr uint8_t RPU_OS_ALL_DIGITS_MASK = 0x3F;
+#endif
 
 constexpr uint8_t RPU_OS_MAJOR_VERSION = 5;
 constexpr uint8_t RPU_OS_MINOR_VERSION = 7;

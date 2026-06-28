@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RPU_config.h"
+#include "RPU.h"
 #include <stdint.h>
 
 class LampManager {

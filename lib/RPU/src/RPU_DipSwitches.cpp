@@ -18,9 +18,10 @@
     See <https://www.gnu.org/licenses/>.
  */
 
-#include "RPU_DipSwitches.h"
 #include "RPU.h"
 #include "RPU_Internal.h"
+#include "RPU_DipSwitches.h"
+#include "RPU_Switches.h"
 #include <Arduino.h>
 
 #ifdef RPU_OS_USE_DIP_SWITCHES

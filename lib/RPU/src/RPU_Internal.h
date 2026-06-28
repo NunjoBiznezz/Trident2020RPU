@@ -119,6 +119,26 @@ constexpr uint16_t PIA_WIDGET_CONTROL_B = 0x3403;
 #endif
 
 
+// -17, -35, 100, and 200 MPU boards
+// Depending on the number of digits, the RPU_OS_SOFTWARE_DISPLAY_INTERRUPT_INTERVAL
+// can be adjusted in order to change the refresh rate of the displays.
+// The original -17 / MPU-100 boards ran at 320 Hz
+// The Alltek runs the displays at 440 Hz (probably so 7-digit displays won't flicker)
+// The value below is calculated with this formula:
+//       Value = (interval in ms) * (16*10^6) / (1*1024) - 1
+//          (must be <65536)
+// Choose one of these values (or do whatever)
+//  Value         Frequency
+//  48            318.8 Hz
+//  47            325.5 Hz
+//  46            332.4 Hz increments   (I use this for 6-digits displays)
+//  45            339.6 Hz
+//  40            381 Hz
+//  35            434 Hz     (This would probably be good for 7-digit displays)
+//  34            446.4 Hz
+constexpr uint16_t RPU_OS_SOFTWARE_DISPLAY_INTERRUPT_INTERVAL = 48;
+
+
 
 #if !defined(RPU_DEBUG_MESSAGES)
 #define RPU_DEBUG_MESSAGES 0

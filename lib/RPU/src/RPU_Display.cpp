@@ -24,12 +24,20 @@
 #include "RPU_Display.h"
 #include <Arduino.h>
 
+#ifdef RPU_OS_USE_6_DIGIT_CREDIT_DISPLAY_WITH_7_DIGIT_DISPLAYS
+constexpr uint8_t RPU_OS_MASK_SHIFT_1 = 0x60;
+constexpr uint8_t RPU_OS_MASK_SHIFT_2 = 0x0C;
+#else
+constexpr uint8_t RPU_OS_MASK_SHIFT_1 = 0x30;
+constexpr uint8_t RPU_OS_MASK_SHIFT_2 = 0x06;
+#endif
+
 DisplayManager displays;
 
 void DisplayManager::reset() {
    currentDigit_ = 0;
    for (int d = 0; d < 5; d++) {
-      for (int dig = 0; dig < RPU_OS_NUM_DIGITS; dig++) {
+      for (unsigned dig = 0; dig < RPU_OS_NUM_DIGITS; dig++) {
          digits_[d][dig] = 0;
       }
       digitEnable_[d] = 0x00;
@@ -43,7 +51,7 @@ uint8_t DisplayManager::setDisplay(int displayNumber, unsigned long value, bool 
    }
 
    uint8_t blank = 0x00;
-   for (int count = 0; count < RPU_OS_NUM_DIGITS; count++) {
+   for (unsigned count = 0; count < RPU_OS_NUM_DIGITS; count++) {
       blank = blank * 2;
       if (value != 0 || count < minDigits) {
          blank |= 1;
