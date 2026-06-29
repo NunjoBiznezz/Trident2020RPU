@@ -77,9 +77,6 @@
 //   RPU_OS_USE_DASH51 - Enable Dash-51 sound card support
 //   RPU_OS_DISABLE_CPC_FOR_SPACE - Disable CPC code to save space
 
-
-
-
 // Fast boards might need a slower lamp strobe
 // #define RPU_OS_SLOW_DOWN_LAMP_STROBE  0
 
