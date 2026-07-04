@@ -27,18 +27,31 @@ static constexpr bool UsesM6800Processor = true;
 static constexpr bool UsesM6800Processor = false;
 #endif
 
+/**
+ * Set all of the address pins to OUTPUT or INPUT
+ * @param pinsOutput OUTPUT or INPUT
+ */
 static void RPU_SetAddressPinsDirection(uint8_t pinsOutput) {
    for (int count = 0; count < 16; count++) {
       pinMode(A0 + count, pinsOutput);
    }
 }
 
+/**
+ * Set all of the data pins to OUTPUT or INPUT
+ * @param pinsOutput OUTPUT or INPUT
+ */
 static void RPU_SetDataPinsDirection(uint8_t pinsOutput) {
    for (int count = 0; count < 8; count++) {
       pinMode(22 + count, pinsOutput);
    }
 }
 
+/**
+ * Write data to the target MPU via its address bus
+ * @param address address to write to
+ * @param data data to write
+ */
 void RPU_DataWrite(int address, uint8_t data) {
    DDRA = 0xFF;
    PORTE = (PORTE & 0xDF); // R/W LOW
@@ -76,6 +89,11 @@ void RPU_DataWrite(int address, uint8_t data) {
    DDRA = 0x00;
 }
 
+/**
+ * Read data from the target MPU via its address bus
+ * @param address address to read from
+ * @return data read
+ */
 uint8_t RPU_DataRead(int address) {
    DDRA = 0x00;
    DDRE = DDRE | 0x20;
@@ -123,7 +141,7 @@ void RPU_HW_SetupPorts(uint16_t &retVal) {
    }
 }
 
-bool RPU_HW_EarlyInit(uint16_t initOptions, uint8_t creditResetSwitch, uint16_t &retVal) {
+bool RPU_InitializeBSP(uint16_t initOptions, uint8_t creditResetSwitch, uint16_t &retVal) {
    pinMode(RPU_BUFFER_DISABLE, OUTPUT);
    digitalWrite(RPU_BUFFER_DISABLE, 1); // tri-state 680X buffers
 

@@ -179,7 +179,7 @@ void RPU_HW_SetupPorts(uint16_t &retVal) {
    }
 }
 
-bool RPU_HW_EarlyInit(uint16_t initOptions, uint8_t creditResetSwitch, uint16_t &retVal) {
+bool RPU_InitializeBSP(uint16_t initOptions, uint8_t creditResetSwitch, uint16_t &retVal) {
    pinMode(RPU_BUFFER_DISABLE, OUTPUT);
    digitalWrite(RPU_BUFFER_DISABLE, 1); // tri-state 680X buffers
 

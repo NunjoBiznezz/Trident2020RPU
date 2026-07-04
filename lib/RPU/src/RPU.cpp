@@ -81,6 +81,11 @@ static void InitializeU11PIA() {
    solenoids.initDefault();
 }
 
+/**
+ * Once the BSP is initialized, verify that the PIA chips are responding correctly.
+ * If the PIAs are not responding correctly, return a bitmask of errors.
+ * @return A bitmask of PIA errors (RPU_RET_U10_PIA_ERROR, RPU_RET_U11_PIA_ERROR)
+ */
 static unsigned long RPU_TestPIAs() {
    unsigned long piaErrors = 0;
 
@@ -253,10 +258,9 @@ void RPU_Update(unsigned long currentTime) {
 uint16_t RPU_InitializeMPU(uint16_t initOptions, uint8_t creditResetSwitch) {
    uint16_t retVal = 0;
 
-   delayMicroseconds(50000);
-   delayMicroseconds(50000);
+   delay(100);
 
-   if (RPU_HW_EarlyInit(initOptions, creditResetSwitch, retVal)) {
+   if (RPU_InitializeBSP(initOptions, creditResetSwitch, retVal)) {
       return retVal;
    }
 

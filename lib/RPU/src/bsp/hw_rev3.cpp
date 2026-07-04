@@ -108,7 +108,7 @@ void RPU_HW_SetupPorts(uint16_t &) {
    digitalWrite(4, LOW);  // VMA low
 }
 
-bool RPU_HW_EarlyInit(uint16_t initOptions, uint8_t, uint16_t &retVal) {
+bool RPU_InitializeBSP(uint16_t initOptions, uint8_t, uint16_t &retVal) {
    RPU_DEBUG_MESSAGE("* Starting Setup for Rev 3\n");
 
    if (initOptions & (RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET | RPU_CMD_BOOT_ORIGINAL_IF_NOT_CREDIT_RESET |

@@ -21,19 +21,6 @@ static constexpr uint8_t RPU_BUFFER_DISABLE = 2;
 static constexpr uint8_t RPU_HALT_PIN = 14;
 static constexpr uint8_t RPU_RESET_PIN = 14;
 
-static void RPU_SetAddressPinsDirection(bool pinsOutput) {
-   for (int count = 0; count < 16; count++) {
-      pinMode(16 + count, pinsOutput ? OUTPUT : INPUT);
-   }
-}
-
-static void RPU_SetDataPinsDirection(bool pinsOutput) {
-   for (int count = 0; count < 7; count++) {
-      pinMode(6 + count, pinsOutput ? OUTPUT : INPUT);
-   }
-   pinMode(15, pinsOutput ? OUTPUT : INPUT);
-}
-
 void RPU_DataWrite(int address, uint8_t data) {
    DDRH = DDRH | 0x78;
    DDRB = DDRB | 0x70;
@@ -110,7 +97,7 @@ void RPU_HW_SetupPorts(uint16_t &) {
    // Rev 100 has no additional port setup after early init
 }
 
-bool RPU_HW_EarlyInit(uint16_t, uint8_t, uint16_t &) {
+bool RPU_InitializeBSP(uint16_t, uint8_t, uint16_t &) {
    // Rev 100 boots directly to Arduino code with no original-MPU option
    return false;
 }
