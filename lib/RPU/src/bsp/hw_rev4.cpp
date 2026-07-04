@@ -27,15 +27,15 @@ static constexpr bool UsesM6800Processor = true;
 static constexpr bool UsesM6800Processor = false;
 #endif
 
-static void RPU_SetAddressPinsDirection(bool pinsOutput) {
+static void RPU_SetAddressPinsDirection(uint8_t pinsOutput) {
    for (int count = 0; count < 16; count++) {
-      pinMode(A0 + count, pinsOutput ? OUTPUT : INPUT);
+      pinMode(A0 + count, pinsOutput);
    }
 }
 
-static void RPU_SetDataPinsDirection(bool pinsOutput) {
+static void RPU_SetDataPinsDirection(uint8_t pinsOutput) {
    for (int count = 0; count < 8; count++) {
-      pinMode(22 + count, pinsOutput ? OUTPUT : INPUT);
+      pinMode(22 + count, pinsOutput);
    }
 }
 
@@ -134,7 +134,7 @@ bool RPU_HW_EarlyInit(uint16_t initOptions, uint8_t creditResetSwitch, uint16_t 
 
    pinMode(RPU_VMA_PIN, OUTPUT);
    pinMode(RPU_RW_PIN, OUTPUT);
-   RPU_SetAddressPinsDirection(true);
+   RPU_SetAddressPinsDirection(OUTPUT);
 
    if (UsesM6800Processor) {
       pinMode(RPU_PHI2_PIN, INPUT);
@@ -170,8 +170,8 @@ bool RPU_HW_EarlyInit(uint16_t initOptions, uint8_t creditResetSwitch, uint16_t 
       pinMode(RPU_PHI2_PIN, INPUT);
       pinMode(RPU_VMA_PIN, INPUT);
       pinMode(RPU_RW_PIN, INPUT);
-      RPU_SetDataPinsDirection(false);
-      RPU_SetAddressPinsDirection(false);
+      RPU_SetDataPinsDirection(INPUT);
+      RPU_SetAddressPinsDirection(INPUT);
       digitalWrite(RPU_HALT_PIN, 1);  // release /HALT
       digitalWrite(RPU_RESET_PIN, 1); // release /RESET
       retVal |= RPU_RET_ORIGINAL_CODE_REQUESTED;

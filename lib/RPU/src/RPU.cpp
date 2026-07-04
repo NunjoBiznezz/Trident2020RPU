@@ -296,6 +296,7 @@ uint16_t RPU_InitializeMPU(uint16_t initOptions, uint8_t creditResetSwitch) {
    RPU_DataRead(ADDRESS_U11_B);
    RPU_DataRead(ADDRESS_U10_A);
    RPU_DataRead(ADDRESS_U10_B);
+
    if (initOptions & RPU_CMD_PERFORM_MPU_TEST) {
       retVal |= RPU_TestPIAs();
    }
