@@ -28,7 +28,6 @@
 #include "RPU_Solenoids.h"
 #include <Arduino.h>
 
-
 /******************************************************
  *   PIA initialization (Bally/Stern architecture)
  */
