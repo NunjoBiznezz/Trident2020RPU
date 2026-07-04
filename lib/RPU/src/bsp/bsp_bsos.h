@@ -2,8 +2,8 @@
 // Created by Douglas Bercot on 6/28/26.
 //
 
-#ifndef TRIDENT2020RPU_BSP_STERN_H
-#define TRIDENT2020RPU_BSP_STERN_H
+#ifndef TRIDENT2020RPU_BSP_BSOS_H
+#define TRIDENT2020RPU_BSP_BSOS_H
 
 #include <stdint.h>
 
@@ -83,4 +83,4 @@ constexpr uint16_t ADDRESS_SB300_ANALOG = 0xC0;
 constexpr uint16_t RPU_OS_SOFTWARE_DISPLAY_INTERRUPT_INTERVAL = 48;
 
 
-#endif // TRIDENT2020RPU_BSP_STERN_H
+#endif // TRIDENT2020RPU_BSP_BSOS_H

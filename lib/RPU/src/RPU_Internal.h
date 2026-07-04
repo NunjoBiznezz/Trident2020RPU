@@ -42,9 +42,9 @@
 
 
 #if (RPU_MACHINE_FAMILY == RPU_MACHINE_FAMILY_BALLY_STERN)
-#include "bsp_bsos.h"
+#include "bsp/bsp_bsos.h"
 #elif (RPU_MACHINE_FAMILY == RPU_MACHINE_FAMILY_WILLIAMS)
-#include "bsp_wms.h"
+#include "bsp/bsp_wms.h"
 #else
 #error "Unsupported machine family"
 #endif
@@ -67,7 +67,18 @@ Serial.write(_debug_buf);         \
 #endif
 
 
-// Internal methods needed by controllers
+// Low-level bus access — defined in bsp/hw_rev*.cpp, one per hardware revision
 extern void RPU_DataWrite(int address, uint8_t data);
 extern uint8_t RPU_DataRead(int address);
 
+// Hardware-revision init hooks — called from RPU_InitializeMPU in RPU.cpp
+// RPU_HW_EarlyInit: performs rev-specific pin setup and boot-to-original logic.
+//   Returns true if RPU_InitializeMPU should return immediately (original MPU boot path).
+extern bool RPU_HW_EarlyInit(uint16_t initOptions, uint8_t creditResetSwitch, uint16_t &retVal);
+
+// RPU_HW_SetupPorts: called after RPU_HW_EarlyInit for any remaining port config
+//   (e.g. diagnostic pin check). May set bits in retVal.
+extern void RPU_HW_SetupPorts(uint16_t &retVal);
+
+// PIA helper used by hw_rev4 and hw_rev101_102 during boot-to-original detection
+extern bool CheckCreditResetSwitchArch1(uint8_t creditResetSwitch);
