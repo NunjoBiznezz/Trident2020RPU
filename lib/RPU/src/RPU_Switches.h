@@ -11,6 +11,8 @@ constexpr unsigned MAX_NUM_SWITCHES = 40;
 constexpr int RPU_OS_SWITCH_DELAY_IN_MICROSECONDS = 200;
 constexpr int RPU_OS_TIMING_LOOP_PADDING_IN_MICROSECONDS = 70;
 
+namespace RPU {
+
 class SwitchManager {
 public:
    void reset();
@@ -40,3 +42,5 @@ private:
 };
 
 extern SwitchManager switches;
+
+} // namespace RPU

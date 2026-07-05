@@ -33,6 +33,8 @@
  * @tparam SIZE The maximum number of elements the queue can hold
  * @tparam EMPTY_VALUE The sentinel value used to indicate an empty slot
  */
+namespace RPU {
+
 template <typename T, uint8_t SIZE, T EMPTY_VALUE> class CircularQueue {
  private:
    volatile T buffer[SIZE];
@@ -161,3 +163,5 @@ template <typename T, uint8_t SIZE, T EMPTY_VALUE> class CircularQueue {
       return false;
    }
 };
+
+} // namespace RPU

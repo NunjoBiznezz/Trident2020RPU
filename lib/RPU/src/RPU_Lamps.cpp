@@ -23,6 +23,8 @@
 #include "RPU_Internal.h"
 #include <Arduino.h>
 
+namespace RPU {
+
 LampManager lamps;
 
 // left shift is iterative on Arduinos, so a bit array is faster
@@ -250,42 +252,44 @@ void LampManager::setLampAnimation(const uint8_t *lamps, unsigned count) {
    }
 }
 
+} // namespace RPU
+
 /******************************************************
  *   Public API
  */
 
 void RPU_SetDimDivisor(uint8_t level, uint8_t divisor) {
-   lamps.setDimDivisor(level, divisor);
+   RPU::lamps.setDimDivisor(level, divisor);
 }
 
 void RPU_SetLampState(int lampNum, bool lampState, uint8_t lampDim, int lampFlashPeriod) {
-   lamps.setState(lampNum, lampState, lampDim, lampFlashPeriod);
+   RPU::lamps.setState(lampNum, lampState, lampDim, lampFlashPeriod);
 }
 
 uint8_t RPU_ReadLampState(int lampNum) {
-   return lamps.readState(lampNum);
+   return RPU::lamps.readState(lampNum);
 }
 
 uint8_t RPU_ReadLampDim(int lampNum) {
-   return lamps.readDim(lampNum);
+   return RPU::lamps.readDim(lampNum);
 }
 
 int RPU_ReadLampFlash(int lampNum) {
-   return lamps.readFlash(lampNum);
+   return RPU::lamps.readFlash(lampNum);
 }
 
 void RPU_ApplyFlashToLamps(unsigned long curTime) {
-   lamps.applyFlash(curTime);
+   RPU::lamps.applyFlash(curTime);
 }
 
 void RPU_FlashAllLamps(unsigned long curTime) {
-   lamps.flashAll(curTime);
+   RPU::lamps.flashAll(curTime);
 }
 
 void RPU_TurnOffAllLamps() {
-   lamps.turnOffAll();
+   RPU::lamps.turnOffAll();
 }
 
 void RPU_SetLampAnimation(const uint8_t *lampData, unsigned count) {
-   lamps.setLampAnimation(lampData, count);
+   RPU::lamps.setLampAnimation(lampData, count);
 }

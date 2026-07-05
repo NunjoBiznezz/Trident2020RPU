@@ -9,6 +9,8 @@ constexpr unsigned DEFAULT_SOLENOID_STATE = 0x9F;
 constexpr uint8_t SOLENOID_STACK_EMPTY = 0xFF;
 constexpr uint8_t SOL_NONE = 0x0F;
 
+namespace RPU {
+
 class SolenoidManager {
 public:
    void reset();
@@ -50,3 +52,5 @@ private:
 };
 
 extern SolenoidManager solenoids;
+
+} // namespace RPU

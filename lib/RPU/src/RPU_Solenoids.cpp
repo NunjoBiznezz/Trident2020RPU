@@ -22,6 +22,8 @@
 #include "RPU_Internal.h"
 #include "RPU_Solenoids.h"
 
+namespace RPU {
+
 SolenoidManager solenoids;
 
 void SolenoidManager::reset() {
@@ -140,7 +142,7 @@ void SolenoidManager::disable() {
 }
 
 /**
- * Switch processing called during zero crossing
+ * Solenoid processing called during zero crossing
  */
 void SolenoidManager::service() {
    if (numCyclesBeforeRevert_ != 0) {
@@ -178,46 +180,48 @@ void SolenoidManager::service() {
 #endif
 }
 
+} // namespace RPU
+
 /******************************************************
  *   Public API
  */
 
 void RPU_PushToSolenoidStack(uint8_t solenoidNumber, uint8_t numPushes, bool disableOverride) {
-   solenoids.push(solenoidNumber, numPushes, disableOverride);
+   RPU::solenoids.push(solenoidNumber, numPushes, disableOverride);
 }
 
 bool RPU_PushToTimedSolenoidStack(uint8_t solenoidNumber, uint8_t numPushes, unsigned long whenToFire, bool disableOverride) {
-   return solenoids.pushTimed(solenoidNumber, numPushes, whenToFire, disableOverride);
+   return RPU::solenoids.pushTimed(solenoidNumber, numPushes, whenToFire, disableOverride);
 }
 
 void RPU_UpdateTimedSolenoidStack(unsigned long curTime) {
-   solenoids.updateTimed(curTime);
+   RPU::solenoids.updateTimed(curTime);
 }
 
 void RPU_SetCoinLockout(bool lockoutOff, uint8_t solbit) {
-   solenoids.setCoinLockout(lockoutOff, solbit);
+   RPU::solenoids.setCoinLockout(lockoutOff, solbit);
 }
 
 void RPU_SetDisableFlippers(bool disableFlippers, uint8_t solbit) {
-   solenoids.setDisableFlippers(disableFlippers, solbit);
+   RPU::solenoids.setDisableFlippers(disableFlippers, solbit);
 }
 
 void RPU_SetContinuousSolenoidBit(bool bitOn, uint8_t solBit) {
-   solenoids.setContinuousBit(bitOn, solBit);
+   RPU::solenoids.setContinuousBit(bitOn, solBit);
 }
 
 bool RPU_FireContinuousSolenoid(uint8_t solBit, uint8_t numCyclesToFire) {
-   return solenoids.fireContinuous(solBit, numCyclesToFire);
+   return RPU::solenoids.fireContinuous(solBit, numCyclesToFire);
 }
 
 uint8_t RPU_ReadContinuousSolenoids() {
-   return solenoids.readContinuous();
+   return RPU::solenoids.readContinuous();
 }
 
 void RPU_DisableSolenoidStack() {
-   solenoids.disable();
+   RPU::solenoids.disable();
 }
 
 void RPU_EnableSolenoidStack() {
-   solenoids.enable();
+   RPU::solenoids.enable();
 }

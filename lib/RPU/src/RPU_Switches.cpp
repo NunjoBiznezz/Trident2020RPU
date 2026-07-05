@@ -24,6 +24,8 @@
 #include "RPU_Switches.h"
 #include <Arduino.h>
 
+namespace RPU {
+
 SwitchManager switches;
 
 void SwitchManager::reset() {
@@ -151,30 +153,32 @@ void SwitchManager::serviceBank(uint8_t switchBank) {
    noInterrupts();
 }
 
+} // namespace RPU
+
 /******************************************************
  *   Public API
  */
 
 void RPU_PushToSwitchStack(uint8_t switchNumber) {
-   switches.pushToStack(switchNumber);
+   RPU::switches.pushToStack(switchNumber);
 }
 
 uint8_t RPU_PullFirstFromSwitchStack() {
-   return switches.pullFromStack();
+   return RPU::switches.pullFromStack();
 }
 
 bool RPU_ReadSingleSwitchState(uint8_t switchNum) {
-   return switches.readState(switchNum);
+   return RPU::switches.readState(switchNum);
 }
 
 void RPU_SetupGameSwitches(int s_numSwitches, int s_numPrioritySwitches, const PlayfieldAndCabinetSwitch* s_gameSwitchArray) {
-   switches.setup(s_numSwitches, s_numPrioritySwitches, s_gameSwitchArray);
+   RPU::switches.setup(s_numSwitches, s_numPrioritySwitches, s_gameSwitchArray);
 }
 
 void RPU_ClearUpDownSwitchState() {
-   switches.clearUpDown();
+   RPU::switches.clearUpDown();
 }
 
 bool RPU_GetUpDownSwitchState() {
-   return switches.getUpDown();
+   return RPU::switches.getUpDown();
 }

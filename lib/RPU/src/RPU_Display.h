@@ -3,6 +3,8 @@
 #include "RPU.h"
 #include <stdint.h>
 
+namespace RPU {
+
 class DisplayManager {
 public:
    void reset();
@@ -27,3 +29,5 @@ private:
 };
 
 extern DisplayManager displays;
+
+} // namespace RPU

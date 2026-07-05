@@ -4,6 +4,8 @@
 #include "RPU.h"
 #include <stdint.h>
 
+namespace RPU {
+
 class LampManager {
 public:
    void reset();
@@ -33,3 +35,5 @@ private:
 };
 
 extern LampManager lamps;
+
+} // namespace RPU

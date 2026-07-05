@@ -81,7 +81,7 @@ static void InitializeU11PIA() {
    RPU_DataWrite(ADDRESS_U11_B_CONTROL, RPU_DataRead(ADDRESS_U11_B_CONTROL) | 0x04);
 
    // Store 9F in U11B Output and initialize solenoid state
-   solenoids.initDefault();
+   RPU::solenoids.initDefault();
 }
 
 /**
@@ -154,7 +154,7 @@ static volatile uint8_t InsideZeroCrossingInterrupt = 0;
 
 // Display refresh ISR (ARCH 1 — Bally/Stern)
 ISR(TIMER1_COMPA_vect) {
-   displays.serviceISR();
+   RPU::displays.serviceISR();
 }
 
 // IRQ handler: services self-test switch (U10A CA1), display interrupt (U11A CA1),
@@ -163,7 +163,7 @@ static void InterruptService3() {
    const uint8_t u10AControl = RPU_DataRead(ADDRESS_U10_A_CONTROL);
    if (u10AControl & 0x80) {
       if (RPU_DataRead(ADDRESS_U10_A_CONTROL) & 0x80) {
-         switches.pushSelfTest();
+         RPU::switches.pushSelfTest();
       }
       RPU_DataRead(ADDRESS_U10_A);
    }
@@ -188,9 +188,9 @@ static void InterruptService3() {
       const uint8_t backupU10BControl = RPU_DataRead(ADDRESS_U10_B_CONTROL);
       const uint8_t backup10A = RPU_DataRead(ADDRESS_U10_A);
 
-      switches.service();
-      solenoids.service();
-      lamps.strobe();
+      RPU::switches.service();
+      RPU::solenoids.service();
+      RPU::lamps.strobe();
 
       interrupts();
       noInterrupts();
@@ -249,8 +249,8 @@ bool CheckCreditResetSwitchArch1(uint8_t creditResetSwitch) {
 
 void RPU_Update(unsigned long currentTime) {
    RPU_DataRead(0);
-   lamps.applyFlash(currentTime);
-   solenoids.updateTimed(currentTime);
+   RPU::lamps.applyFlash(currentTime);
+   RPU::solenoids.updateTimed(currentTime);
 }
 
 
@@ -281,15 +281,15 @@ uint16_t RPU_InitializeMPU(uint16_t initOptions, uint8_t creditResetSwitch) {
    InitializeU11PIA();
 
 #ifdef RPU_OS_USE_DIP_SWITCHES
-   dipSwitches.read();
+   RPU::dipSwitches.read();
 #endif
 
    RPU_DataRead(0);
 
-   solenoids.reset();
-   switches.reset();
-   displays.reset();
-   lamps.reset();
+   RPU::solenoids.reset();
+   RPU::switches.reset();
+   RPU::displays.reset();
+   RPU::lamps.reset();
 
    RPU_DEBUG_MESSAGE("* About to hook interrupts\n");
    RPU_DEBUG_DELAY(100);

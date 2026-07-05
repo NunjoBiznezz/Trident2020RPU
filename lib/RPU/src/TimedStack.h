@@ -22,6 +22,8 @@
 
 #include <stdint.h>
 
+namespace RPU {
+
 struct TimedSolenoidEntry {
    uint8_t inUse;
    unsigned long pushTime;
@@ -91,3 +93,5 @@ template <typename EntryType, uint8_t SIZE> class TimedStack {
       }
    }
 };
+
+} // namespace RPU
