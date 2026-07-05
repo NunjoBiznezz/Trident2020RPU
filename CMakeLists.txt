@@ -10,7 +10,14 @@ project(Trident2020RPU C CXX ASM)
 option(RPU_BUILD_FOR_REV3   "Build for RPU hardware revision 3 (MEGA)"   OFF)
 option(RPU_BUILD_FOR_REV4   "Build for RPU hardware revision 4 (MEGA)"   ON)
 option(RPU_BUILD_FOR_REV102 "Build for RPU hardware revision 102 (MEGA)" OFF)
-option(ENABLE_DEBUG_MESSAGES "Enable debug messages over serial" OFF)
+# Debug output — all disabled by default.
+# Set DEBUG_PORT to the Arduino HardwareSerial object to use (e.g. Serial, Serial1, Serial2).
+# Leave empty to disable all debug output; the message flags below have no effect without it.
+# Rev 3 uses Serial for WAV Trigger — use Serial2 or higher on that rev.
+# Rev 4+ use Serial1 for WAV Trigger — Serial is free.
+set(DEBUG_PORT "" CACHE STRING "Serial port for debug output (e.g. Serial2). Empty = all debug disabled.")
+option(DEBUG_GAME_MESSAGES "Enable game-code debug messages (requires DEBUG_PORT)" OFF)
+option(DEBUG_RPU_MESSAGES  "Enable RPU library debug messages (requires DEBUG_PORT)" OFF)
 
 # RPU feature options — exactly one native sound card may be enabled per build
 option(RPU_USE_DIP_SWITCHES          "Enable DIP switch reading"                     ON)
@@ -47,6 +54,18 @@ set(RPU_ENABLE_7_DIGIT_DISPLAYS      ${RPU_USE_7_DIGIT_DISPLAYS}      CACHE BOOL
 set(RPU_ENABLE_6_DIGIT_CREDIT_WITH_7_DIGIT ${RPU_USE_6_DIGIT_CREDIT_WITH_7_DIGIT} CACHE BOOL "" FORCE)
 set(RPU_ENABLE_AUX_LAMPS             ${RPU_USE_AUX_LAMPS}             CACHE BOOL "" FORCE)
 
+# Debug defines — applied before add_subdirectory so RPU library sees them too.
+# add_compile_definitions() is directory-scoped: it propagates to all subdirectories.
+if(DEBUG_PORT)
+    add_compile_definitions("DEBUG_PORT=${DEBUG_PORT}")
+    if(DEBUG_GAME_MESSAGES)
+        add_compile_definitions(DEBUG_MESSAGES)
+    endif()
+    if(DEBUG_RPU_MESSAGES)
+        add_compile_definitions(RPU_DEBUG_MESSAGES)
+    endif()
+endif()
+
 # Arduino core library
 find_package(Arduino REQUIRED)
 
@@ -76,11 +95,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Game-specific compile definitions only — hardware/feature flags propagate from the RPU library
-if(RPU_BUILD_FOR_REV102 AND ENABLE_DEBUG_MESSAGES)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE DEBUG_MESSAGES)
-endif()
-
 target_link_libraries(${PROJECT_NAME} PRIVATE RPU WavTrigger)
 
 # Configure upload settings
@@ -90,8 +104,14 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 )
 
 message(STATUS "=== Trident2020RPU Build Configuration ===")
-message(STATUS "Hardware Revision: ${RPU_HARDWARE_REV}")
-message(STATUS "Target Board: ${ARDUINO_BOARD}")
-message(STATUS "WAV Trigger: ${RPU_USE_WAV_TRIGGER}")
-message(STATUS "Debug Messages: ${ENABLE_DEBUG_MESSAGES}")
+message(STATUS "Hardware Revision : ${RPU_HARDWARE_REV}")
+message(STATUS "Target Board      : ${ARDUINO_BOARD}")
+message(STATUS "WAV Trigger       : ${RPU_USE_WAV_TRIGGER}")
+if(DEBUG_PORT)
+    message(STATUS "Debug Port        : ${DEBUG_PORT}")
+    message(STATUS "Game debug        : ${DEBUG_GAME_MESSAGES}")
+    message(STATUS "RPU debug         : ${DEBUG_RPU_MESSAGES}")
+else()
+    message(STATUS "Debug             : disabled (set DEBUG_PORT to enable)")
+endif()
 message(STATUS "==========================================")
