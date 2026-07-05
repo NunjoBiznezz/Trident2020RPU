@@ -18,12 +18,15 @@
     See <https://www.gnu.org/licenses/>.
  */
 
-#include "RPU_DipSwitches.h"
 #include "RPU.h"
 #include "RPU_Internal.h"
+#include "RPU_DipSwitches.h"
+#include "RPU_Switches.h"
 #include <Arduino.h>
 
 #ifdef RPU_OS_USE_DIP_SWITCHES
+
+namespace RPU {
 
 DipSwitchManager dipSwitches;
 
@@ -62,16 +65,18 @@ uint8_t DipSwitchManager::get(uint8_t index) const {
    return dipSwitches_[index];
 }
 
+} // namespace RPU
+
 /******************************************************
  *   Public API
  */
 
 void RPU_ReadDipSwitches() {
-   dipSwitches.read();
+   RPU::dipSwitches.read();
 }
 
 uint8_t RPU_GetDipSwitches(uint8_t index) {
-   return dipSwitches.get(index);
+   return RPU::dipSwitches.get(index);
 }
 
 #endif

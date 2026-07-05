@@ -42,11 +42,30 @@ uint8_t ReadSetting(int setting, uint8_t defaultValue);
 void PlaySoundEffect(uint8_t soundEffectNum);
 void PlayBackgroundSongBasedOnBall(uint8_t ballNum);
 
-constexpr unsigned long TRIDENT2020_MAJOR_VERSION = 2020;  
+constexpr unsigned long TRIDENT2020_MAJOR_VERSION = 2020;
 constexpr unsigned long TRIDENT2020_MINOR_VERSION = 3;
+
+// Queryable build record embedded in flash. Extract with:
+//   pio run -t version -e <env>
+struct __attribute__((packed)) BuildInfoRecord {
+   char     magic[8];    // "TRID2020"
+   uint16_t major;
+   uint16_t minor;
+   char     branch[32];
+   char     describe[64];
+   char     built[24];
+};
+static const BuildInfoRecord FIRMWARE_BUILD_INFO PROGMEM = {
+   {'T', 'R', 'I', 'D', '2', '0', '2', '0'},
+   (uint16_t)TRIDENT2020_MAJOR_VERSION,
+   (uint16_t)TRIDENT2020_MINOR_VERSION,
+   BUILD_GIT_BRANCH,
+   BUILD_GIT_DESCRIBE,
+   __DATE__ " " __TIME__,
+};
    
-#if defined(DEBUG_MESSAGES) 
-#  define DEBUG_MESSAGE(x) Serial.write(x)
+#if defined(DEBUG_MESSAGES) && defined(DEBUG_PORT)
+#  define DEBUG_MESSAGE(x) DEBUG_PORT.write(x)
 #else
 #  define DEBUG_MESSAGE(x)
 #endif
@@ -62,61 +81,6 @@ constexpr unsigned long TRIDENT2020_MINOR_VERSION = 3;
 int8_t MachineState = 0;
 bool MachineStateChanged = true;
 
-// Game modes
-constexpr uint8_t GAME_MODE_SKILL_SHOT = 0;
-constexpr uint8_t GAME_MODE_UNSTRUCTURED_PLAY = 1;
-constexpr uint8_t GAME_MODE_MINI_GAME_QUALIFIED = 2;
-constexpr uint8_t GAME_MODE_MINI_GAME_ENGAGED = 3;
-constexpr uint8_t GAME_MODE_MINI_GAME_REWARD_COUNTDOWN = 4;
-constexpr uint8_t GAME_MODE_WIZARD_INTRO = 5;
-constexpr uint8_t GAME_MODE_FEEDING_FRENZY_FLAG = 0x10;
-constexpr uint8_t GAME_MODE_SHARP_SHOOTER_FLAG = 0x20;
-constexpr uint8_t GAME_MODE_EXPLORE_THE_DEPTHS_FLAG = 0x40;
-constexpr uint8_t GAME_MODE_WIZARD_WITHOUT_FLAGS = 0x0F;
-constexpr uint8_t GAME_MODE_WIZARD = 0x7F;
-
-constexpr int EEPROM_BALL_SAVE_BYTE = 100;
-constexpr int EEPROM_FREE_PLAY_BYTE = 101;
-constexpr int EEPROM_SOUND_SELECTOR_BYTE = 102;
-constexpr int EEPROM_SKILL_SHOT_BYTE = 103;
-constexpr int EEPROM_TILT_WARNING_BYTE = 104;
-constexpr int EEPROM_AWARD_OVERRIDE_BYTE = 105;
-constexpr int EEPROM_BALLS_OVERRIDE_BYTE = 106;
-constexpr int EEPROM_TOURNAMENT_SCORING_BYTE = 107;
-constexpr int EEPROM_MUSIC_VOLUME_BYTE = 108;
-constexpr int EEPROM_SFX_VOLUME_BYTE = 109;
-constexpr int EEPROM_SCROLLING_SCORES_BYTE = 110;
-constexpr int EEPROM_CALLOUTS_VOLUME_BYTE = 111;
-constexpr int EEPROM_DIM_LEVEL_BYTE = 113;
-constexpr int EEPROM_EXTRA_BALL_SCORE_BYTE = 140;
-constexpr int EEPROM_SPECIAL_SCORE_BYTE = 144;
-
-#define STANDUP_PURPLE_MASK 0x01
-#define STANDUP_YELLOW_MASK 0x02
-#define STANDUP_AMBER_MASK 0x04
-#define STANDUP_GREEN_MASK 0x08
-#define STANDUP_WHITE_MASK 0x10
-
-#define SKILL_SHOT_DURATION 15
-#define MAX_DISPLAY_BONUS 55
-#define TILT_WARNING_DEBOUNCE_TIME 1000
-#define BONUS_UNDERLIGHTS_OFF 0
-#define BONUS_UNDERLIGHTS_DIM 1
-#define BONUS_UNDERLIGHTS_FULL 2
-#define SAUCER_DISPLAY_DURATION 1000
-#define MODE_START_DISPLAY_DURATION 5000
-#define DROP_TARGET_CLEAR_DURATION 1000
-#define STANDUP_HIT_DISPLAY_DURATION 5000
-#define MAX_DROP_TARGET_CLEAR_DEADLINE 5000
-#define ROLLOVER_FLASH_DURATION 2000
-#define RESCUE_FROM_THE_DEEP_TIME 6000
-#define FEEDING_FRENZY_ALTERNATE_TIME 30000
-#define MODE_QUALIFY_TIME 45000
-#define SHARP_SHOOTER_TARGET_TIME 5000
-#define MINI_GAME_SINGLE_DURATION 40000
-#define MINI_GAME_DOUBLE_DURATION 66000
-#define MINI_GAME_TRIPLE_DURATION 107000
-#define WIZARD_MODE_DURATION 110000
 
 /*********************************************************************
 
@@ -128,9 +92,6 @@ static unsigned long AwardScores[3];
 static uint8_t Credits = 0;
 static bool FreePlayMode = true;
 
-constexpr uint8_t SOUND_SELECTOR_NONE = 0;
-constexpr uint8_t SOUND_SELECTOR_ORIGINAL = 1;
-constexpr uint8_t SOUND_SELECTOR_TRIDENT2020 = 3;
 
 static uint8_t SoundSelector = SOUND_SELECTOR_TRIDENT2020; // 0=No effects, 1=Original, 3=Trident 2020
 
@@ -338,8 +299,23 @@ void QueueDIAGNotification(unsigned short notificationNum) {
 }
 
 void setup() {
-   #if defined(RPU_DEBUG_MESSAGES)
-      Serial.begin(115200);
+   // Opaque to LTO — prevents --gc-sections from discarding FIRMWARE_BUILD_INFO.
+   __asm__ volatile("" :: "r"(&FIRMWARE_BUILD_INFO) : "memory");
+
+   #if defined(DEBUG_PORT)
+      DEBUG_PORT.begin(115200);
+   #  if defined(DEBUG_MESSAGES)
+      DEBUG_PORT.print(F("Trident2020 v"));
+      DEBUG_PORT.print(TRIDENT2020_MAJOR_VERSION);
+      DEBUG_PORT.print('.');
+      DEBUG_PORT.println(TRIDENT2020_MINOR_VERSION);
+      DEBUG_PORT.print(F("Branch:   "));
+      DEBUG_PORT.println(F(BUILD_GIT_BRANCH));
+      DEBUG_PORT.print(F("Describe: "));
+      DEBUG_PORT.println(F(BUILD_GIT_DESCRIBE));
+      DEBUG_PORT.print(F("Built:    "));
+      DEBUG_PORT.println(F(__DATE__ " " __TIME__));
+   #  endif
    #endif
 
 
@@ -547,8 +523,8 @@ void ShowSaucerLamps() {
    }
 }
 
-uint8_t DropTargetLampArray[] = {DROP_TARGET_1, DROP_TARGET_2, DROP_TARGET_3, DROP_TARGET_4, DROP_TARGET_5};
-uint8_t DropTargetSwitchArray[] = {SW_DROP_TARGET_1, SW_DROP_TARGET_2, SW_DROP_TARGET_3, SW_DROP_TARGET_4, SW_DROP_TARGET_5};
+const uint8_t DropTargetLampArray[] = {DROP_TARGET_1, DROP_TARGET_2, DROP_TARGET_3, DROP_TARGET_4, DROP_TARGET_5};
+const uint8_t DropTargetSwitchArray[] = {SW_DROP_TARGET_1, SW_DROP_TARGET_2, SW_DROP_TARGET_3, SW_DROP_TARGET_4, SW_DROP_TARGET_5};
 
 void ShowDropTargetLamps() {
    if (GameMode == GAME_MODE_MINI_GAME_QUALIFIED) {
@@ -567,37 +543,16 @@ void ShowDropTargetLamps() {
       for (uint8_t count = 0; count < 5; count++) {
          RPU_SetLampState(DropTargetLampArray[count], lampPhase == count);
       }
-      /*
-          RPU_SetLampState(DROP_TARGET_1, lampPhase==0);
-          RPU_SetLampState(DROP_TARGET_2, lampPhase==1);
-          RPU_SetLampState(DROP_TARGET_3, lampPhase==2);
-          RPU_SetLampState(DROP_TARGET_4, lampPhase==3);
-          RPU_SetLampState(DROP_TARGET_5, lampPhase==4);
-      */
+
       for (uint8_t count = 0; count < 4; count++) {
          RPU_SetLampState(BONUS_2X_FEATURE - count, false);
       }
    } else if (GameMode == GAME_MODE_SKILL_SHOT) {
       uint8_t lampPhase = ((CurrentTime - GameModeStartTime) / 110) % 8;
       for (uint8_t count = 0; count < 5; count++) {
-         //      RPU_SetLampState(DropTargetLampArray[count],
-         //      (count==lampPhase)||(count==((7+lampPhase)&0x07))||(count==(7-lampPhase))||(count==((0-lampPhase)&0x07)),
-         //      (count==lampPhase)||(count==((0-lampPhase)&0x07)));
          RPU_SetLampState(DropTargetLampArray[count], (count == lampPhase) || (count == (8 - lampPhase)));
       }
-      /*
-          1 - lampPhase==7||lampPhase==0||lampPhase==7||lampPhase==0, lampPhase==0||lampPhase==0
-          2 - lampPhase==0||lampPhase==1||lampPhase==6||lampPhase==7, lampPhase==1||lampPhase==7
-          3 - lampPhase==1||lampPhase==2||lampPhase==5||lampPhase==6, lampPhase==2||lampPhase==6
-          4 - lampPhase==2||lampPhase==3||lampPhase==4||lampPhase==5, lampPhase==3||lampPhase==5
-          4 - lampPhase==3||lampPhase==4||lampPhase==3||lampPhase==4, lampPhase==4||lampPhase==4
 
-          RPU_SetLampState(DROP_TARGET_1, lampPhase==0);
-          RPU_SetLampState(DROP_TARGET_2, lampPhase%2, 1);
-          RPU_SetLampState(DROP_TARGET_3, lampPhase==2);
-          RPU_SetLampState(DROP_TARGET_4, lampPhase%2, 1);
-          RPU_SetLampState(DROP_TARGET_5, lampPhase==0);
-      */
       for (uint8_t count = 0; count < 4; count++) {
          RPU_SetLampState(BONUS_2X_FEATURE - count, false);
       }
@@ -605,13 +560,7 @@ void ShowDropTargetLamps() {
       for (uint8_t count = 0; count < 5; count++) {
          RPU_SetLampState(DropTargetLampArray[count], !RPU_ReadSingleSwitchState(DropTargetSwitchArray[count]));
       }
-      /*
-          RPU_SetLampState(DROP_TARGET_1, RPU_ReadSingleSwitchState(SW_DROP_TARGET_1)?0:1);
-          RPU_SetLampState(DROP_TARGET_2, RPU_ReadSingleSwitchState(SW_DROP_TARGET_2)?0:1);
-          RPU_SetLampState(DROP_TARGET_3, RPU_ReadSingleSwitchState(SW_DROP_TARGET_3)?0:1);
-          RPU_SetLampState(DROP_TARGET_4, RPU_ReadSingleSwitchState(SW_DROP_TARGET_4)?0:1);
-          RPU_SetLampState(DROP_TARGET_5, RPU_ReadSingleSwitchState(SW_DROP_TARGET_5)?0:1);
-      */
+
       for (uint8_t count = 0; count < 4; count++) {
          RPU_SetLampState(BONUS_2X_FEATURE - count, BonusX == (count + 1));
       }

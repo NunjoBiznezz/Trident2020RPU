@@ -240,18 +240,20 @@ bool WavTriggerHandler::queuePrioritizedNotification(uint16_t index, uint16_t le
 }
 
 void WavTriggerHandler::outputTracksPlaying() {
+#if defined(DEBUG_PORT)
    char buf[256];
-   Serial.write("Looking for playing tracks\n");
+   DEBUG_PORT.write("Looking for playing tracks\n");
    wTrig_->getVersion(buf, 256);
-   Serial.write("Version: ");
-   Serial.write(buf);
-   Serial.write("\n");
+   DEBUG_PORT.write("Version: ");
+   DEBUG_PORT.write(buf);
+   DEBUG_PORT.write("\n");
    for (int i = 0; i < 1000; i++) {
       if (wTrig_->isTrackPlaying(i)) {
          sprintf(buf, "Track %d playing\n", i);
-         Serial.write(buf);
+         DEBUG_PORT.write(buf);
       }
    }
+#endif
 }
 
 bool WavTriggerHandler::serviceNotificationQueue(unsigned long currentTime) {

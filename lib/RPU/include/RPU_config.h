@@ -38,6 +38,29 @@
 #error "RPU_OS_HARDWARE_REV not defined. Please define it in platformio.ini or in RPU_config.h"
 #endif
 
+#define RPU_OS_HARDWARE_REV_IS(rev)        (RPU_OS_HARDWARE_REV == (rev))
+
+
+#define RPU_MPU_ARCHITECTURE_BSOS           1
+#define RPU_MPU_ARCHITECTURE_SYSTEM3        10
+#define RPU_MPU_ARCHITECTURE_SYSTEM4_6      11
+#define RPU_MPU_ARCHITECTURE_SYSTEM7        13
+#define RPU_MPU_ARCHITECTURE_SYSTEM11       15
+
+// Available Architectures (0-9 is for B/S Boards, 10-19 is for W)
+//  RPU_MPU_ARCHITECTURE 1 = -17, -35, 100, 200, or compatible
+//  RPU_MPU_ARCHITECTURE 11 = Sys 4, 6
+//  RPU_MPU_ARCHITECTURE 13 = Sys 7
+//  RPU_MPU_ARCHITECTURE 15 = Sys 11
+#if !defined(RPU_MPU_ARCHITECTURE)
+#error "RPU_MPU_ARCHITECTURE not defined. Please define it in platformio.ini or in RPU_config.h"
+#endif
+
+#define RPU_MPU_ARCH_IS(arch)    (RPU_MPU_ARCHITECTURE == (arch))
+#define RPU_MPU_ARCH_IS_BSOS()   (RPU_MPU_ARCHITECTURE < 10)
+#define RPU_MPU_ARCH_IS_WMS()    (RPU_MPU_ARCHITECTURE >= 10)
+
+
 // Some boards will assume a 6800 is the processor (RPU_OS_HARDWARE_REV 1 through 4)
 // and some boards will try to detect the processor (RPU_OS_HARDWARE_REV 102)
 // but in other cases we can specify if we're building for a 6800.
@@ -68,56 +91,8 @@
 //   RPU_OS_USE_DASH51 - Enable Dash-51 sound card support
 //   RPU_OS_DISABLE_CPC_FOR_SPACE - Disable CPC code to save space
 
-
-// -17, -35, 100, and 200 MPU boards
-// Depending on the number of digits, the RPU_OS_SOFTWARE_DISPLAY_INTERRUPT_INTERVAL
-// can be adjusted in order to change the refresh rate of the displays.
-// The original -17 / MPU-100 boards ran at 320 Hz
-// The Alltek runs the displays at 440 Hz (probably so 7-digit displays won't flicker)
-// The value below is calculated with this formula:
-//       Value = (interval in ms) * (16*10^6) / (1*1024) - 1
-//          (must be <65536)
-// Choose one of these values (or do whatever)
-//  Value         Frequency
-//  48            318.8 Hz
-//  47            325.5 Hz
-//  46            332.4 Hz increments   (I use this for 6-digits displays)
-//  45            339.6 Hz
-//  40            381 Hz
-//  35            434 Hz     (This would probably be good for 7-digit displays)
-//  34            446.4 Hz
-constexpr uint16_t RPU_OS_SOFTWARE_DISPLAY_INTERRUPT_INTERVAL = 48;
-
-#ifdef RPU_OS_USE_6_DIGIT_CREDIT_DISPLAY_WITH_7_DIGIT_DISPLAYS
-constexpr uint8_t RPU_OS_MASK_SHIFT_1 = 0x60;
-constexpr uint8_t RPU_OS_MASK_SHIFT_2 = 0x0C;
-#else
-constexpr uint8_t RPU_OS_MASK_SHIFT_1 = 0x30;
-constexpr uint8_t RPU_OS_MASK_SHIFT_2 = 0x06;
-#endif
-
-#ifdef RPU_OS_USE_7_DIGIT_DISPLAYS
-constexpr long RPU_OS_MAX_DISPLAY_SCORE = 9999999;
-#define RPU_OS_NUM_DIGITS 7
-constexpr uint8_t RPU_OS_ALL_DIGITS_MASK = 0x7F;
-#else
-constexpr long RPU_OS_MAX_DISPLAY_SCORE = 999999;
-#define RPU_OS_NUM_DIGITS 6
-constexpr uint8_t RPU_OS_ALL_DIGITS_MASK = 0x3F;
-#endif
-
-
-constexpr int RPU_OS_SWITCH_DELAY_IN_MICROSECONDS = 200;
-constexpr int RPU_OS_TIMING_LOOP_PADDING_IN_MICROSECONDS = 70;
-
 // Fast boards might need a slower lamp strobe
 // #define RPU_OS_SLOW_DOWN_LAMP_STROBE  0
 
-#ifdef RPU_OS_USE_AUX_LAMPS
-constexpr int RPU_NUM_LAMP_BANKS = 11;
-constexpr int RPU_MAX_LAMPS = 88;
-#else
-constexpr int RPU_NUM_LAMP_BANKS = 8;
-constexpr int RPU_MAX_LAMPS = 60;
-#endif
+#define RPU_USES_SB300()         (defined(RPU_OS_USE_SB300) && (RPU_OS_HARDWARE_REV_IS(3) || RPU_OS_HARDWARE_REV_IS(4))
 

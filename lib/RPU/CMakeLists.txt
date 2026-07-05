@@ -4,6 +4,11 @@ project(RPU)
 
 set(RPU_SOURCES
         src/RPU.cpp
+        src/bsp/bsos_rev1_2.cpp
+        src/bsp/bsos_rev3.cpp
+        src/bsp/bsos_rev4.cpp
+        src/bsp/bsos_rev100.cpp
+        src/bsp/bsos_rev101_102.cpp
 )
 
 # Conditionally include native sound card implementations
@@ -21,6 +26,8 @@ add_library(RPU STATIC ${RPU_SOURCES})
 
 target_include_directories(RPU PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 # Hardware and architecture defines — PUBLIC so they propagate to any consumer.

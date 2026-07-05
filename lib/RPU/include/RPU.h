@@ -24,6 +24,23 @@
 
 #include <stdint.h>
 
+#ifdef RPU_OS_USE_AUX_LAMPS
+constexpr int RPU_NUM_LAMP_BANKS = 11;
+constexpr int RPU_MAX_LAMPS = 88;
+#else
+constexpr int RPU_NUM_LAMP_BANKS = 8;
+constexpr int RPU_MAX_LAMPS = 60;
+#endif
+
+#ifdef RPU_OS_USE_7_DIGIT_DISPLAYS
+constexpr long RPU_OS_MAX_DISPLAY_SCORE = 9999999;
+constexpr unsigned RPU_OS_NUM_DIGITS = 7;
+constexpr uint8_t RPU_OS_ALL_DIGITS_MASK = 0x7F;
+#else
+constexpr long RPU_OS_MAX_DISPLAY_SCORE = 999999;
+constexpr unsigned RPU_OS_NUM_DIGITS = 6;
+constexpr uint8_t RPU_OS_ALL_DIGITS_MASK = 0x3F;
+#endif
 
 constexpr uint8_t RPU_OS_MAJOR_VERSION = 5;
 constexpr uint8_t RPU_OS_MINOR_VERSION = 7;
@@ -41,40 +58,40 @@ constexpr uint8_t CONTSOL_DISABLE_COIN_LOCKOUT = 0x20;
 
 // RPU_InitializeMPU will always boot none of the following
 // parameters are set to force it back to original code
-constexpr unsigned long RPU_CMD_BOOT_ORIGINAL = 0x0001; /* This will boot to original unconditionally (disables new code completely for this install) */
-constexpr unsigned long RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET =  0x0002; /* Only supported on Rev 4 or greater, boots original if the C/R button is held at power on */
-constexpr unsigned long RPU_CMD_BOOT_ORIGINAL_IF_NOT_CREDIT_RESET = 0x0004; /* Only supported on Rev 4 or greater, boots original if the C/R button is NOT held at power on */
-constexpr unsigned long RPU_CMD_BOOT_ORIGINAL_IF_SWITCH_CLOSED = 0x0008;     /* boots to original if the switch is closed at power on */
-constexpr unsigned long RPU_CMD_BOOT_ORIGINAL_IF_NOT_SWITCH_CLOSED = 0x0010; /* boots to original if the switch is NOT closed at power on */
-constexpr unsigned long RPU_CMD_AUTODETECT_ARCHITECTURE = 0x0040; /* For Rev 101 and greater--the code detects architecture of board (mainly for diagnostics applications) */
-constexpr unsigned long RPU_CMD_PERFORM_MPU_TEST = 0x0080; /* perform basic tests on PIAs and return result codes */
+constexpr uint16_t RPU_CMD_BOOT_ORIGINAL = 0x0001; /* This will boot to original unconditionally (disables new code completely for this install) */
+constexpr uint16_t RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET =  0x0002; /* Only supported on Rev 4 or greater, boots original if the C/R button is held at power on */
+constexpr uint16_t RPU_CMD_BOOT_ORIGINAL_IF_NOT_CREDIT_RESET = 0x0004; /* Only supported on Rev 4 or greater, boots original if the C/R button is NOT held at power on */
+constexpr uint16_t RPU_CMD_BOOT_ORIGINAL_IF_SWITCH_CLOSED = 0x0008;     /* boots to original if the switch is closed at power on */
+constexpr uint16_t RPU_CMD_BOOT_ORIGINAL_IF_NOT_SWITCH_CLOSED = 0x0010; /* boots to original if the switch is NOT closed at power on */
+constexpr uint16_t RPU_CMD_AUTODETECT_ARCHITECTURE = 0x0040; /* For Rev 101 and greater--the code detects architecture of board (mainly for diagnostics applications) */
+constexpr uint16_t RPU_CMD_PERFORM_MPU_TEST = 0x0080; /* perform basic tests on PIAs and return result codes */
 
 /*
    If the caller chooses this option, it's up to them to honor the RPU_RET_ORIGINAL_CODE_REQUESTED return
    flag and halt the Arduino with a while(1);
 */
-constexpr unsigned long RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN = 0x0100;
+constexpr uint16_t RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN = 0x0100;
 
-constexpr unsigned long RPU_RET_NO_ERRORS = 0;
-constexpr unsigned long RPU_RET_U10_PIA_ERROR = 0x0001;
-constexpr unsigned long RPU_RET_U11_PIA_ERROR = 0x0002;
-constexpr unsigned long RPU_RET_PIA_1_ERROR = 0x0004;
-constexpr unsigned long RPU_RET_PIA_2_ERROR = 0x0008;
-constexpr unsigned long RPU_RET_PIA_3_ERROR = 0x0010;
-constexpr unsigned long RPU_RET_PIA_4_ERROR = 0x0020;
-constexpr unsigned long RPU_RET_PIA_5_ERROR = 0x0040;
-constexpr unsigned long RPU_RET_OPTION_NOT_SUPPORTED = 0x0080;
-constexpr unsigned long RPU_RET_6800_DETECTED = 0x0100;
-constexpr unsigned long RPU_RET_6802_OR_8_DETECTED = 0x0200;
-constexpr unsigned long RPU_RET_DIAGNOSTIC_REQUESTED = 0x1000;
-constexpr unsigned long RPU_RET_SELECTOR_SWITCH_ON = 0x2000;
-constexpr unsigned long RPU_RET_CREDIT_RESET_BUTTON_HIT = 0x4000;
-constexpr unsigned long RPU_RET_ORIGINAL_CODE_REQUESTED = 0x8000;
+constexpr uint16_t RPU_RET_NO_ERRORS = 0;
+constexpr uint16_t RPU_RET_U10_PIA_ERROR = 0x0001;
+constexpr uint16_t RPU_RET_U11_PIA_ERROR = 0x0002;
+constexpr uint16_t RPU_RET_PIA_1_ERROR = 0x0004;
+constexpr uint16_t RPU_RET_PIA_2_ERROR = 0x0008;
+constexpr uint16_t RPU_RET_PIA_3_ERROR = 0x0010;
+constexpr uint16_t RPU_RET_PIA_4_ERROR = 0x0020;
+constexpr uint16_t RPU_RET_PIA_5_ERROR = 0x0040;
+constexpr uint16_t RPU_RET_OPTION_NOT_SUPPORTED = 0x0080;
+constexpr uint16_t RPU_RET_6800_DETECTED = 0x0100;
+constexpr uint16_t RPU_RET_6802_OR_8_DETECTED = 0x0200;
+constexpr uint16_t RPU_RET_DIAGNOSTIC_REQUESTED = 0x1000;
+constexpr uint16_t RPU_RET_SELECTOR_SWITCH_ON = 0x2000;
+constexpr uint16_t RPU_RET_CREDIT_RESET_BUTTON_HIT = 0x4000;
+constexpr uint16_t RPU_RET_ORIGINAL_CODE_REQUESTED = 0x8000;
 
 // Function Prototypes
 
 //   Initialization
-unsigned long RPU_InitializeMPU(unsigned long initOptions = RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET |
+uint16_t RPU_InitializeMPU(uint16_t initOptions = RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET |
                                                             RPU_CMD_BOOT_ORIGINAL_IF_NOT_SWITCH_CLOSED | RPU_CMD_PERFORM_MPU_TEST,
                                 uint8_t creditResetSwitch = 0xFF);
 void RPU_SetupGameSwitches(int s_numSwitches, int s_numPrioritySwitches, const PlayfieldAndCabinetSwitch* s_gameSwitchArray);
@@ -91,7 +108,7 @@ void RPU_WriteShortToEEProm(uint16_t addr, uint16_t value);
 uint32_t RPU_ReadULFromEEProm(uint16_t startByte, uint32_t defaultValue = 0);
 void RPU_WriteULToEEProm(uint16_t startByte, uint32_t value);
 
-//   Swtiches
+//   Switches
 uint8_t RPU_PullFirstFromSwitchStack();
 bool RPU_ReadSingleSwitchState(uint8_t switchNum);
 void RPU_PushToSwitchStack(uint8_t switchNumber);

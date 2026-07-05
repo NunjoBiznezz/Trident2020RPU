@@ -1,7 +1,10 @@
 #pragma once
 
 #include "RPU_config.h"
+#include "RPU.h"
 #include <stdint.h>
+
+namespace RPU {
 
 class LampManager {
 public:
@@ -32,3 +35,5 @@ private:
 };
 
 extern LampManager lamps;
+
+} // namespace RPU

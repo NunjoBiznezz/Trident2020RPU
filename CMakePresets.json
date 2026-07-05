@@ -46,7 +46,9 @@
                 "RPU_BUILD_FOR_REV1": "OFF",
                 "RPU_BUILD_FOR_REV2": "OFF",
                 "RPU_BUILD_FOR_REV102": "ON",
-                "ENABLE_DEBUG_MESSAGES": "ON"
+                "DEBUG_PORT": "Serial",
+                "DEBUG_GAME_MESSAGES": "ON",
+                "DEBUG_RPU_MESSAGES": "OFF"
             }
         }
     ],

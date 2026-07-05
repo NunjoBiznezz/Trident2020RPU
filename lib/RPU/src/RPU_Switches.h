@@ -8,6 +8,11 @@ constexpr unsigned NUM_SWITCH_BYTES = 5;
 constexpr unsigned NUM_SWITCH_BYTES_ON_U10_PORT_A = 5;
 constexpr unsigned MAX_NUM_SWITCHES = 40;
 
+constexpr int RPU_OS_SWITCH_DELAY_IN_MICROSECONDS = 200;
+constexpr int RPU_OS_TIMING_LOOP_PADDING_IN_MICROSECONDS = 70;
+
+namespace RPU {
+
 class SwitchManager {
 public:
    void reset();
@@ -33,7 +38,9 @@ private:
 
    CircularQueue<uint8_t, 60, 0xFF> switchStack_;
 
-   void serviceBank(uint8_t switchCount);
+   void serviceBank(uint8_t switchBank);
 };
 
 extern SwitchManager switches;
+
+} // namespace RPU

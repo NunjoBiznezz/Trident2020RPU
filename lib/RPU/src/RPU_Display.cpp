@@ -24,12 +24,22 @@
 #include "RPU_Display.h"
 #include <Arduino.h>
 
+#ifdef RPU_OS_USE_6_DIGIT_CREDIT_DISPLAY_WITH_7_DIGIT_DISPLAYS
+constexpr uint8_t RPU_OS_MASK_SHIFT_1 = 0x60;
+constexpr uint8_t RPU_OS_MASK_SHIFT_2 = 0x0C;
+#else
+constexpr uint8_t RPU_OS_MASK_SHIFT_1 = 0x30;
+constexpr uint8_t RPU_OS_MASK_SHIFT_2 = 0x06;
+#endif
+
+namespace RPU {
+
 DisplayManager displays;
 
 void DisplayManager::reset() {
    currentDigit_ = 0;
    for (int d = 0; d < 5; d++) {
-      for (int dig = 0; dig < RPU_OS_NUM_DIGITS; dig++) {
+      for (unsigned dig = 0; dig < RPU_OS_NUM_DIGITS; dig++) {
          digits_[d][dig] = 0;
       }
       digitEnable_[d] = 0x00;
@@ -43,7 +53,7 @@ uint8_t DisplayManager::setDisplay(int displayNumber, unsigned long value, bool 
    }
 
    uint8_t blank = 0x00;
-   for (int count = 0; count < RPU_OS_NUM_DIGITS; count++) {
+   for (unsigned count = 0; count < RPU_OS_NUM_DIGITS; count++) {
       blank = blank * 2;
       if (value != 0 || count < minDigits) {
          blank |= 1;
@@ -240,42 +250,44 @@ void DisplayManager::serviceISR() {
    RPU_DataWrite(ADDRESS_U10_A, backupU10A);
 }
 
+} // namespace RPU
+
 /******************************************************
  *   Public API
  */
 
 uint8_t RPU_SetDisplay(int displayNumber, unsigned long value, bool blankByMagnitude, uint8_t minDigits, bool showCommasByMagnitude) {
-   return displays.setDisplay(displayNumber, value, blankByMagnitude, minDigits, showCommasByMagnitude);
+   return RPU::displays.setDisplay(displayNumber, value, blankByMagnitude, minDigits, showCommasByMagnitude);
 }
 
 void RPU_SetDisplayCredits(int value, bool displayOn, bool showBothDigits) {
-   displays.setCredits(value, displayOn, showBothDigits);
+   RPU::displays.setCredits(value, displayOn, showBothDigits);
 }
 
 void RPU_SetDisplayBallInPlay(int value, bool displayOn, bool showBothDigits) {
-   displays.setBallInPlay(value, displayOn, showBothDigits);
+   RPU::displays.setBallInPlay(value, displayOn, showBothDigits);
 }
 
 void RPU_CycleAllDisplays(unsigned long curTime, uint8_t digitNum) {
-   displays.cycleAll(curTime, digitNum);
+   RPU::displays.cycleAll(curTime, digitNum);
 }
 
 void RPU_SetDisplayMatch(int value, bool displayOn, bool showBothDigits) {
-   displays.setMatch(value, displayOn, showBothDigits);
+   RPU::displays.setMatch(value, displayOn, showBothDigits);
 }
 
 void RPU_SetDisplayBlank(int displayNumber, uint8_t bitMask) {
-   displays.setBlank(displayNumber, bitMask);
+   RPU::displays.setBlank(displayNumber, bitMask);
 }
 
 uint8_t RPU_GetDisplayBlank(int displayNumber) {
-   return displays.getBlank(displayNumber);
+   return RPU::displays.getBlank(displayNumber);
 }
 
 void RPU_SetDisplayFlash(int displayNumber, unsigned long value, unsigned long curTime, unsigned period, uint8_t minDigits) {
-   displays.setFlash(displayNumber, value, curTime, period, minDigits);
+   RPU::displays.setFlash(displayNumber, value, curTime, period, minDigits);
 }
 
 void RPU_SetDisplayFlashCredits(unsigned long curTime, int period) {
-   displays.setFlashCredits(curTime, period);
+   RPU::displays.setFlashCredits(curTime, period);
 }

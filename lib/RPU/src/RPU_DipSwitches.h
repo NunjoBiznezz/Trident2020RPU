@@ -3,6 +3,8 @@
 
 #ifdef RPU_OS_USE_DIP_SWITCHES
 
+namespace RPU {
+
 class DipSwitchManager {
 public:
    void read();
@@ -13,5 +15,7 @@ private:
 };
 
 extern DipSwitchManager dipSwitches;
+
+} // namespace RPU
 
 #endif

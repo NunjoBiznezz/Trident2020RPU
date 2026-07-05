@@ -1,6 +1,9 @@
 #pragma once
 #include "RPU_config.h"
+#include "RPU.h"
 #include <stdint.h>
+
+namespace RPU {
 
 class DisplayManager {
 public:
@@ -26,3 +29,5 @@ private:
 };
 
 extern DisplayManager displays;
+
+} // namespace RPU
