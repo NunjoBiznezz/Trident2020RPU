@@ -141,7 +141,8 @@ void RPU_HW_SetupPorts(uint16_t &retVal) {
    }
 }
 
-bool RPU_InitializeBSP(uint16_t initOptions, uint8_t creditResetSwitch, uint16_t &retVal) {
+uint16_t RPU_InitializeBSP(uint16_t initOptions, uint8_t creditResetSwitch) {
+   uint16_t retVal = 0;
    pinMode(RPU_BUFFER_DISABLE, OUTPUT);
    digitalWrite(RPU_BUFFER_DISABLE, 1); // tri-state 680X buffers
 
@@ -197,10 +198,10 @@ bool RPU_InitializeBSP(uint16_t initOptions, uint8_t creditResetSwitch, uint16_t
          while (1)
             ;
       }
-      return true;
+      return retVal;
    }
 
-   return false;
+   return retVal;
 }
 
 #endif // RPU_OS_HARDWARE_REV 4

@@ -4,11 +4,11 @@ project(RPU)
 
 set(RPU_SOURCES
         src/RPU.cpp
-        src/bsp/hw_rev1_2.cpp
-        src/bsp/hw_rev3.cpp
-        src/bsp/hw_rev4.cpp
-        src/bsp/hw_rev100.cpp
-        src/bsp/hw_rev101_102.cpp
+        src/bsp/bsos_rev1_2.cpp
+        src/bsp/bsos_rev3.cpp
+        src/bsp/bsos_rev4.cpp
+        src/bsp/bsos_rev100.cpp
+        src/bsp/bsos_rev101_102.cpp
 )
 
 # Conditionally include native sound card implementations

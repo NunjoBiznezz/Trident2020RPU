@@ -108,7 +108,7 @@ void RPU_WriteShortToEEProm(uint16_t addr, uint16_t value);
 uint32_t RPU_ReadULFromEEProm(uint16_t startByte, uint32_t defaultValue = 0);
 void RPU_WriteULToEEProm(uint16_t startByte, uint32_t value);
 
-//   Swtiches
+//   Switches
 uint8_t RPU_PullFirstFromSwitchStack();
 bool RPU_ReadSingleSwitchState(uint8_t switchNum);
 void RPU_PushToSwitchStack(uint8_t switchNumber);

@@ -1,4 +1,5 @@
 #if (RPU_OS_HARDWARE_REV == 3)
+#include <stdint.h>
 
 #if !defined(__AVR_ATmega2560__)
 #error "RPU_OS_HARDWARE_REV 3 requires ATMega2560, check RPU_Config.h and adjust settings"
@@ -108,7 +109,8 @@ void RPU_HW_SetupPorts(uint16_t &) {
    digitalWrite(4, LOW);  // VMA low
 }
 
-bool RPU_InitializeBSP(uint16_t initOptions, uint8_t, uint16_t &retVal) {
+uint16_t RPU_InitializeBSP(uint16_t initOptions, uint8_t) {
+   uint16_t retVal = 0;
    RPU_DEBUG_MESSAGE("* Starting Setup for Rev 3\n");
 
    if (initOptions & (RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET | RPU_CMD_BOOT_ORIGINAL_IF_NOT_CREDIT_RESET |
@@ -134,7 +136,7 @@ bool RPU_InitializeBSP(uint16_t initOptions, uint8_t, uint16_t &retVal) {
       digitalWrite(14, HIGH); // release HALT
       if (initOptions & RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN) {
          retVal |= RPU_RET_ORIGINAL_CODE_REQUESTED;
-         return true;
+         return retVal;
       } else {
          while (1)
             ;
@@ -143,7 +145,7 @@ bool RPU_InitializeBSP(uint16_t initOptions, uint8_t, uint16_t &retVal) {
 
    pinMode(14, OUTPUT);
    digitalWrite(14, LOW); // assert HALT to keep 680X off the bus
-   return false;
+   return retVal;
 }
 
 #endif // RPU_OS_HARDWARE_REV 3

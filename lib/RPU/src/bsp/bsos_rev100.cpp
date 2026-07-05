@@ -97,9 +97,9 @@ void RPU_HW_SetupPorts(uint16_t &) {
    // Rev 100 has no additional port setup after early init
 }
 
-bool RPU_InitializeBSP(uint16_t, uint8_t, uint16_t &) {
+uint16_t RPU_InitializeBSP(uint16_t, uint8_t) {
    // Rev 100 boots directly to Arduino code with no original-MPU option
-   return false;
+   return 0;
 }
 
 #endif // RPU_OS_HARDWARE_REV 100

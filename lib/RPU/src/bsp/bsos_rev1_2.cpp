@@ -104,7 +104,9 @@ void RPU_HW_SetupPorts(uint16_t &) {
 #endif
 }
 
-bool RPU_InitializeBSP(uint16_t initOptions, uint8_t, uint16_t &retVal) {
+uint16_t RPU_InitializeBSP(uint16_t initOptions, uint8_t) {
+   uint16_t retVal = 0;
+
    if (initOptions & (RPU_CMD_BOOT_ORIGINAL | RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET |
                       RPU_CMD_BOOT_ORIGINAL_IF_NOT_CREDIT_RESET | RPU_CMD_BOOT_ORIGINAL_IF_SWITCH_CLOSED |
                       RPU_CMD_AUTODETECT_ARCHITECTURE)) {
@@ -114,13 +116,13 @@ bool RPU_InitializeBSP(uint16_t initOptions, uint8_t, uint16_t &retVal) {
    if (LookFor6800Activity()) {
       if (initOptions & RPU_CMD_INIT_AND_RETURN_EVEN_IF_ORIGINAL_CHOSEN) {
          retVal |= RPU_RET_ORIGINAL_CODE_REQUESTED;
-         return true;
+         return retVal;
       } else {
          while (1)
             ;
       }
    }
-   return false;
+   return retVal;
 }
 
 #endif // RPU_OS_HARDWARE_REV 1 or 2

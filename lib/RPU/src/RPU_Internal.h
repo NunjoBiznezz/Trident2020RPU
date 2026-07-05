@@ -73,8 +73,8 @@ extern uint8_t RPU_DataRead(int address);
 
 // Hardware-revision init hooks — called from RPU_InitializeMPU in RPU.cpp
 // RPU_InitializeBSP: performs rev-specific pin setup and boot-to-original logic.
-//   Returns true if RPU_InitializeMPU should return immediately (original MPU boot path).
-extern bool RPU_InitializeBSP(uint16_t initOptions, uint8_t creditResetSwitch, uint16_t &retVal);
+// Returns a uint16_t value indicating the initialization status.
+extern uint16_t RPU_InitializeBSP(uint16_t initOptions, uint8_t creditResetSwitch=0xff);
 
 // RPU_HW_SetupPorts: called after RPU_InitializeBSP for any remaining port config
 //   (e.g. diagnostic pin check). May set bits in retVal.

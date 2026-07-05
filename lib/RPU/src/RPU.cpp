@@ -260,9 +260,7 @@ uint16_t RPU_InitializeMPU(uint16_t initOptions, uint8_t creditResetSwitch) {
 
    delay(100);
 
-   if (RPU_InitializeBSP(initOptions, creditResetSwitch, retVal)) {
-      return retVal;
-   }
+   retVal = RPU_InitializeBSP(initOptions, creditResetSwitch);
 
    RPU_DEBUG_MESSAGE("* About to init Arduino ports\n");
    RPU_DEBUG_DELAY(100);
