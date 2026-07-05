@@ -42,11 +42,30 @@ uint8_t ReadSetting(int setting, uint8_t defaultValue);
 void PlaySoundEffect(uint8_t soundEffectNum);
 void PlayBackgroundSongBasedOnBall(uint8_t ballNum);
 
-constexpr unsigned long TRIDENT2020_MAJOR_VERSION = 2020;  
+constexpr unsigned long TRIDENT2020_MAJOR_VERSION = 2020;
 constexpr unsigned long TRIDENT2020_MINOR_VERSION = 3;
+
+// Queryable build record embedded in flash. Extract with:
+//   pio run -t version -e <env>
+struct __attribute__((packed)) BuildInfoRecord {
+   char     magic[8];    // "TRID2020"
+   uint16_t major;
+   uint16_t minor;
+   char     branch[32];
+   char     describe[64];
+   char     built[24];
+};
+static const BuildInfoRecord FIRMWARE_BUILD_INFO PROGMEM = {
+   {'T', 'R', 'I', 'D', '2', '0', '2', '0'},
+   (uint16_t)TRIDENT2020_MAJOR_VERSION,
+   (uint16_t)TRIDENT2020_MINOR_VERSION,
+   BUILD_GIT_BRANCH,
+   BUILD_GIT_DESCRIBE,
+   __DATE__ " " __TIME__,
+};
    
-#if defined(DEBUG_MESSAGES) 
-#  define DEBUG_MESSAGE(x) Serial.write(x)
+#if defined(DEBUG_MESSAGES) && defined(DEBUG_PORT)
+#  define DEBUG_MESSAGE(x) DEBUG_PORT.write(x)
 #else
 #  define DEBUG_MESSAGE(x)
 #endif
@@ -338,8 +357,23 @@ void QueueDIAGNotification(unsigned short notificationNum) {
 }
 
 void setup() {
-   #if defined(RPU_DEBUG_MESSAGES)
-      Serial.begin(115200);
+   // Opaque to LTO — prevents --gc-sections from discarding FIRMWARE_BUILD_INFO.
+   __asm__ volatile("" :: "r"(&FIRMWARE_BUILD_INFO) : "memory");
+
+   #if defined(DEBUG_PORT)
+      DEBUG_PORT.begin(115200);
+   #  if defined(DEBUG_MESSAGES)
+      DEBUG_PORT.print(F("Trident2020 v"));
+      DEBUG_PORT.print(TRIDENT2020_MAJOR_VERSION);
+      DEBUG_PORT.print('.');
+      DEBUG_PORT.println(TRIDENT2020_MINOR_VERSION);
+      DEBUG_PORT.print(F("Branch:   "));
+      DEBUG_PORT.println(F(BUILD_GIT_BRANCH));
+      DEBUG_PORT.print(F("Describe: "));
+      DEBUG_PORT.println(F(BUILD_GIT_DESCRIBE));
+      DEBUG_PORT.print(F("Built:    "));
+      DEBUG_PORT.println(F(__DATE__ " " __TIME__));
+   #  endif
    #endif
 
 
