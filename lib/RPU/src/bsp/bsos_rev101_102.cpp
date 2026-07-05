@@ -1,11 +1,12 @@
-#if (RPU_OS_HARDWARE_REV == 101) || (RPU_OS_HARDWARE_REV == 102)
+#include "RPU.h"
+#include "RPU_Internal.h"
+
+#if RPU_OS_HARDWARE_REV_IS(101) || RPU_OS_HARDWARE_REV_IS(102)
 
 #if !defined(__AVR_ATmega2560__)
 #error "RPU_OS_HARDWARE_REV >100 requires ATMega2560, check RPU_Config.h and adjust settings"
 #endif
 
-#include "RPU.h"
-#include "RPU_Internal.h"
 #include <Arduino.h>
 
 // Rev 101/102 pin map (MEGA 2560 CPU interposer):
@@ -51,7 +52,7 @@ static void RPU_SetDataPinsDirection(bool pinsOutput) {
    }
 }
 
-#if (RPU_OS_HARDWARE_REV == 102)
+#if (RPU_OS_HARDWARE_REV_IS(102))
 static bool CheckForMPUClock() {
    pinMode(RPU_DISABLE_PHI_FROM_MPU, OUTPUT);
    digitalWrite(RPU_DISABLE_PHI_FROM_MPU, 1);
@@ -93,7 +94,7 @@ static bool CheckForMPUClock() {
    digitalWrite(RPU_DISABLE_PHI_FROM_CPU, 1);
    return false;
 }
-#endif // RPU_OS_HARDWARE_REV == 102
+#endif // RPU_OS_HARDWARE_REV_IS(102)
 
 void RPU_DataWrite(int address, uint8_t data) {
    DDRA = 0xFF;
@@ -194,7 +195,7 @@ uint16_t RPU_InitializeBSP(uint16_t initOptions, uint8_t creditResetSwitch) {
    pinMode(RPU_RW_PIN, OUTPUT);
    RPU_SetAddressPinsDirection(true);
 
-#if (RPU_OS_HARDWARE_REV == 102)
+#if RPU_OS_HARDWARE_REV_IS(102)
    UsesM6800Processor = CheckForMPUClock();
 #endif
 
@@ -233,7 +234,7 @@ uint16_t RPU_InitializeBSP(uint16_t initOptions, uint8_t creditResetSwitch) {
       pinMode(RPU_VMA_PIN, INPUT);
       pinMode(RPU_RW_PIN, INPUT);
 
-#if (RPU_OS_HARDWARE_REV == 102)
+#if RPU_OS_HARDWARE_REV_IS(102)
       if (UsesM6800Processor) {
          pinMode(RPU_DISABLE_PHI_FROM_MPU, OUTPUT);
          digitalWrite(RPU_DISABLE_PHI_FROM_MPU, 0);
@@ -264,4 +265,4 @@ uint16_t RPU_InitializeBSP(uint16_t initOptions, uint8_t creditResetSwitch) {
    return retVal;
 }
 
-#endif // RPU_OS_HARDWARE_REV 101 or 102
+#endif // RPU_OS_HARDWARE_REV_IS(101) || RPU_OS_HARDWARE_REV_IS(102)

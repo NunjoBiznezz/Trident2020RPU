@@ -6,6 +6,7 @@
 #define TRIDENT2020RPU_BSP_WMS_H
 
 #include <stdint.h>
+#include "RPU_Internal.h"
 
 constexpr uint16_t PIA_DISPLAY_PORT_A = 0x2800;
 constexpr uint16_t PIA_DISPLAY_CONTROL_A = 0x2801;
@@ -24,14 +25,14 @@ constexpr uint16_t PIA_SOLENOID_CONTROL_A = 0x2201;
 constexpr uint16_t PIA_SOLENOID_PORT_B = 0x2202;
 constexpr uint16_t PIA_SOLENOID_CONTROL_B = 0x2203;
 
-#if (RPU_MPU_ARCHITECTURE==13)
+#if RPU_MPU_ARCH_IS(RPU_MPU_ARCHITECTURE_SYSTEM7)
 constexpr uint16_t PIA_SOUND_COMMA_PORT_A = 0x2100;
 constexpr uint16_t PIA_SOUND_COMMA_CONTROL_A = 0x2101;
 constexpr uint16_t PIA_SOUND_COMMA_PORT_B = 0x2102;
 constexpr uint16_t PIA_SOUND_COMMA_CONTROL_B = 0x2103;
 #endif
 
-#if (RPU_MPU_ARCHITECTURE==15)
+#if RPU_MPU_ARCH_IS(RPU_MPU_ARCHITECTURE_SYSTEM11)
 constexpr uint16_t PIA_SOUND_11_PORT_A = 0x2100;
 constexpr uint16_t PIA_SOUND_11_CONTROL_A = 0x2101;
 constexpr uint16_t PIA_SOLENOID_11_PORT_B = 0x2102;

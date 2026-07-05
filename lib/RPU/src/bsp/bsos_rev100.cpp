@@ -1,10 +1,13 @@
-#if (RPU_OS_HARDWARE_REV == 100)
+
+#include "RPU_config.h"
+#include "RPU.h"
+
+#if RPU_OS_HARDWARE_REV_IS(100)
 
 #if !defined(__AVR_ATmega2560__)
 #error "RPU_OS_HARDWARE_REV 100 requires ATMega2560, check RPU_Config.h and adjust settings"
 #endif
 
-#include "RPU.h"
 #include "RPU_Internal.h"
 #include <Arduino.h>
 

@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 
-#if (RPU_OS_HARDWARE_REV == 1)
+#if RPU_OS_HARDWARE_REV_IS(1)
 constexpr uint16_t ADDRESS_U10_A = 0x14;
 constexpr uint16_t ADDRESS_U10_A_CONTROL = 0x15;
 constexpr uint16_t ADDRESS_U10_B = 0x16;
@@ -18,7 +18,7 @@ constexpr uint16_t ADDRESS_U11_B = 0x1A;
 constexpr uint16_t ADDRESS_U11_B_CONTROL = 0x1B;
 constexpr uint16_t ADDRESS_SB100 = 0x10;
 
-#elif (RPU_OS_HARDWARE_REV == 2)
+#elif RPU_OS_HARDWARE_REV_IS(2)
 
 constexpr uint16_t ADDRESS_U10_A = 0x00;
 constexpr uint16_t ADDRESS_U10_A_CONTROL = 0x01;
@@ -33,7 +33,7 @@ constexpr uint16_t ADDRESS_SB100_CHIMES = 0x18;
 constexpr uint16_t ADDRESS_SB300_SQUARE_WAVES = 0x10;
 constexpr uint16_t ADDRESS_SB300_ANALOG = 0x18;
 
-#elif (RPU_OS_HARDWARE_REV == 3) || (RPU_OS_HARDWARE_REV == 4)
+#elif RPU_OS_HARDWARE_REV_IS(3) || RPU_OS_HARDWARE_REV_IS(4)
 
 constexpr uint16_t ADDRESS_U10_A = 0x88;
 constexpr uint16_t ADDRESS_U10_A_CONTROL = 0x89;

@@ -36,7 +36,7 @@ private:
 
    CircularQueue<uint8_t, 60, 0xFF> switchStack_;
 
-   void serviceBank(uint8_t switchCount);
+   void serviceBank(uint8_t switchBank);
 };
 
 extern SwitchManager switches;

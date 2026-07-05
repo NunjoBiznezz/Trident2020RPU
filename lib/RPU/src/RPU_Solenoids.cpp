@@ -18,9 +18,9 @@
     See <https://www.gnu.org/licenses/>.
  */
 
-#include "RPU_Solenoids.h"
 #include "RPU.h"
 #include "RPU_Internal.h"
+#include "RPU_Solenoids.h"
 
 SolenoidManager solenoids;
 

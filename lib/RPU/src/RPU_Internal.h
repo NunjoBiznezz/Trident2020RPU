@@ -24,29 +24,14 @@
 #include <stdint.h>
 
 
-// Use the precompiler variables to compute build parameters
-#define RPU_MACHINE_FAMILY_BALLY_STERN  1000
-
-#define RPU_MACHINE_FAMILY_WILLIAMS     2000
-#define RPU_MPU_ARCH_WMS_SYSTEM3        10
-#define RPU_MPU_ARCH_WMS_SYSTEM4_6      11
-#define RPU_MPU_ARCH_WMS_SYSTEM7        13
-#define RPU_MPU_ARCH_WMS_SYSTEM11       15
-
-// Define the machine architecture based on the MPU architecture
-#if (RPU_MPU_ARCHITECTURE<10)
-#define RPU_MACHINE_FAMILY RPU_MACHINE_FAMILY_BALLY_STERN
-#else
-#define RPU_MACHINE_FAMILY RPU_MACHINE_FAMILY_WILLIAMS
-#endif
 
 
-#if (RPU_MACHINE_FAMILY == RPU_MACHINE_FAMILY_BALLY_STERN)
+#if RPU_MPU_ARCH_IS_BSOS()
 #include "bsp/bsp_bsos.h"
-#elif (RPU_MACHINE_FAMILY == RPU_MACHINE_FAMILY_WILLIAMS)
+#elif RPU_MPU_ARCH_IS_WMS()
 #include "bsp/bsp_wms.h"
 #else
-#error "Unsupported machine family"
+#error "Unsupported MPU"
 #endif
 
 

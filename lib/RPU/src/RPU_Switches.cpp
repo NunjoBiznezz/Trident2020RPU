@@ -89,29 +89,29 @@ void SwitchManager::service() {
    // Turn off U10BControl interrupts
    RPU_DataWrite(ADDRESS_U10_B_CONTROL, 0x30);
 
-   for (uint8_t switchCount = 0; switchCount < NUM_SWITCH_BYTES; switchCount++) {
-      serviceBank(switchCount);
+   for (uint8_t switchBank = 0; switchBank < NUM_SWITCH_BYTES; switchBank++) {
+      serviceBank(switchBank);
    }
 
 }
 
-void SwitchManager::serviceBank(uint8_t switchCount) {
-   minus2_[switchCount] = minus1_[switchCount];
-   minus1_[switchCount] = now_[switchCount];
+void SwitchManager::serviceBank(uint8_t switchBank) {
+   minus2_[switchBank] = minus1_[switchBank];
+   minus1_[switchBank] = now_[switchBank];
 
-   RPU_DataWrite(ADDRESS_U10_A, 0x01 << switchCount);
+   RPU_DataWrite(ADDRESS_U10_A, 0x01 << switchBank);
    RPU_DataWrite(ADDRESS_U10_B_CONTROL, 0x34);
    delayMicroseconds(RPU_OS_SWITCH_DELAY_IN_MICROSECONDS);
-   now_[switchCount] = RPU_DataRead(ADDRESS_U10_B);
+   now_[switchBank] = RPU_DataRead(ADDRESS_U10_B);
    RPU_DataWrite(ADDRESS_U10_A, 0x00);
 
    // Starting closures (off→on): fire immediate solenoids
-   uint8_t startingClosures = now_[switchCount] & (~minus1_[switchCount]);
+   uint8_t startingClosures = now_[switchBank] & (~minus1_[switchBank]);
    if (startingClosures != 0) {
       bool immediateSolenoidFired = false;
       for (uint8_t bitCount = 0; bitCount < 8 && !immediateSolenoidFired; bitCount++) {
          if ((startingClosures & 0x01) != 0) {
-            uint8_t switchNum = switchCount * 8 + bitCount;
+            uint8_t switchNum = switchBank * 8 + bitCount;
             for (int i = 0; i < numPrioritySwitches_ && !immediateSolenoidFired; i++) {
                if (gameSwitches_ != nullptr && switchNum == gameSwitches_[i].switchNum) {
                   solenoids.pushToFront(gameSwitches_[i].solenoid, 1);
@@ -124,11 +124,11 @@ void SwitchManager::serviceBank(uint8_t switchCount) {
    }
 
    // Valid closures (off→on→on): push solenoids and notify game rules
-   uint8_t validClosures = (now_[switchCount] & minus1_[switchCount]) & ~minus2_[switchCount];
+   uint8_t validClosures = (now_[switchBank] & minus1_[switchBank]) & ~minus2_[switchBank];
    if (validClosures != 0) {
       for (uint8_t bitCount = 0; bitCount < 8; bitCount++) {
          if ((validClosures & 0x01) != 0) {
-            uint8_t switchNum = switchCount * 8 + bitCount;
+            uint8_t switchNum = switchBank * 8 + bitCount;
             for (int i = 0; i < numGameSwitches_; i++) {
                if (gameSwitches_ != nullptr && gameSwitches_[i].switchNum == switchNum) {
                   if (gameSwitches_[i].solenoid != SOL_NONE) {

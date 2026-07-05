@@ -38,6 +38,15 @@
 #error "RPU_OS_HARDWARE_REV not defined. Please define it in platformio.ini or in RPU_config.h"
 #endif
 
+#define RPU_OS_HARDWARE_REV_IS(rev)        (RPU_OS_HARDWARE_REV == (rev))
+
+
+#define RPU_MPU_ARCHITECTURE_BSOS           1
+#define RPU_MPU_ARCHITECTURE_SYSTEM3        10
+#define RPU_MPU_ARCHITECTURE_SYSTEM4_6      11
+#define RPU_MPU_ARCHITECTURE_SYSTEM7        13
+#define RPU_MPU_ARCHITECTURE_SYSTEM11       15
+
 // Available Architectures (0-9 is for B/S Boards, 10-19 is for W)
 //  RPU_MPU_ARCHITECTURE 1 = -17, -35, 100, 200, or compatible
 //  RPU_MPU_ARCHITECTURE 11 = Sys 4, 6
@@ -46,6 +55,11 @@
 #if !defined(RPU_MPU_ARCHITECTURE)
 #error "RPU_MPU_ARCHITECTURE not defined. Please define it in platformio.ini or in RPU_config.h"
 #endif
+
+#define RPU_MPU_ARCH_IS(arch)    (RPU_MPU_ARCHITECTURE == (arch))
+#define RPU_MPU_ARCH_IS_BSOS()   (RPU_MPU_ARCHITECTURE < 10)
+#define RPU_MPU_ARCH_IS_WMS()    (RPU_MPU_ARCHITECTURE >= 10)
+
 
 // Some boards will assume a 6800 is the processor (RPU_OS_HARDWARE_REV 1 through 4)
 // and some boards will try to detect the processor (RPU_OS_HARDWARE_REV 102)
@@ -80,4 +94,5 @@
 // Fast boards might need a slower lamp strobe
 // #define RPU_OS_SLOW_DOWN_LAMP_STROBE  0
 
+#define RPU_USES_SB300()         (defined(RPU_OS_USE_SB300) && (RPU_OS_HARDWARE_REV_IS(3) || RPU_OS_HARDWARE_REV_IS(4))
 

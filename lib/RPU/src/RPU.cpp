@@ -21,6 +21,9 @@
 #include "RPU.h"
 #include "RPU_config.h"
 #include "RPU_Internal.h"
+
+#if RPU_MPU_ARCH_IS_BSOS()
+
 #include "RPU_DipSwitches.h"
 #include "RPU_Switches.h"
 #include "RPU_Display.h"
@@ -306,3 +309,5 @@ uint16_t RPU_InitializeMPU(uint16_t initOptions, uint8_t creditResetSwitch) {
 
    return retVal;
 }
+
+#endif
