@@ -50,11 +50,7 @@ constexpr int MACHINE_STATE_ADJUST_CPC_CHUTE_3  =  -20;
 // Boundary between hardware tests and operator adjustments.
 constexpr int MACHINE_STATE_TEST_DONE           =  -20;
 
-#ifndef RPU_OS_DISABLE_CPC_FOR_SPACE
 constexpr uint8_t kNumCPCPairs = 9;
-extern const uint8_t CPCPairs[kNumCPCPairs][2];
-extern uint8_t CPCSelection[3];
-#endif
 
 // Total number of individual display digits across all four player displays.
 #ifdef RPU_OS_USE_7_DIGIT_DISPLAYS
@@ -71,11 +67,5 @@ unsigned long GetLastSelfTestChangedTime();
 void          SetLastSelfTestChangedTime(unsigned long t);
 
 unsigned long GetAwardScore(uint8_t level);
-#ifndef RPU_OS_DISABLE_CPC_FOR_SPACE
-uint8_t GetCPCSelection(uint8_t chuteNumber);
-uint8_t GetCPCCoins(uint8_t cpcSelection);
-uint8_t GetCPCCredits(uint8_t cpcSelection);
-void    SetCPCSelection(uint8_t chuteNum, uint8_t value);
-#endif
 
 #endif

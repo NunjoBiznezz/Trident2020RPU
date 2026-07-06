@@ -7,7 +7,6 @@
  **************************************************************************/
 
 #include "RPU.h"
-#include "SelfTestAndAudit.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
 #include "TridentMachine.h"
@@ -24,9 +23,53 @@ const unsigned short TridentMachine::kChuteAuditByte[3] = {
    RPU_CHUTE_3_COINS_START_BYTE,
 };
 
+const uint8_t TridentMachine::kCPCPairs[9][2] = {
+   {1, 5}, {1, 4}, {1, 3}, {1, 2}, {1, 1},
+   {2, 3}, {2, 1}, {3, 1}, {4, 1}
+};
+
+const uint16_t TridentMachine::kCPCChuteByte[3] = {
+   RPU_CPC_CHUTE_1_SELECTION_BYTE,
+   RPU_CPC_CHUTE_2_SELECTION_BYTE,
+   RPU_CPC_CHUTE_3_SELECTION_BYTE,
+};
+
 // ---------------------------------------------------------------------------
 // Private helpers
 // ---------------------------------------------------------------------------
+
+void TridentMachine::ensureCPCRead() {
+   if (cpcSelectionsRead_) return;
+   for (uint8_t i = 0; i < 3; i++) {
+      cpcSelection_[i] = RPU_ReadByteFromEEProm(kCPCChuteByte[i]);
+      if (cpcSelection_[i] >= 9) {
+         cpcSelection_[i] = 4;
+         RPU_WriteByteToEEProm(kCPCChuteByte[i], 4);
+      }
+   }
+   cpcSelectionsRead_ = true;
+}
+
+uint8_t TridentMachine::getCPCSelection(uint8_t chuteNum) {
+   if (chuteNum > 2) return 0xFF;
+   ensureCPCRead();
+   return cpcSelection_[chuteNum];
+}
+
+uint8_t TridentMachine::getCPCPairCoins(uint8_t pairIndex) {
+   return (pairIndex < 9) ? kCPCPairs[pairIndex][0] : 1;
+}
+
+uint8_t TridentMachine::getCPCPairCredits(uint8_t pairIndex) {
+   return (pairIndex < 9) ? kCPCPairs[pairIndex][1] : 1;
+}
+
+void TridentMachine::setCPCSelection(uint8_t chuteNum, uint8_t pairIdx) {
+   if (chuteNum >= 3) return;
+   ensureCPCRead();
+   cpcSelection_[chuteNum] = pairIdx;
+   RPU_WriteByteToEEProm(kCPCChuteByte[chuteNum], pairIdx);
+}
 
 uint8_t TridentMachine::readSetting(int addr, uint8_t defaultValue) {
    uint8_t value = EEPROM.read(addr);
@@ -493,17 +536,17 @@ void TridentMachine::addCoinToAudit(uint8_t chuteNum) {
 
 bool TridentMachine::addCoin(uint8_t chuteNum) {
    if (chuteNum > 2) return false;
-   uint8_t cpcSelection = GetCPCSelection(chuteNum);
+   uint8_t cpcSelection = getCPCSelection(chuteNum);
 
    uint8_t chuteNumToUse;
    for (chuteNumToUse = 0; chuteNumToUse <= chuteNum; chuteNumToUse++) {
-      if (GetCPCSelection(chuteNumToUse) == cpcSelection) break;
+      if (getCPCSelection(chuteNumToUse) == cpcSelection) break;
    }
 
    playSoundEffect(SOUND_EFFECT_COIN_DROP_1 + (currentTime_ % 3));
 
-   uint8_t cpcCoins          = GetCPCCoins(cpcSelection);
-   uint8_t cpcCredits        = GetCPCCredits(cpcSelection);
+   uint8_t cpcCoins          = getCPCPairCoins(cpcSelection);
+   uint8_t cpcCredits        = getCPCPairCredits(cpcSelection);
    uint8_t coinProgressBefore = chuteCoinsInProgress_[chuteNumToUse];
    chuteCoinsInProgress_[chuteNumToUse] += 1;
 

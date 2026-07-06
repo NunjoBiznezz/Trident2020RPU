@@ -97,11 +97,11 @@ TopState HardwareTestMode::update(unsigned long currentTime) {
    uint8_t chuteNum     = 0xFF;
    uint8_t cpcSelBefore = 0xFF;
    if (curState == MACHINE_STATE_ADJUST_CPC_CHUTE_1) {
-      chuteNum = 0; cpcSelBefore = GetCPCSelection(0);
+      chuteNum = 0; cpcSelBefore = machine_->getCPCSelection(0);
    } else if (curState == MACHINE_STATE_ADJUST_CPC_CHUTE_2) {
-      chuteNum = 1; cpcSelBefore = GetCPCSelection(1);
+      chuteNum = 1; cpcSelBefore = machine_->getCPCSelection(1);
    } else if (curState == MACHINE_STATE_ADJUST_CPC_CHUTE_3) {
-      chuteNum = 2; cpcSelBefore = GetCPCSelection(2);
+      chuteNum = 2; cpcSelBefore = machine_->getCPCSelection(2);
    }
 #endif
 
@@ -359,8 +359,8 @@ TopState HardwareTestMode::update(unsigned long currentTime) {
       if (curStateChanged) {
          savedValue_ = machine_->readByteFromEEProm(cpcSelectorStartByte);
          if (savedValue_ >= kNumCPCPairs) savedValue_ = 4;
-         machine_->setDisplay(0, GetCPCCoins((uint8_t)savedValue_), true);
-         machine_->setDisplay(1, GetCPCCredits((uint8_t)savedValue_), true);
+         machine_->setDisplay(0, machine_->getCPCPairCoins((uint8_t)savedValue_), true);
+         machine_->setDisplay(1, machine_->getCPCPairCredits((uint8_t)savedValue_), true);
       }
       if (curSwitch == SW_CREDIT_RESET) {
          uint8_t lastValue = (uint8_t)savedValue_;
@@ -370,25 +370,24 @@ TopState HardwareTestMode::update(unsigned long currentTime) {
          } else {
             if (savedValue_ > 0) savedValue_ -= 1;
          }
-         machine_->setDisplay(0, GetCPCCoins((uint8_t)savedValue_), true);
-         machine_->setDisplay(1, GetCPCCredits((uint8_t)savedValue_), true);
+         machine_->setDisplay(0, machine_->getCPCPairCoins((uint8_t)savedValue_), true);
+         machine_->setDisplay(1, machine_->getCPCPairCredits((uint8_t)savedValue_), true);
          if (lastValue != (uint8_t)savedValue_) {
-            machine_->writeByteToEEProm(cpcSelectorStartByte, (uint8_t)savedValue_);
             if (cpcSelectorStartByte == RPU_CPC_CHUTE_1_SELECTION_BYTE) {
-               SetCPCSelection(0, (uint8_t)savedValue_);
+               machine_->setCPCSelection(0, (uint8_t)savedValue_);
             } else if (cpcSelectorStartByte == RPU_CPC_CHUTE_2_SELECTION_BYTE) {
-               SetCPCSelection(1, (uint8_t)savedValue_);
+               machine_->setCPCSelection(1, (uint8_t)savedValue_);
             } else if (cpcSelectorStartByte == RPU_CPC_CHUTE_3_SELECTION_BYTE) {
-               SetCPCSelection(2, (uint8_t)savedValue_);
+               machine_->setCPCSelection(2, (uint8_t)savedValue_);
             }
          }
       }
    }
 
    // Notify if CPC selection changed this tick.
-   if (chuteNum != 0xFF && cpcSelBefore != GetCPCSelection(chuteNum)) {
+   if (chuteNum != 0xFF && cpcSelBefore != machine_->getCPCSelection(chuteNum)) {
       machine_->stopAllAudio();
-      machine_->playCallout(SOUND_EFFECT_SELF_TEST_CPC_START + GetCPCSelection(chuteNum));
+      machine_->playCallout(SOUND_EFFECT_SELF_TEST_CPC_START + machine_->getCPCSelection(chuteNum));
    }
 #endif
 

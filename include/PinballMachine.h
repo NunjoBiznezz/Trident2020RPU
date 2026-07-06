@@ -62,6 +62,12 @@ public:
    // --- Sound card (SB100 / S&T / Dash-51) ---
    virtual void    playSoundCardEffect(uint8_t sound)                  { (void)sound; }
 
+   // --- CPC (coins-per-credit) ---
+   virtual uint8_t getCPCSelection(uint8_t chuteNum)                  { (void)chuteNum; return 4; }
+   virtual uint8_t getCPCPairCoins(uint8_t pairIndex)                 { (void)pairIndex; return 1; }
+   virtual uint8_t getCPCPairCredits(uint8_t pairIndex)               { (void)pairIndex; return 1; }
+   virtual void    setCPCSelection(uint8_t chuteNum, uint8_t pairIdx) { (void)chuteNum; (void)pairIdx; }
+
    // --- EEPROM (RPU wrappers) ---
    virtual uint8_t       readByteFromEEProm(uint16_t addr)            { (void)addr; return 0xFF; }
    virtual void          writeByteToEEProm(uint16_t addr, uint8_t val){ (void)addr; (void)val; }
