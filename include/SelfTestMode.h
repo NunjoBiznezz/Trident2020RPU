@@ -2,7 +2,7 @@
  * SelfTestMode.h
  *
  * Operator self-test and adjustment menu. Knows concretely about
- * TridentMachineOps so it can reach the pointer getters for audio
+ * TridentMachine so it can reach the pointer getters for audio
  * adjustment variables. All per-session state is held as members so
  * that re-entering self-test starts fresh.
  **************************************************************************/
@@ -10,8 +10,8 @@
 #pragma once
 #include "MachineMode.h"
 #include "MachineState.h"
-#include "TridentMachineOps.h"
 #include "Trident2020Game.h"
+#include "TridentMachine.h"
 #include <stdint.h>
 
 // Non-const pointers to the operator-adjustable game/machine settings
@@ -43,7 +43,7 @@ class SelfTestMode : public MachineMode {
    bool stateChanged_  = false;
 
    Trident2020Game*   game_    = nullptr;
-   TridentMachineOps* machine_ = nullptr;
+   TridentMachine* machine_ = nullptr;
    SelfTestSettings   settings_ = {};
 
    // Operator adjustment state (was scattered as main.cpp globals)
@@ -61,7 +61,7 @@ class SelfTestMode : public MachineMode {
    void (*readParamsCallback_)() = nullptr;
 
 public:
-   void setDependencies(Trident2020Game& game, TridentMachineOps& machine,
+   void setDependencies(Trident2020Game& game, TridentMachine& machine,
                         SelfTestSettings settings) {
       game_     = &game;
       machine_  = &machine;

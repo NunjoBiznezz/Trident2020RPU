@@ -13,6 +13,7 @@
 
 class PinballMachine {
 public:
+   virtual ~PinballMachine() = default;
    virtual void playSoundEffect(uint8_t soundEffectNum)              = 0;
    virtual void playBackgroundSong(unsigned short songNum)           = 0;
    virtual void playBackgroundSongBasedOnBall(uint8_t ballNum)       = 0;

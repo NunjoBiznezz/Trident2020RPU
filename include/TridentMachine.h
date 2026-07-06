@@ -1,10 +1,10 @@
 /**************************************************************************
- * TridentMachineOps.h
+ * TridentMachine.h
  *
  * Concrete PinballMachine implementation for the Trident hardware.
  * Owns the audio subsystem (AudioHandler, WavTriggerHandler) and
  * implements all credit and coin-mech operations. Constructed once in
- * main.cpp; other classes hold a PinballMachine* or TridentMachineOps*
+ * main.cpp; other classes hold a PinballMachine* or TridentMachine*
  * depending on whether they need the concrete pointer-getter API.
  **************************************************************************/
 
@@ -18,9 +18,9 @@
 
 struct GameContext;   // full definition in Trident2020Game.h
 
-class TridentMachineOps : public PinballMachine {
+class TridentMachine : public PinballMachine {
 public:
-   TridentMachineOps() = default;
+   TridentMachine() = default;
 
    void setContext(GameContext& ctx)   { ctx_ = &ctx; }
 

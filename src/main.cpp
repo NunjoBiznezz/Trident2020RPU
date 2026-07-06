@@ -21,21 +21,21 @@
 // Scores not ending in zero (wizard mode)
 // unstructured play jackpots
 // increase mode start time with new qualifier
+#include "AttractMode.h"
+#include "MachineMode.h"
+#include "MachineState.h"
 #include "RPU.h"
 #include "RPU_config.h"
 #include "RPU_Internal.h"
 #include "SelfTestAndAudit.h"
-#include "MachineMode.h"
+#include "SelfTestMode.h"
+#include "SoundEffects.h"
 #include "Trident2020.h"
 #include "Trident2020Game.h"
-#include "TridentMachineOps.h"
-#include "AttractMode.h"
-#include "SelfTestMode.h"
+#include "TridentMachine.h"
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <stdint.h>
-#include "MachineState.h"
-#include "SoundEffects.h"
 
 // Forward declarations
 uint8_t ReadSetting(int setting, uint8_t defaultValue);
@@ -119,7 +119,7 @@ static GameContext g_ctx = {
    &StandupSpecialLevel,
 };
 
-static TridentMachineOps machineOps;
+static TridentMachine   pinballMachine;
 static SelfTestMode      selfTestMode;
 static AttractMode       attractMode;
 
@@ -128,7 +128,7 @@ static MachineMode* activeMode = &attractMode;
 
 // ---------------------------------------------------------------------------
 // Operator settings — game/hardware values read from EEPROM.
-// Audio settings are read by machineOps.readStoredParameters().
+// Audio settings are read by pinballMachine.readStoredParameters().
 // ---------------------------------------------------------------------------
 
 void ReadStoredParameters() {
@@ -173,7 +173,7 @@ void ReadStoredParameters() {
    AwardScores[1] = RPU_ReadULFromEEProm(RPU_AWARD_SCORE_2_EEPROM_START_BYTE);
    AwardScores[2] = RPU_ReadULFromEEProm(RPU_AWARD_SCORE_3_EEPROM_START_BYTE);
 
-   machineOps.readStoredParameters();
+   pinballMachine.readStoredParameters();
 }
 
 uint8_t ReadSetting(int setting, uint8_t defaultValue) {
@@ -206,7 +206,7 @@ void setup() {
 #endif
 
    CurrentTime = millis();
-   machineOps.init(CurrentTime);
+   pinballMachine.init(CurrentTime);
 
    RPU_SetupGameSwitches(NUM_SWITCHES_WITH_TRIGGERS, NUM_PRIORITY_SWITCHES_WITH_TRIGGERS,
                           TriggeredSwitches);
@@ -216,40 +216,40 @@ void setup() {
       RPU_CMD_PERFORM_MPU_TEST, SW_CREDIT_RESET);
 
    if ((initResult & RPU_RET_SELECTOR_SWITCH_ON) != 0) {
-      machineOps.queueDiagNotification(SOUND_EFFECT_DIAG_SELECTOR_SWITCH_ON, CurrentTime);
+      pinballMachine.queueDiagNotification(SOUND_EFFECT_DIAG_SELECTOR_SWITCH_ON, CurrentTime);
    } else {
-      machineOps.queueDiagNotification(SOUND_EFFECT_DIAG_SELECTOR_SWITCH_OFF, CurrentTime);
+      pinballMachine.queueDiagNotification(SOUND_EFFECT_DIAG_SELECTOR_SWITCH_OFF, CurrentTime);
    }
    if ((initResult & RPU_RET_CREDIT_RESET_BUTTON_HIT) != 0) {
-      machineOps.queueDiagNotification(SOUND_EFFECT_DIAG_CREDIT_RESET_BUTTON, CurrentTime);
+      pinballMachine.queueDiagNotification(SOUND_EFFECT_DIAG_CREDIT_RESET_BUTTON, CurrentTime);
    }
    if ((initResult & RPU_RET_DIAGNOSTIC_REQUESTED) != 0) {
-      machineOps.queueDiagNotification(SOUND_EFFECT_DIAG_STARTING_DIAGNOSTICS_MODE, CurrentTime);
+      pinballMachine.queueDiagNotification(SOUND_EFFECT_DIAG_STARTING_DIAGNOSTICS_MODE, CurrentTime);
    }
    if ((initResult & RPU_RET_ORIGINAL_CODE_REQUESTED) != 0) {
       delay(100);
-      machineOps.queueDiagNotification(SOUND_EFFECT_DIAG_STARTING_ORIGINAL_CODE, CurrentTime);
+      pinballMachine.queueDiagNotification(SOUND_EFFECT_DIAG_STARTING_ORIGINAL_CODE, CurrentTime);
       while (1) ;
    }
-   machineOps.queueDiagNotification(SOUND_EFFECT_DIAG_STARTING_NEW_CODE, CurrentTime);
+   pinballMachine.queueDiagNotification(SOUND_EFFECT_DIAG_STARTING_NEW_CODE, CurrentTime);
 
    RPU_DisableSolenoidStack();
    RPU_SetDisableFlippers(true);
 
    ReadStoredParameters();
 
-   machineOps.setContext(g_ctx);
+   pinballMachine.setContext(g_ctx);
    game.setContext(g_ctx);
-   game.setMachine(machineOps);
+   game.setMachine(pinballMachine);
 
    static const SelfTestSettings stSettings = {
       &FreePlayMode, &BallSaveNumSeconds, &TournamentScoring, &MaxTiltWarnings,
       &ScoreAwardReplay, &BallsPerGame, &ScrollingScores, &ExtraBallValue,
       &SpecialValue, &DimLevel,
    };
-   selfTestMode.setDependencies(game, machineOps, stSettings);
+   selfTestMode.setDependencies(game, pinballMachine, stSettings);
    selfTestMode.setReadParamsCallback(ReadStoredParameters);
-   attractMode.setDependencies(game, machineOps, g_ctx);
+   attractMode.setDependencies(game, pinballMachine, g_ctx);
 
    game.setScore(0, TRIDENT2020_MAJOR_VERSION);
    game.setCurrentPlayerScore(TRIDENT2020_MAJOR_VERSION);
@@ -266,7 +266,7 @@ void loop() {
    CurrentTime = millis();
 
    // Tick audio handlers first so currentTime_ is fresh when game logic calls playSoundEffect.
-   machineOps.update(CurrentTime);
+   pinballMachine.update(CurrentTime);
 
    TopState newState = activeMode->update(CurrentTime);
    if (newState != topState) {

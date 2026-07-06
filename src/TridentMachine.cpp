@@ -1,24 +1,24 @@
 /**************************************************************************
- * TridentMachineOps.cpp
+ * TridentMachine.cpp
  *
  * Concrete PinballMachine for the Trident hardware. Owns the audio
  * subsystem and implements all credit / coin-mech operations that were
  * previously free functions in main.cpp.
  **************************************************************************/
 
-#include "TridentMachineOps.h"
-#include "Trident2020Game.h"
 #include "RPU.h"
 #include "SelfTestAndAudit.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
+#include "Trident2020Game.h"
+#include "TridentMachine.h"
 #include <EEPROM.h>
 
 // ---------------------------------------------------------------------------
 // Static data
 // ---------------------------------------------------------------------------
 
-const unsigned short TridentMachineOps::kChuteAuditByte[3] = {
+const unsigned short TridentMachine::kChuteAuditByte[3] = {
    RPU_CHUTE_1_COINS_START_BYTE,
    RPU_CHUTE_2_COINS_START_BYTE,
    RPU_CHUTE_3_COINS_START_BYTE,
@@ -28,7 +28,7 @@ const unsigned short TridentMachineOps::kChuteAuditByte[3] = {
 // Private helpers
 // ---------------------------------------------------------------------------
 
-uint8_t TridentMachineOps::readSetting(int addr, uint8_t defaultValue) {
+uint8_t TridentMachine::readSetting(int addr, uint8_t defaultValue) {
    uint8_t value = EEPROM.read(addr);
    if (value == 0xFF) {
       EEPROM.write(addr, defaultValue);
@@ -37,7 +37,7 @@ uint8_t TridentMachineOps::readSetting(int addr, uint8_t defaultValue) {
    return value;
 }
 
-uint8_t TridentMachineOps::switchToChuteNum(uint8_t switchHit) {
+uint8_t TridentMachine::switchToChuteNum(uint8_t switchHit) {
    if (switchHit == SW_COIN_2) return 1;
    if (switchHit == SW_COIN_3) return 2;
    return 0;
@@ -47,7 +47,7 @@ uint8_t TridentMachineOps::switchToChuteNum(uint8_t switchHit) {
 // Init / lifecycle
 // ---------------------------------------------------------------------------
 
-void TridentMachineOps::init(unsigned long currentTime) {
+void TridentMachine::init(unsigned long currentTime) {
    currentTime_ = currentTime;
    audioHandler_.initDevices();
 #if defined(RPU_OS_USE_WAV_TRIGGER)
@@ -60,7 +60,7 @@ void TridentMachineOps::init(unsigned long currentTime) {
 #endif
 }
 
-void TridentMachineOps::queueDiagNotification(unsigned short notificationNum,
+void TridentMachine::queueDiagNotification(unsigned short notificationNum,
                                                unsigned long  currentTime) {
 #if defined(RPU_OS_USE_WAV_TRIGGER)
    wavHandler_.queuePrioritizedNotification(notificationNum, 0, 10, currentTime);
@@ -74,7 +74,7 @@ void TridentMachineOps::queueDiagNotification(unsigned short notificationNum,
 // PinballMachine interface
 // ---------------------------------------------------------------------------
 
-void TridentMachineOps::update(unsigned long currentTime) {
+void TridentMachine::update(unsigned long currentTime) {
    currentTime_ = currentTime;
    audioHandler_.update(currentTime);
 #if defined(RPU_OS_USE_WAV_TRIGGER)
@@ -82,14 +82,14 @@ void TridentMachineOps::update(unsigned long currentTime) {
 #endif
 }
 
-void TridentMachineOps::stopAllAudio() {
+void TridentMachine::stopAllAudio() {
 #if defined(RPU_OS_USE_WAV_TRIGGER)
    wavHandler_.stopAllAudio();
 #endif
    audioHandler_.stopAllSoundFX();
 }
 
-void TridentMachineOps::readStoredParameters() {
+void TridentMachine::readStoredParameters() {
    soundSelector_ = readSetting(EEPROM_SOUND_SELECTOR_BYTE, 3);
    switch (soundSelector_) {
    case SOUND_SELECTOR_NONE:
@@ -117,7 +117,7 @@ void TridentMachineOps::readStoredParameters() {
 #endif
 }
 
-void TridentMachineOps::playCallout(uint8_t track) {
+void TridentMachine::playCallout(uint8_t track) {
 #if defined(RPU_OS_USE_WAV_TRIGGER)
    wavHandler_.playSound(track, 10);
 #else
@@ -125,7 +125,7 @@ void TridentMachineOps::playCallout(uint8_t track) {
 #endif
 }
 
-void TridentMachineOps::playBackgroundSong(unsigned short songNum) {
+void TridentMachine::playBackgroundSong(unsigned short songNum) {
    if (musicVolume_ != 0 && soundSelector_ == SOUND_SELECTOR_TRIDENT2020) {
 #if defined(RPU_OS_USE_WAV_TRIGGER)
       wavHandler_.playBackgroundSong(songNum, true);
@@ -135,7 +135,7 @@ void TridentMachineOps::playBackgroundSong(unsigned short songNum) {
    }
 }
 
-void TridentMachineOps::playBackgroundSongBasedOnBall(uint8_t ballNum) {
+void TridentMachine::playBackgroundSongBasedOnBall(uint8_t ballNum) {
    uint8_t ballsPerGame = ctx_ ? *ctx_->ballsPerGame : 3;
    if (ballNum == 1) {
       playBackgroundSong(SOUND_EFFECT_BACKGROUND_1);
@@ -146,7 +146,7 @@ void TridentMachineOps::playBackgroundSongBasedOnBall(uint8_t ballNum) {
    }
 }
 
-void TridentMachineOps::playSoundEffect(uint8_t soundEffectNum) {
+void TridentMachine::playSoundEffect(uint8_t soundEffectNum) {
    switch (soundSelector_) {
    case SOUND_SELECTOR_NONE:
       return;
@@ -300,7 +300,7 @@ void TridentMachineOps::playSoundEffect(uint8_t soundEffectNum) {
 // Credit and coin operations
 // ---------------------------------------------------------------------------
 
-void TridentMachineOps::addCredit(bool playSound, uint8_t numToAdd) {
+void TridentMachine::addCredit(bool playSound, uint8_t numToAdd) {
    if (!ctx_) return;
    uint8_t& credits    = *ctx_->credits;
    uint8_t  maxCredits = *ctx_->maximumCredits;
@@ -317,20 +317,20 @@ void TridentMachineOps::addCredit(bool playSound, uint8_t numToAdd) {
    }
 }
 
-void TridentMachineOps::addSpecialCredit() {
+void TridentMachine::addSpecialCredit() {
    addCredit(false, 1);
    RPU_PushToTimedSolenoidStack(SOL_KNOCKER, 3, currentTime_, true);
    RPU_WriteULToEEProm(RPU_TOTAL_REPLAYS_EEPROM_START_BYTE,
                         RPU_ReadULFromEEProm(RPU_TOTAL_REPLAYS_EEPROM_START_BYTE) + 1);
 }
 
-void TridentMachineOps::addCoinToAudit(uint8_t chuteNum) {
+void TridentMachine::addCoinToAudit(uint8_t chuteNum) {
    if (chuteNum > 2) return;
    unsigned short coinAuditStartByte = kChuteAuditByte[chuteNum];
    RPU_WriteULToEEProm(coinAuditStartByte, RPU_ReadULFromEEProm(coinAuditStartByte) + 1);
 }
 
-bool TridentMachineOps::addCoin(uint8_t chuteNum) {
+bool TridentMachine::addCoin(uint8_t chuteNum) {
    if (chuteNum > 2) return false;
    uint8_t cpcSelection = GetCPCSelection(chuteNum);
 
