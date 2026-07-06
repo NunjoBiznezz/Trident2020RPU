@@ -15,6 +15,7 @@
 #include "Trident2020Game.h"
 #include <stdint.h>
 
+
 enum AdjustmentType_t : uint8_t {
    ADJ_TYPE_LIST               = 1,
    ADJ_TYPE_MIN_MAX            = 2,

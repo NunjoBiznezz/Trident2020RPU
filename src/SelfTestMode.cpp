@@ -4,7 +4,6 @@
 
 #include "SelfTestMode.h"
 #include "RPU.h"
-#include "SelfTestAndAudit.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
 #include <EEPROM.h>
@@ -49,8 +48,8 @@ TopState AdjustmentsMode::update(unsigned long currentTime) {
    uint8_t curSwitch = machine_->pullFirstFromSwitchStack();
 
    if (curSwitch == SW_SELF_TEST_SWITCH &&
-       (currentTime - GetLastSelfTestChangedTime()) > 250) {
-      SetLastSelfTestChangedTime(currentTime);
+       (currentTime - machine_->getSelfTestChangedTime()) > 250) {
+      machine_->setSelfTestChangedTime(currentTime);
       returnState -= 1;
    }
 

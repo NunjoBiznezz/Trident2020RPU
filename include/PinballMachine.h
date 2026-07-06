@@ -77,6 +77,10 @@ public:
    // --- Dim level ---
    virtual void    setDimDivisor(uint8_t level1, uint8_t level2)       { (void)level1; (void)level2; }
 
+   // --- Self-test debounce ---
+   virtual unsigned long getSelfTestChangedTime()                      { return 0; }
+   virtual void          setSelfTestChangedTime(unsigned long t)       { (void)t; }
+
    // --- Misc ---
    virtual void setRolloverValue(uint8_t v)                           { (void)v; }
    virtual void update(unsigned long currentTime)                     { (void)currentTime; }

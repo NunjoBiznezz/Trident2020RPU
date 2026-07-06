@@ -29,14 +29,13 @@
 #include "RPU.h"
 #include "RPU_config.h"
 #include "RPU_Internal.h"
-#include "SelfTestAndAudit.h"
 #include "SelfTestMode.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
 #include "Trident2020Game.h"
 #include "TridentMachine.h"
 #include <Arduino.h>
-#include <EEPROM.h>
+// #include <EEPROM.h>
 #include <stdint.h>
 
 constexpr unsigned long TRIDENT2020_MAJOR_VERSION = 2020;

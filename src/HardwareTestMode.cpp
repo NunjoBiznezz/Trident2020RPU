@@ -5,9 +5,23 @@
 #include "HardwareTestMode.h"
 #include "MachineState.h"
 #include "RPU.h"
-#include "SelfTestAndAudit.h"
+#include "SelfTestMode.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
+
+
+constexpr uint8_t kNumCPCPairs = 9;
+
+// Total number of individual display digits across all four player displays.
+#ifdef RPU_OS_USE_7_DIGIT_DISPLAYS
+#  ifdef RPU_OS_USE_6_DIGIT_CREDIT_DISPLAY_WITH_7_DIGIT_DISPLAYS
+constexpr uint8_t kTotalDisplayDigits = 34;
+#  else
+constexpr uint8_t kTotalDisplayDigits = 35;
+#  endif
+#else
+constexpr uint8_t kTotalDisplayDigits = 30;
+#endif
 
 // Callouts for hardware test states -1 (LAMPS) through -20 (TEST_DONE/CPC_CHUTE_3).
 static const uint8_t kHardwareTestCalloutMap[20] = {
@@ -66,13 +80,13 @@ TopState HardwareTestMode::update(unsigned long currentTime) {
    }
 
    if (curSwitch == SW_SELF_TEST_SWITCH &&
-       (currentTime - GetLastSelfTestChangedTime()) > 250) {
+       (currentTime - machine_->getSelfTestChangedTime()) > 250) {
       if (machine_->getUpDownSwitchState()) {
          returnState -= 1;
       } else {
          returnState += 1;
       }
-      SetLastSelfTestChangedTime(currentTime);
+      machine_->setSelfTestChangedTime(currentTime);
    }
 
    if (curStateChanged) {
@@ -209,7 +223,7 @@ TopState HardwareTestMode::update(unsigned long currentTime) {
       }
    } else if (curState == MACHINE_STATE_TEST_SOUNDS) {
 #if defined(RPU_OS_USE_SB100)
-      uint8_t soundToPlay = 0x01 << (((currentTime - GetLastSelfTestChangedTime()) / 750) % 8);
+      uint8_t soundToPlay = 0x01 << (((currentTime - machine_->getSelfTestChangedTime()) / 750) % 8);
       if (soundPlaying_ != soundToPlay) {
          machine_->playSoundCardEffect(soundToPlay);
          soundPlaying_    = soundToPlay;
@@ -217,7 +231,7 @@ TopState HardwareTestMode::update(unsigned long currentTime) {
          lastSolTestTime_ = currentTime;
       }
 #elif defined(RPU_OS_USE_S_AND_T)
-      uint8_t soundToPlay = ((currentTime - GetLastSelfTestChangedTime()) / 2000) % 256;
+      uint8_t soundToPlay = ((currentTime - machine_->getSelfTestChangedTime()) / 2000) % 256;
       if (soundPlaying_ != soundToPlay) {
          machine_->playSoundCardEffect(soundToPlay);
          soundPlaying_    = soundToPlay;
@@ -225,7 +239,7 @@ TopState HardwareTestMode::update(unsigned long currentTime) {
          lastSolTestTime_ = currentTime;
       }
 #elif defined(RPU_OS_USE_DASH51)
-      uint8_t soundToPlay = ((currentTime - GetLastSelfTestChangedTime()) / 2000) % 32;
+      uint8_t soundToPlay = ((currentTime - machine_->getSelfTestChangedTime()) / 2000) % 32;
       if (soundPlaying_ != soundToPlay) {
          if (soundToPlay == 17) soundToPlay = 0;
          machine_->playSoundCardEffect(soundToPlay);

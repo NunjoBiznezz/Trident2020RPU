@@ -9,10 +9,8 @@
 #include "Trident2020Game.h"
 #include "MachineState.h"
 #include "RPU.h"
-#include "SelfTestAndAudit.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
-// #include <EEPROM.h>
 
 
 #if defined(DEBUG_MESSAGES) && defined(DEBUG_PORT)
@@ -123,7 +121,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
 
          case SW_SELF_TEST_SWITCH:
             returnState = MACHINE_STATE_TEST_LAMPS;
-            SetLastSelfTestChangedTime(CurrentTime);
+            machine_->setSelfTestChangedTime(CurrentTime);
             break;
 
          case SW_LEFT_INLANE:
@@ -382,7 +380,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
          switch (switchHit) {
          case SW_SELF_TEST_SWITCH:
             returnState = MACHINE_STATE_TEST_LAMPS;
-            SetLastSelfTestChangedTime(CurrentTime);
+            machine_->setSelfTestChangedTime(CurrentTime);
             break;
          case SW_SAUCER:
             RPU_PushToSolenoidStack(SOL_SAUCER, 5, true);

@@ -1,8 +1,32 @@
 #ifndef MACHINE_STATE_H
 #define MACHINE_STATE_H
 
-#include "SelfTestAndAudit.h"
 #include <stdint.h>
+
+constexpr int MACHINE_STATE_TEST_LAMPS          =  -1;
+constexpr int MACHINE_STATE_TEST_DISPLAYS       =  -2;
+constexpr int MACHINE_STATE_TEST_SOLENOIDS      =  -3;
+constexpr int MACHINE_STATE_TEST_SWITCHES       =  -4;
+constexpr int MACHINE_STATE_TEST_SOUNDS         =  -5;
+constexpr int MACHINE_STATE_TEST_SCORE_LEVEL_1  =  -6;
+constexpr int MACHINE_STATE_TEST_SCORE_LEVEL_2  =  -7;
+constexpr int MACHINE_STATE_TEST_SCORE_LEVEL_3  =  -8;
+constexpr int MACHINE_STATE_TEST_HISCR          =  -9;
+constexpr int MACHINE_STATE_TEST_CREDITS        =  -10;
+constexpr int MACHINE_STATE_TEST_TOTAL_PLAYS    =  -11;
+constexpr int MACHINE_STATE_TEST_TOTAL_REPLAYS  =  -12;
+constexpr int MACHINE_STATE_TEST_HISCR_BEAT     =  -13;
+constexpr int MACHINE_STATE_TEST_CHUTE_2_COINS  =  -14;
+constexpr int MACHINE_STATE_TEST_CHUTE_1_COINS  =  -15;
+constexpr int MACHINE_STATE_TEST_CHUTE_3_COINS  =  -16;
+constexpr int MACHINE_STATE_TEST_BOOT           =  -17;
+
+constexpr int MACHINE_STATE_ADJUST_CPC_CHUTE_1  =  -18;
+constexpr int MACHINE_STATE_ADJUST_CPC_CHUTE_2  =  -19;
+constexpr int MACHINE_STATE_ADJUST_CPC_CHUTE_3  =  -20;
+
+// Boundary between hardware tests and operator adjustments.
+constexpr int MACHINE_STATE_TEST_DONE           =  -20;
 
 // MachineState
 //  0 - Attract Mode

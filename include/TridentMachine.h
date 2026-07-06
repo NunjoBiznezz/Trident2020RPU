@@ -72,7 +72,10 @@ public:
    unsigned long readULFromEEProm(uint16_t addr) override;
    void          writeULToEEProm(uint16_t addr, unsigned long val) override;
 
-   void    setDimDivisor(uint8_t level1, uint8_t level2) override;
+   void          setDimDivisor(uint8_t level1, uint8_t level2) override;
+
+   unsigned long getSelfTestChangedTime() override           { return selfTestChangedTime_; }
+   void          setSelfTestChangedTime(unsigned long t) override { selfTestChangedTime_ = t; }
 
    void setRolloverValue(uint8_t v) override        { rolloverValue_ = v; }
    void update(unsigned long currentTime) override;
@@ -91,8 +94,9 @@ private:
    unsigned long currentTime_         = 0;
    uint8_t       chuteCoinsInProgress_[3] = {};
 
-   bool    cpcSelectionsRead_  = false;
-   uint8_t cpcSelection_[3]    = {};
+   bool          cpcSelectionsRead_     = false;
+   uint8_t       cpcSelection_[3]       = {};
+   unsigned long selfTestChangedTime_   = 0;
 
    static const unsigned short kChuteAuditByte[3];
    static const uint8_t        kCPCPairs[9][2];

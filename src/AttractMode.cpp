@@ -5,7 +5,6 @@
 #include "AttractMode.h"
 #include "MachineState.h"
 #include "RPU.h"
-#include "SelfTestAndAudit.h"
 #include "Trident.h"
 #include "Trident2020.h"
 
@@ -117,8 +116,8 @@ TopState AttractMode::update(unsigned long currentTime) {
          machine_->addCredit(true, 1);
       }
       if (switchHit == SW_SELF_TEST_SWITCH &&
-          (currentTime - GetLastSelfTestChangedTime()) > 250) {
-         SetLastSelfTestChangedTime(currentTime);
+          (currentTime - machine_->getSelfTestChangedTime()) > 250) {
+         machine_->setSelfTestChangedTime(currentTime);
          return TopState::HardwareTest;
       }
    }
