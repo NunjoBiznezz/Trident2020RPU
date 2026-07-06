@@ -45,9 +45,19 @@ Trident2020Game::Trident2020Game() {}
 // Public interface
 // ===========================================================================
 
-int Trident2020Game::run(int curState, bool curStateChanged, unsigned long currentTime, GameContext& ctx) {
+void Trident2020Game::enter(unsigned long currentTime) {
    CurrentTime = currentTime;
-   ctx_ = &ctx;
+   internalState_ = MACHINE_STATE_INIT_GAMEPLAY;
+   internalStateChanged_ = true;
+}
+
+TopState Trident2020Game::update(unsigned long currentTime) {
+   CurrentTime = currentTime;
+
+   // Snapshot and consume the state-changed flag for this tick.
+   bool curStateChanged = internalStateChanged_;
+   internalStateChanged_ = false;
+   int curState = internalState_;
 
    int returnState = curState;
    uint8_t bonusAtTop = Bonus;
@@ -360,7 +370,7 @@ int Trident2020Game::run(int curState, bool curStateChanged, unsigned long curre
 
          case SW_CREDIT_RESET:
             if (CurrentBallInPlay < 2) {
-               addPlayer(false, ctx);
+               addPlayer(false, *ctx_);
             } else {
                if (*ctx_->credits >= 1 || *ctx_->freePlayMode) {
                   if (!*ctx_->freePlayMode) {
@@ -428,8 +438,18 @@ int Trident2020Game::run(int curState, bool curStateChanged, unsigned long curre
       }
    }
 
-   ctx_ = nullptr;
-   return returnState;
+   // Propagate internal state changes and map to the top-level state.
+   if (returnState < 0) {
+      return TopState::SelfTest;   // self-test button hit during play
+   }
+   if (returnState == MACHINE_STATE_ATTRACT) {
+      return TopState::Attract;    // game over
+   }
+   if (returnState != internalState_) {
+      internalState_ = returnState;
+      internalStateChanged_ = true;
+   }
+   return TopState::Game;
 }
 
 bool Trident2020Game::addPlayer(bool resetNumPlayers, GameContext& ctx) {

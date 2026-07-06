@@ -7,6 +7,7 @@
  **************************************************************************/
 
 #pragma once
+#include "MachineMode.h"
 #include <stdint.h>
 
 // Machine-level operator settings and persistent state. Populated in main.cpp
@@ -34,14 +35,20 @@ struct GameContext {
    const uint8_t* standupSpecialLevel;
 };
 
-class Trident2020Game {
+class Trident2020Game : public MachineMode {
 public:
    Trident2020Game();
 
-   // Main entry point — called from loop() instead of RunGamePlayMode()
-   int run(int curState, bool curStateChanged, unsigned long currentTime, GameContext& ctx);
+   // Set once from main.cpp after construction; ctx_ remains valid for the
+   // lifetime of the program.
+   void setContext(GameContext& ctx) { ctx_ = &ctx; }
 
-   // Called from RunAttractMode() and internally
+   // MachineMode interface
+   void     enter(unsigned long currentTime) override;
+   void     exit() override {}
+   TopState update(unsigned long currentTime) override;
+
+   // Called from AttractMode and internally
    bool addPlayer(bool resetNumPlayers, GameContext& ctx);
 
    // Score/player accessors for attract mode and self-test
@@ -68,9 +75,12 @@ public:
    void showLeftLaneLamps();
 
 private:
-   // ctx_ is set at the start of run() and remains valid for the entire call stack
-   // that originates from run(). It is nullptr outside of run().
+   // Set once via setContext(); valid for the lifetime of the program.
    GameContext* ctx_ = nullptr;
+
+   // Top-level state machine: internal game state and change flag.
+   int  internalState_    = 0;
+   bool internalStateChanged_ = false;
 
    unsigned long CurrentTime = 0;
 

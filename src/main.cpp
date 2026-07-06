@@ -29,6 +29,7 @@
 #include "RPU_config.h"
 #include "RPU_Internal.h"
 #include "SelfTestAndAudit.h"
+#include "MachineMode.h"
 #include "Trident2020.h"
 #include "Trident2020Game.h"
 #include <Arduino.h>
@@ -74,14 +75,6 @@ static const BuildInfoRecord FIRMWARE_BUILD_INFO PROGMEM = {
 /*********************************************************************
     Game specific code
 *********************************************************************/
-
-// MachineState
-//  0 - Attract Mode
-//  negative - self-test modes
-//  positive - game play
-int8_t MachineState = 0;
-bool MachineStateChanged = true;
-
 
 /*********************************************************************
 
@@ -158,6 +151,33 @@ static GameContext g_ctx = {
    &TargetSpecialBonus,
    &StandupSpecialLevel,
 };
+
+
+class SelfTestMode : public MachineMode {
+   int  internalState_ = MACHINE_STATE_TEST_LAMPS;
+   bool stateChanged_  = false;
+public:
+   void enter(unsigned long) override;
+   void exit() override;
+   TopState update(unsigned long) override;
+};
+
+class AttractMode : public MachineMode {
+   unsigned long lastLadderTime_    = 0;
+   uint8_t       lastLadderBonus_   = 0;
+   unsigned long lastStarTime_      = 0;
+   uint8_t       lastHeadMode_      = 255;
+   uint8_t       lastPlayfieldMode_ = 255;
+public:
+   void enter(unsigned long) override;
+   TopState update(unsigned long) override;
+};
+
+static SelfTestMode selfTestMode;
+static AttractMode  attractMode;
+
+static TopState     topState   = TopState::Attract;
+static MachineMode* activeMode = &attractMode;
 
 void ReadStoredParameters() {
    HighScore = RPU_ReadULFromEEProm(RPU_HIGHSCORE_EEPROM_START_BYTE, 10000);
@@ -333,6 +353,8 @@ void setup() {
    // Read parameters from EEProm
    ReadStoredParameters();
 
+   game.setContext(g_ctx);
+
    game.setScore(0, TRIDENT2020_MAJOR_VERSION);
    game.setCurrentPlayerScore(TRIDENT2020_MAJOR_VERSION);
    game.setScore(1, TRIDENT2020_MINOR_VERSION);
@@ -345,6 +367,8 @@ void setup() {
    wavHandler.setMusicDuckingGain(16);
    wavHandler.queueSound(SOUND_EFFECT_TRIDENT_INTRO, CurrentTime + 5000);
 #endif
+
+   attractMode.enter(CurrentTime);
 }
 
 uint8_t ReadSetting(int setting, uint8_t defaultValue) {
@@ -465,7 +489,244 @@ const uint8_t SelfTestStateToCalloutMap[] = {136, 137, 135, 134, 133, 140, 141, 
 
 const uint8_t SoundSelectorToCalloutsMap[] = {190, 191, 199, 197, 198, 196};
 
-int RunSelfTest(int curState, bool curStateChanged) {
+
+////////////////////////////////////////////////////////////////////////////
+//
+//  Audio Output functions
+//
+////////////////////////////////////////////////////////////////////////////
+
+#if defined(RPU_USE_WAV_TRIGGER) || defined(RPU_USE_WAV_TRIGGER_1p3)
+uint8_t CurrentBackgroundSong = SOUND_EFFECT_NONE;
+#endif
+
+void PlayBackgroundSong(unsigned short songNum) {
+   if ((MusicVolume != 0) && (SoundSelector == SOUND_SELECTOR_TRIDENT2020)) {
+#if defined(RPU_OS_USE_WAV_TRIGGER)
+      wavHandler.playBackgroundSong(songNum, true);
+#endif
+   }
+}
+
+void PlayBackgroundSongBasedOnBall(uint8_t ballNum) {
+   if (ballNum == 1) {
+      PlayBackgroundSong(SOUND_EFFECT_BACKGROUND_1);
+   } else if (ballNum == BallsPerGame) {
+      PlayBackgroundSong(SOUND_EFFECT_BACKGROUND_6);
+   } else {
+      PlayBackgroundSong(SOUND_EFFECT_BACKGROUND_2 + CurrentTime % 4);
+   }
+}
+
+unsigned long NextSoundEffectTime = 0;
+
+void PlaySoundEffect(uint8_t soundEffectNum) {
+   switch (SoundSelector) {
+   case SOUND_SELECTOR_NONE:
+      return;
+
+   case SOUND_SELECTOR_ORIGINAL:
+      switch (soundEffectNum) {
+      case SOUND_EFFECT_ROLLOVER:
+      case SOUND_EFFECT_DT_SKILL_SHOT:
+      case SOUND_EFFECT_ROLLOVER_SKILL_SHOT:
+      case SOUND_EFFECT_SU_SKILL_SHOT:
+      case SOUND_EFFECT_LEFT_SPINNER:
+      case SOUND_EFFECT_RIGHT_SPINNER:
+      case SOUND_EFFECT_DROP_TARGET:
+      case SOUND_EFFECT_BALL_OVER:
+         audioHandler.queueSound(0x02, CurrentTime);
+         audioHandler.queueSound(0x00, CurrentTime + 75);
+         break;
+      case SOUND_EFFECT_LEFT_INLANE:
+         for (int count = 0; count < game.getRolloverValue(); count++) {
+            audioHandler.queueSound(0x04, CurrentTime + 200 * count);
+            audioHandler.queueSound(0x00, CurrentTime + 75 + (200 * count));
+         }
+         break;
+      case SOUND_EFFECT_RIGHT_INLANE:
+         for (int count = 0; count < 6; count++) {
+            audioHandler.queueSound((count < 3) ? 0x04 : 0x10, CurrentTime + 200 * count);
+            audioHandler.queueSound(0x00, CurrentTime + 75 + (200 * count));
+         }
+         break;
+      case SOUND_EFFECT_SAUCER_HIT_5K:
+         for (int count = 0; count < 5; count++) {
+            audioHandler.queueSound(0x04, CurrentTime + 200 * count);
+            audioHandler.queueSound(0x00, CurrentTime + 75 + (200 * count));
+         }
+         break;
+      case SOUND_EFFECT_SAUCER_HIT_30K:
+         for (int count = 0; count < 3; count++) {
+            audioHandler.queueSound(0x08, CurrentTime + 200 * count);
+            audioHandler.queueSound(0x00, CurrentTime + 75 + (200 * count));
+         }
+         break;
+
+      case SOUND_EFFECT_SAUCER_HIT_20K:
+         for (int count = 0; count < 2; count++) {
+            audioHandler.queueSound(0x08, CurrentTime + 200 * count);
+            audioHandler.queueSound(0x00, CurrentTime + 75 + (200 * count));
+         }
+         break;
+
+      case SOUND_EFFECT_SAUCER_HIT_10K:
+         for (int count = 0; count < 1; count++) {
+            audioHandler.queueSound(0x08, CurrentTime + 200 * count);
+            audioHandler.queueSound(0x00, CurrentTime + 75 + (200 * count));
+         }
+         break;
+      case SOUND_EFFECT_RIGHT_OUTLANE:
+         for (int count = 0; count < 5; count++) {
+            audioHandler.queueSound(0x04, CurrentTime + 200 * count);
+            audioHandler.queueSound(0x00, CurrentTime + 75 + (200 * count));
+         }
+         break;
+
+      case SOUND_EFFECT_TOP_BUMPER_HIT:
+      case SOUND_EFFECT_BOTTOM_BUMPER_HIT:
+         audioHandler.queueSound(0x20, CurrentTime);
+         audioHandler.queueSound(0x00, CurrentTime + 75);
+         break;
+
+      case SOUND_EFFECT_SHOOT_AGAIN:
+      case SOUND_EFFECT_PLAYER_1_UP:
+      case SOUND_EFFECT_PLAYER_2_UP:
+      case SOUND_EFFECT_PLAYER_3_UP:
+      case SOUND_EFFECT_PLAYER_4_UP:
+         audioHandler.queueSound(0x08, CurrentTime);
+         audioHandler.queueSound(0x04, CurrentTime + 75);
+         audioHandler.queueSound(0x00, CurrentTime + 175);
+         break;
+
+      case SOUND_EFFECT_BONUS_COUNT:
+      case SOUND_EFFECT_2X_BONUS_COUNT:
+      case SOUND_EFFECT_3X_BONUS_COUNT:
+      case SOUND_EFFECT_4X_BONUS_COUNT:
+      case SOUND_EFFECT_5X_BONUS_COUNT:
+         audioHandler.queueSound(0x04, CurrentTime);
+         audioHandler.queueSound(0x00, CurrentTime + 75);
+         break;
+
+      case SOUND_EFFECT_UPPER_SLING:
+      case SOUND_EFFECT_EXTRA_BALL:
+      case SOUND_EFFECT_TILT_WARNING:
+         audioHandler.queueSound(0x10, CurrentTime);
+         audioHandler.queueSound(0x00, CurrentTime + 75);
+         break;
+      case SOUND_EFFECT_10PT_SWITCH:
+      case SOUND_EFFECT_MATCH_SPIN:
+      case SOUND_EFFECT_LOWER_SLING:
+         audioHandler.queueSound(0x01, CurrentTime);
+         audioHandler.queueSound(0x00, CurrentTime + 75);
+         break;
+
+      case SOUND_EFFECT_DROP_TARGET_CLEAR_1:
+      case SOUND_EFFECT_DROP_TARGET_CLEAR_2:
+      case SOUND_EFFECT_DROP_TARGET_CLEAR_3:
+      case SOUND_EFFECT_DROP_TARGET_CLEAR_4:
+      case SOUND_EFFECT_DROP_TARGET_CLEAR_5:
+         audioHandler.queueSound(0x08, CurrentTime);
+         audioHandler.queueSound(0x00, CurrentTime + 75);
+         break;
+
+      case SOUND_EFFECT_FIRST_SU_SWITCH_HIT:
+      case SOUND_EFFECT_SECOND_SU_SWITCH_HIT:
+      case SOUND_EFFECT_THIRD_SU_SWITCH_HIT:
+      case SOUND_EFFECT_FOURTH_SU_SWITCH_HIT:
+      case SOUND_EFFECT_FIFTH_SU_SWITCH_HIT:
+         audioHandler.queueSound(0x04, CurrentTime);
+         audioHandler.queueSound(0x00, CurrentTime + 75);
+         break;
+
+      case SOUND_EFFECT_ADD_CREDIT:
+      case SOUND_EFFECT_GAME_OVER:
+         audioHandler.queueSound(0x08, CurrentTime);
+         audioHandler.queueSound(0x04, CurrentTime + 75);
+         audioHandler.queueSound(0x02, CurrentTime + 150);
+         audioHandler.queueSound(0x01, CurrentTime + 225);
+         audioHandler.queueSound(0x08, CurrentTime + 325);
+         audioHandler.queueSound(0x04, CurrentTime + 400);
+         audioHandler.queueSound(0x02, CurrentTime + 475);
+         audioHandler.queueSound(0x01, CurrentTime + 550);
+         audioHandler.queueSound(0x00, CurrentTime + 650);
+         break;
+
+      case SOUND_EFFECT_ADD_PLAYER_1:
+      case SOUND_EFFECT_ADD_PLAYER_2:
+      case SOUND_EFFECT_ADD_PLAYER_3:
+      case SOUND_EFFECT_ADD_PLAYER_4:
+      case SOUND_EFFECT_RESCUE_FROM_THE_DEEP:
+      case SOUND_EFFECT_TRIDENT_INTRO:
+         audioHandler.queueSound(0x01, CurrentTime);
+         audioHandler.queueSound(0x02, CurrentTime + 75);
+         audioHandler.queueSound(0x04, CurrentTime + 150);
+         audioHandler.queueSound(0x08, CurrentTime + 225);
+         audioHandler.queueSound(0x01, CurrentTime + 325);
+         audioHandler.queueSound(0x02, CurrentTime + 400);
+         audioHandler.queueSound(0x04, CurrentTime + 475);
+         audioHandler.queueSound(0x08, CurrentTime + 550);
+         audioHandler.queueSound(0x00, CurrentTime + 650);
+         break;
+      }
+      break;
+
+   case SOUND_SELECTOR_TRIDENT2020:
+   default:
+#if defined(RPU_OS_USE_WAV_TRIGGER)
+      wavHandler.playSound(soundEffectNum);
+#endif
+      break;
+   }
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+//  Attract Mode (class)
+//
+////////////////////////////////////////////////////////////////////////////
+
+
+void loop() {
+   RPU_DataRead(0);
+   CurrentTime = millis();
+
+   TopState newState = activeMode->update(CurrentTime);
+   if (newState != topState) {
+      activeMode->exit();
+      topState = newState;
+      switch (topState) {
+      case TopState::SelfTest: activeMode = &selfTestMode; break;
+      case TopState::Attract:  activeMode = &attractMode;  break;
+      case TopState::Game:     activeMode = &game;         break;
+      }
+      activeMode->enter(CurrentTime);
+   }
+
+   audioHandler.update(CurrentTime);
+#if defined(RPU_OS_USE_WAV_TRIGGER)
+   wavHandler.update(CurrentTime);
+#endif
+   RPU_Update(CurrentTime);
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+//  SelfTestMode and AttractMode method definitions
+//
+////////////////////////////////////////////////////////////////////////////
+
+   void SelfTestMode::enter(unsigned long) {
+      internalState_ = MACHINE_STATE_TEST_LAMPS;
+      stateChanged_  = true;
+   }
+
+   void SelfTestMode::exit() { ReadStoredParameters(); }
+
+   TopState SelfTestMode::update(unsigned long) {
+      bool curStateChanged = stateChanged_;
+      stateChanged_ = false;
+      int curState = internalState_;
    int returnState = curState;
    game.setNumPlayers(0);
 
@@ -716,224 +977,14 @@ int RunSelfTest(int curState, bool curStateChanged) {
       }
    }
 
-   if (returnState == MACHINE_STATE_ATTRACT) {
-      // If any variables have been set to non-override (99), return
-      // them to dip switch settings
-      // Balls Per Game, Player Loses On Ties, Novelty Scoring, Award Score
-      //    DecodeDIPSwitchParameters();
-      ReadStoredParameters();
-   }
-
-   return returnState;
-}
-
-////////////////////////////////////////////////////////////////////////////
-//
-//  Audio Output functions
-//
-////////////////////////////////////////////////////////////////////////////
-
-#if defined(RPU_USE_WAV_TRIGGER) || defined(RPU_USE_WAV_TRIGGER_1p3)
-uint8_t CurrentBackgroundSong = SOUND_EFFECT_NONE;
-#endif
-
-void PlayBackgroundSong(unsigned short songNum) {
-   if ((MusicVolume != 0) && (SoundSelector == SOUND_SELECTOR_TRIDENT2020)) {
-#if defined(RPU_OS_USE_WAV_TRIGGER)
-      wavHandler.playBackgroundSong(songNum, true);
-#endif
-   }
-}
-
-void PlayBackgroundSongBasedOnBall(uint8_t ballNum) {
-   if (ballNum == 1) {
-      PlayBackgroundSong(SOUND_EFFECT_BACKGROUND_1);
-   } else if (ballNum == BallsPerGame) {
-      PlayBackgroundSong(SOUND_EFFECT_BACKGROUND_6);
-   } else {
-      PlayBackgroundSong(SOUND_EFFECT_BACKGROUND_2 + CurrentTime % 4);
-   }
-}
-
-unsigned long NextSoundEffectTime = 0;
-
-void PlaySoundEffect(uint8_t soundEffectNum) {
-   switch (SoundSelector) {
-   case SOUND_SELECTOR_NONE:
-      return;
-
-   case SOUND_SELECTOR_ORIGINAL:
-      switch (soundEffectNum) {
-      case SOUND_EFFECT_ROLLOVER:
-      case SOUND_EFFECT_DT_SKILL_SHOT:
-      case SOUND_EFFECT_ROLLOVER_SKILL_SHOT:
-      case SOUND_EFFECT_SU_SKILL_SHOT:
-      case SOUND_EFFECT_LEFT_SPINNER:
-      case SOUND_EFFECT_RIGHT_SPINNER:
-      case SOUND_EFFECT_DROP_TARGET:
-      case SOUND_EFFECT_BALL_OVER:
-         audioHandler.queueSound(0x02, CurrentTime);
-         audioHandler.queueSound(0x00, CurrentTime + 75);
-         break;
-      case SOUND_EFFECT_LEFT_INLANE:
-         for (int count = 0; count < game.getRolloverValue(); count++) {
-            audioHandler.queueSound(0x04, CurrentTime + 200 * count);
-            audioHandler.queueSound(0x00, CurrentTime + 75 + (200 * count));
-         }
-         break;
-      case SOUND_EFFECT_RIGHT_INLANE:
-         for (int count = 0; count < 6; count++) {
-            audioHandler.queueSound((count < 3) ? 0x04 : 0x10, CurrentTime + 200 * count);
-            audioHandler.queueSound(0x00, CurrentTime + 75 + (200 * count));
-         }
-         break;
-      case SOUND_EFFECT_SAUCER_HIT_5K:
-         for (int count = 0; count < 5; count++) {
-            audioHandler.queueSound(0x04, CurrentTime + 200 * count);
-            audioHandler.queueSound(0x00, CurrentTime + 75 + (200 * count));
-         }
-         break;
-      case SOUND_EFFECT_SAUCER_HIT_30K:
-         for (int count = 0; count < 3; count++) {
-            audioHandler.queueSound(0x08, CurrentTime + 200 * count);
-            audioHandler.queueSound(0x00, CurrentTime + 75 + (200 * count));
-         }
-         break;
-
-      case SOUND_EFFECT_SAUCER_HIT_20K:
-         for (int count = 0; count < 2; count++) {
-            audioHandler.queueSound(0x08, CurrentTime + 200 * count);
-            audioHandler.queueSound(0x00, CurrentTime + 75 + (200 * count));
-         }
-         break;
-
-      case SOUND_EFFECT_SAUCER_HIT_10K:
-         for (int count = 0; count < 1; count++) {
-            audioHandler.queueSound(0x08, CurrentTime + 200 * count);
-            audioHandler.queueSound(0x00, CurrentTime + 75 + (200 * count));
-         }
-         break;
-      case SOUND_EFFECT_RIGHT_OUTLANE:
-         for (int count = 0; count < 5; count++) {
-            audioHandler.queueSound(0x04, CurrentTime + 200 * count);
-            audioHandler.queueSound(0x00, CurrentTime + 75 + (200 * count));
-         }
-         break;
-
-      case SOUND_EFFECT_TOP_BUMPER_HIT:
-      case SOUND_EFFECT_BOTTOM_BUMPER_HIT:
-         audioHandler.queueSound(0x20, CurrentTime);
-         audioHandler.queueSound(0x00, CurrentTime + 75);
-         break;
-
-      case SOUND_EFFECT_SHOOT_AGAIN:
-      case SOUND_EFFECT_PLAYER_1_UP:
-      case SOUND_EFFECT_PLAYER_2_UP:
-      case SOUND_EFFECT_PLAYER_3_UP:
-      case SOUND_EFFECT_PLAYER_4_UP:
-         audioHandler.queueSound(0x08, CurrentTime);
-         audioHandler.queueSound(0x04, CurrentTime + 75);
-         audioHandler.queueSound(0x00, CurrentTime + 175);
-         break;
-
-      case SOUND_EFFECT_BONUS_COUNT:
-      case SOUND_EFFECT_2X_BONUS_COUNT:
-      case SOUND_EFFECT_3X_BONUS_COUNT:
-      case SOUND_EFFECT_4X_BONUS_COUNT:
-      case SOUND_EFFECT_5X_BONUS_COUNT:
-         audioHandler.queueSound(0x04, CurrentTime);
-         audioHandler.queueSound(0x00, CurrentTime + 75);
-         break;
-
-      case SOUND_EFFECT_UPPER_SLING:
-      case SOUND_EFFECT_EXTRA_BALL:
-      case SOUND_EFFECT_TILT_WARNING:
-         audioHandler.queueSound(0x10, CurrentTime);
-         audioHandler.queueSound(0x00, CurrentTime + 75);
-         break;
-      case SOUND_EFFECT_10PT_SWITCH:
-      case SOUND_EFFECT_MATCH_SPIN:
-      case SOUND_EFFECT_LOWER_SLING:
-         audioHandler.queueSound(0x01, CurrentTime);
-         audioHandler.queueSound(0x00, CurrentTime + 75);
-         break;
-
-      case SOUND_EFFECT_DROP_TARGET_CLEAR_1:
-      case SOUND_EFFECT_DROP_TARGET_CLEAR_2:
-      case SOUND_EFFECT_DROP_TARGET_CLEAR_3:
-      case SOUND_EFFECT_DROP_TARGET_CLEAR_4:
-      case SOUND_EFFECT_DROP_TARGET_CLEAR_5:
-         audioHandler.queueSound(0x08, CurrentTime);
-         audioHandler.queueSound(0x00, CurrentTime + 75);
-         break;
-
-      case SOUND_EFFECT_FIRST_SU_SWITCH_HIT:
-      case SOUND_EFFECT_SECOND_SU_SWITCH_HIT:
-      case SOUND_EFFECT_THIRD_SU_SWITCH_HIT:
-      case SOUND_EFFECT_FOURTH_SU_SWITCH_HIT:
-      case SOUND_EFFECT_FIFTH_SU_SWITCH_HIT:
-         audioHandler.queueSound(0x04, CurrentTime);
-         audioHandler.queueSound(0x00, CurrentTime + 75);
-         break;
-
-      case SOUND_EFFECT_ADD_CREDIT:
-      case SOUND_EFFECT_GAME_OVER:
-         audioHandler.queueSound(0x08, CurrentTime);
-         audioHandler.queueSound(0x04, CurrentTime + 75);
-         audioHandler.queueSound(0x02, CurrentTime + 150);
-         audioHandler.queueSound(0x01, CurrentTime + 225);
-         audioHandler.queueSound(0x08, CurrentTime + 325);
-         audioHandler.queueSound(0x04, CurrentTime + 400);
-         audioHandler.queueSound(0x02, CurrentTime + 475);
-         audioHandler.queueSound(0x01, CurrentTime + 550);
-         audioHandler.queueSound(0x00, CurrentTime + 650);
-         break;
-
-      case SOUND_EFFECT_ADD_PLAYER_1:
-      case SOUND_EFFECT_ADD_PLAYER_2:
-      case SOUND_EFFECT_ADD_PLAYER_3:
-      case SOUND_EFFECT_ADD_PLAYER_4:
-      case SOUND_EFFECT_RESCUE_FROM_THE_DEEP:
-      case SOUND_EFFECT_TRIDENT_INTRO:
-         audioHandler.queueSound(0x01, CurrentTime);
-         audioHandler.queueSound(0x02, CurrentTime + 75);
-         audioHandler.queueSound(0x04, CurrentTime + 150);
-         audioHandler.queueSound(0x08, CurrentTime + 225);
-         audioHandler.queueSound(0x01, CurrentTime + 325);
-         audioHandler.queueSound(0x02, CurrentTime + 400);
-         audioHandler.queueSound(0x04, CurrentTime + 475);
-         audioHandler.queueSound(0x08, CurrentTime + 550);
-         audioHandler.queueSound(0x00, CurrentTime + 650);
-         break;
+      if (returnState != internalState_) {
+         internalState_ = returnState;
+         stateChanged_ = true;
       }
-      break;
-
-   case SOUND_SELECTOR_TRIDENT2020:
-   default:
-#if defined(RPU_OS_USE_WAV_TRIGGER)
-      wavHandler.playSound(soundEffectNum);
-#endif
-      break;
+      return (internalState_ == MACHINE_STATE_ATTRACT) ? TopState::Attract : TopState::SelfTest;
    }
-}
 
-////////////////////////////////////////////////////////////////////////////
-//
-//  Attract Mode
-//
-////////////////////////////////////////////////////////////////////////////
-
-unsigned long AttractLastLadderTime = 0;
-uint8_t AttractLastLadderBonus = 0;
-unsigned long AttractLastStarTime = 0;
-uint8_t AttractLastHeadMode = 255;
-uint8_t AttractLastPlayfieldMode = 255;
-bool InAttractMode = false;
-
-int RunAttractMode(int curState, bool curStateChanged) {
-   int returnState = curState;
-
-   if (curStateChanged) {
+   void AttractMode::enter(unsigned long) {
 #ifdef RPU_OS_USE_SB100
       RPU_PlaySB100(0);
 #endif
@@ -942,29 +993,31 @@ int RunAttractMode(int curState, bool curStateChanged) {
       RPU_SetDisableFlippers(true);
       DEBUG_MESSAGE("Entering Attract Mode\n\r");
 
-      AttractLastHeadMode = 0;
-      AttractLastPlayfieldMode = 0;
+      lastHeadMode_ = 0;
+      lastPlayfieldMode_ = 0;
    }
 
+   TopState AttractMode::update(unsigned long) {
+      int returnState = MACHINE_STATE_ATTRACT;
    // Alternate displays between high score and blank
    if (CurrentTime < 16000) {
-      if (AttractLastHeadMode != 1) {
+      if (lastHeadMode_ != 1) {
          game.showPlayerScores(0xFF, false, false);
          game.setPlayerLamps(0);
          RPU_SetDisplayCredits(Credits, true);
          RPU_SetDisplayBallInPlay(0, true);
       }
    } else if ((CurrentTime / 8000) % 2 == 0) {
-      if (AttractLastHeadMode != 2) {
+      if (lastHeadMode_ != 2) {
          RPU_SetLampState(HIGH_SCORE_TO_DATE, true, 0, 250);
          RPU_SetLampState(GAME_OVER, false);
          game.setPlayerLamps(0);
          game.markScoreChanged(CurrentTime);
       }
-      AttractLastHeadMode = 2;
+      lastHeadMode_ = 2;
       game.showPlayerScores(0xFF, false, false, HighScore);
    } else {
-      if (AttractLastHeadMode != 3) {
+      if (lastHeadMode_ != 3) {
          if (CurrentTime < 32000) {
             for (int count = 0; count < 4; count++) {
                game.setScore(count, 0);
@@ -980,11 +1033,11 @@ int RunAttractMode(int curState, bool curStateChanged) {
       game.showPlayerScores(0xFF, false, false);
 
       game.setPlayerLamps(((CurrentTime / 250) % 4) + 1);
-      AttractLastHeadMode = 3;
+      lastHeadMode_ = 3;
    }
 
    if ((CurrentTime / 10000) % 3 < 2) {
-      if (AttractLastPlayfieldMode != 1) {
+      if (lastPlayfieldMode_ != 1) {
          RPU_TurnOffAllLamps();
          game.setGameMode(GAME_MODE_SKILL_SHOT);
       }
@@ -994,20 +1047,20 @@ int RunAttractMode(int curState, bool curStateChanged) {
       game.showLeftSpinnerLamps();
       game.showLeftLaneLamps();
 
-      AttractLastPlayfieldMode = 1;
+      lastPlayfieldMode_ = 1;
    } else {
-      if (AttractLastPlayfieldMode != 2) {
+      if (lastPlayfieldMode_ != 2) {
          RPU_TurnOffAllLamps();
-         AttractLastLadderBonus = 1;
-         AttractLastLadderTime = CurrentTime;
+         lastLadderBonus_ = 1;
+         lastLadderTime_ = CurrentTime;
       }
-      if ((CurrentTime - AttractLastLadderTime) > 200) {
-         AttractLastLadderBonus += 1;
-         AttractLastLadderTime = CurrentTime;
-         game.showBonusOnTree(AttractLastLadderBonus % MAX_DISPLAY_BONUS);
+      if ((CurrentTime - lastLadderTime_) > 200) {
+         lastLadderBonus_ += 1;
+         lastLadderTime_ = CurrentTime;
+         game.showBonusOnTree(lastLadderBonus_ % MAX_DISPLAY_BONUS);
       }
 
-      AttractLastPlayfieldMode = 2;
+      lastPlayfieldMode_ = 2;
    }
 
    uint8_t switchHit;
@@ -1027,32 +1080,8 @@ int RunAttractMode(int curState, bool curStateChanged) {
       }
    }
 
-   return returnState;
-}
-
-void loop() {
-   RPU_DataRead(0);
-   CurrentTime = millis();
-   int newMachineState = MachineState;
-
-   if (MachineState < 0) {
-      newMachineState = RunSelfTest(MachineState, MachineStateChanged);
-   } else if (MachineState == MACHINE_STATE_ATTRACT) {
-      newMachineState = RunAttractMode(MachineState, MachineStateChanged);
-   } else {
-      newMachineState = game.run(MachineState, MachineStateChanged, CurrentTime, g_ctx);
+      if (returnState < 0) return TopState::SelfTest;
+      if (returnState == MACHINE_STATE_INIT_GAMEPLAY) return TopState::Game;
+      return TopState::Attract;
    }
 
-   if (newMachineState != MachineState) {
-      MachineState = newMachineState;
-      MachineStateChanged = true;
-   } else {
-      MachineStateChanged = false;
-   }
-
-   audioHandler.update(CurrentTime);
-#if defined(RPU_OS_USE_WAV_TRIGGER)
-   wavHandler.update(CurrentTime);
-#endif
-   RPU_Update(CurrentTime);
-}
