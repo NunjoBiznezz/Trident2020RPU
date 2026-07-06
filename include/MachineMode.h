@@ -10,8 +10,8 @@
 #pragma once
 #include <stdint.h>
 
-// The three top-level states the machine can be in.
-enum class TopState : uint8_t { SelfTest, Attract, Game };
+// The four top-level states the machine can be in.
+enum class TopState : uint8_t { HardwareTest, Adjustments, Attract, Game };
 
 class MachineMode {
 public:

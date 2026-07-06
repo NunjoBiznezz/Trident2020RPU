@@ -118,12 +118,11 @@ TopState AttractMode::update(unsigned long currentTime) {
       }
       if (switchHit == SW_SELF_TEST_SWITCH &&
           (currentTime - GetLastSelfTestChangedTime()) > 250) {
-         returnState = MACHINE_STATE_TEST_LAMPS;
          SetLastSelfTestChangedTime(currentTime);
+         return TopState::HardwareTest;
       }
    }
 
-   if (returnState < 0)                            return TopState::SelfTest;
    if (returnState == MACHINE_STATE_INIT_GAMEPLAY) return TopState::Game;
    return TopState::Attract;
 }

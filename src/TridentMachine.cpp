@@ -206,12 +206,80 @@ void TridentMachine::turnOffAllLamps() {
    RPU_TurnOffAllLamps();
 }
 
+void TridentMachine::setLampState(uint8_t lamp, bool on, uint8_t dimmer, uint16_t flashRate) {
+   RPU_SetLampState(lamp, on, dimmer, flashRate);
+}
+
 void TridentMachine::disableSolenoidStack() {
    RPU_DisableSolenoidStack();
 }
 
+void TridentMachine::enableSolenoidStack() {
+   RPU_EnableSolenoidStack();
+}
+
 void TridentMachine::setDisableFlippers(bool disable) {
    RPU_SetDisableFlippers(disable);
+}
+
+void TridentMachine::pushToSolenoidStack(uint8_t sol, uint8_t duration) {
+   RPU_PushToSolenoidStack(sol, duration);
+}
+
+uint8_t TridentMachine::pullFirstFromSwitchStack() {
+   return RPU_PullFirstFromSwitchStack();
+}
+
+bool TridentMachine::readSingleSwitchState(uint8_t sw) {
+   return RPU_ReadSingleSwitchState(sw);
+}
+
+bool TridentMachine::getUpDownSwitchState() {
+   return RPU_GetUpDownSwitchState();
+}
+
+void TridentMachine::setDisplayBlank(uint8_t display, uint8_t mask) {
+   RPU_SetDisplayBlank(display, mask);
+}
+
+void TridentMachine::cycleAllDisplays(unsigned long t, uint8_t curValue) {
+   RPU_CycleAllDisplays(t, curValue);
+}
+
+void TridentMachine::setCoinLockout(bool lock) {
+   RPU_SetCoinLockout(lock);
+}
+
+void TridentMachine::playSoundCardEffect(uint8_t sound) {
+#if defined(RPU_OS_USE_SB100)
+   RPU_PlaySB100(sound);
+#elif defined(RPU_OS_USE_S_AND_T)
+   RPU_PlaySoundSAndT(sound);
+#elif defined(RPU_OS_USE_DASH51)
+   RPU_PlaySoundDash51(sound);
+#else
+   (void)sound;
+#endif
+}
+
+uint8_t TridentMachine::readByteFromEEProm(uint16_t addr) {
+   return RPU_ReadByteFromEEProm(addr);
+}
+
+void TridentMachine::writeByteToEEProm(uint16_t addr, uint8_t val) {
+   RPU_WriteByteToEEProm(addr, val);
+}
+
+unsigned long TridentMachine::readULFromEEProm(uint16_t addr) {
+   return RPU_ReadULFromEEProm(addr);
+}
+
+void TridentMachine::writeULToEEProm(uint16_t addr, unsigned long val) {
+   RPU_WriteULToEEProm(addr, val);
+}
+
+void TridentMachine::setDimDivisor(uint8_t level1, uint8_t level2) {
+   RPU_SetDimDivisor(level1, level2);
 }
 
 void TridentMachine::playCallout(uint8_t track) {

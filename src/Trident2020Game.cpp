@@ -431,7 +431,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
 
    // Propagate internal state changes and map to the top-level state.
    if (returnState < 0) {
-      return TopState::SelfTest;   // self-test button hit during play
+      return TopState::HardwareTest;   // self-test button hit during play
    }
    if (returnState == MACHINE_STATE_ATTRACT) {
       return TopState::Attract;    // game over

@@ -22,9 +22,10 @@
 #ifndef SELF_TEST_H
 #define SELF_TEST_H
 
+#include "RPU_config.h"
 #include <stdint.h>
 
-constexpr int MACHINE_STATE_TEST_LAMPS        =  -1;
+constexpr int MACHINE_STATE_TEST_LAMPS          =  -1;
 constexpr int MACHINE_STATE_TEST_DISPLAYS       =  -2;
 constexpr int MACHINE_STATE_TEST_SOLENOIDS      =  -3;
 constexpr int MACHINE_STATE_TEST_SWITCHES       =  -4;
@@ -42,22 +43,39 @@ constexpr int MACHINE_STATE_TEST_CHUTE_1_COINS  =  -15;
 constexpr int MACHINE_STATE_TEST_CHUTE_3_COINS  =  -16;
 constexpr int MACHINE_STATE_TEST_BOOT           =  -17;
 
-constexpr int MACHINE_STATE_ADJUST_CPC_CHUTE_1  =   -18;
-constexpr int MACHINE_STATE_ADJUST_CPC_CHUTE_2  =   -19;
-constexpr int MACHINE_STATE_ADJUST_CPC_CHUTE_3  =   -20;
+constexpr int MACHINE_STATE_ADJUST_CPC_CHUTE_1  =  -18;
+constexpr int MACHINE_STATE_ADJUST_CPC_CHUTE_2  =  -19;
+constexpr int MACHINE_STATE_ADJUST_CPC_CHUTE_3  =  -20;
 
-// This define is set to the last test, so the extended settings will know when to take over
+// Boundary between hardware tests and operator adjustments.
 constexpr int MACHINE_STATE_TEST_DONE           =  -20;
 
+#ifndef RPU_OS_DISABLE_CPC_FOR_SPACE
+constexpr uint8_t kNumCPCPairs = 9;
+extern const uint8_t CPCPairs[kNumCPCPairs][2];
+extern uint8_t CPCSelection[3];
+#endif
+
+// Total number of individual display digits across all four player displays.
+#ifdef RPU_OS_USE_7_DIGIT_DISPLAYS
+#  ifdef RPU_OS_USE_6_DIGIT_CREDIT_DISPLAY_WITH_7_DIGIT_DISPLAYS
+constexpr uint8_t kTotalDisplayDigits = 34;
+#  else
+constexpr uint8_t kTotalDisplayDigits = 35;
+#  endif
+#else
+constexpr uint8_t kTotalDisplayDigits = 30;
+#endif
+
 unsigned long GetLastSelfTestChangedTime();
-void SetLastSelfTestChangedTime(unsigned long setSelfTestChange);
-int RunBaseSelfTest(int curState, bool curStateChanged, unsigned long CurrentTime, uint8_t resetSwitch, uint8_t slamSwitch=0xFF);
+void          SetLastSelfTestChangedTime(unsigned long t);
 
 unsigned long GetAwardScore(uint8_t level);
 #ifndef RPU_OS_DISABLE_CPC_FOR_SPACE
 uint8_t GetCPCSelection(uint8_t chuteNumber);
 uint8_t GetCPCCoins(uint8_t cpcSelection);
 uint8_t GetCPCCredits(uint8_t cpcSelection);
+void    SetCPCSelection(uint8_t chuteNum, uint8_t value);
 #endif
 
 #endif

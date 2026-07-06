@@ -46,8 +46,28 @@ public:
    void setDisplayBallInPlay(uint8_t ball, bool showBall) override;
 
    void turnOffAllLamps() override;
+   void setLampState(uint8_t lamp, bool on, uint8_t dimmer, uint16_t flashRate) override;
    void disableSolenoidStack() override;
+   void enableSolenoidStack() override;
    void setDisableFlippers(bool disable) override;
+   void pushToSolenoidStack(uint8_t sol, uint8_t duration) override;
+
+   uint8_t pullFirstFromSwitchStack() override;
+   bool    readSingleSwitchState(uint8_t sw) override;
+   bool    getUpDownSwitchState() override;
+
+   void    setDisplayBlank(uint8_t display, uint8_t mask) override;
+   void    cycleAllDisplays(unsigned long t, uint8_t curValue) override;
+
+   void    setCoinLockout(bool lock) override;
+   void    playSoundCardEffect(uint8_t sound) override;
+
+   uint8_t       readByteFromEEProm(uint16_t addr) override;
+   void          writeByteToEEProm(uint16_t addr, uint8_t val) override;
+   unsigned long readULFromEEProm(uint16_t addr) override;
+   void          writeULToEEProm(uint16_t addr, unsigned long val) override;
+
+   void    setDimDivisor(uint8_t level1, uint8_t level2) override;
 
    void setRolloverValue(uint8_t v) override        { rolloverValue_ = v; }
    void update(unsigned long currentTime) override;
