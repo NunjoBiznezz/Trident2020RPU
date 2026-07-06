@@ -13,10 +13,16 @@
 
 class PinballMachine {
 public:
-   virtual void playSoundEffect(uint8_t soundEffectNum)         = 0;
-   virtual void playBackgroundSong(unsigned short songNum)      = 0;
-   virtual void playBackgroundSongBasedOnBall(uint8_t ballNum)  = 0;
+   virtual void playSoundEffect(uint8_t soundEffectNum)              = 0;
+   virtual void playBackgroundSong(unsigned short songNum)           = 0;
+   virtual void playBackgroundSongBasedOnBall(uint8_t ballNum)       = 0;
    virtual void addCredit(bool playSound = false, uint8_t numToAdd = 1) = 0;
-   virtual void addSpecialCredit()                              = 0;
-   virtual void addCoinToAudit(uint8_t chuteNum)               = 0;
+   virtual void addSpecialCredit()                                   = 0;
+   virtual void addCoinToAudit(uint8_t chuteNum)                    = 0;
+   virtual bool addCoin(uint8_t chuteNum)                           { return false; }
+   virtual void setRolloverValue(uint8_t v)                         { (void)v; }
+   virtual void update(unsigned long currentTime)                   { (void)currentTime; }
+   virtual void stopAllAudio()                                       {}
+   virtual void readStoredParameters()                               {}
+   virtual void playCallout(uint8_t track)                          { (void)track; }
 };
