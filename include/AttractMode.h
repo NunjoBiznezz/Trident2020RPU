@@ -23,11 +23,25 @@ class AttractMode : public MachineMode {
    PinballMachine*  machine_  = nullptr;
    MachineSettings* settings_ = nullptr;
 
+   // Firmware version shown on the score displays at startup.
+   unsigned long versionMajor_ = 0;
+   unsigned long versionMinor_ = 0;
+   unsigned long rpuMajor_     = 0;
+   unsigned long rpuMinor_     = 0;
+
 public:
    void setDependencies(Trident2020Game& game, PinballMachine& machine, MachineSettings& s) {
       game_     = &game;
       machine_  = &machine;
       settings_ = &s;
+   }
+
+   void setVersionInfo(unsigned long major, unsigned long minor,
+                       unsigned long rpuMajor, unsigned long rpuMinor) {
+      versionMajor_ = major;
+      versionMinor_ = minor;
+      rpuMajor_     = rpuMajor;
+      rpuMinor_     = rpuMinor;
    }
 
    void     enter(unsigned long currentTime) override;

@@ -109,13 +109,8 @@ void setup() {
    game.setMachine(pinballMachine);
    selfTestMode.setDependencies(game, pinballMachine, s);
    attractMode.setDependencies(game, pinballMachine, s);
-
-   game.setScore(0, TRIDENT2020_MAJOR_VERSION);
-   game.setCurrentPlayerScore(TRIDENT2020_MAJOR_VERSION);
-   game.setScore(1, TRIDENT2020_MINOR_VERSION);
-   game.setScore(2, RPU_OS_MAJOR_VERSION);
-   game.setScore(3, RPU_OS_MINOR_VERSION);
-   s.resetScoresToClearVersion = true;
+   attractMode.setVersionInfo(TRIDENT2020_MAJOR_VERSION, TRIDENT2020_MINOR_VERSION,
+                               RPU_OS_MAJOR_VERSION, RPU_OS_MINOR_VERSION);
 
    attractMode.enter(CurrentTime);
 }

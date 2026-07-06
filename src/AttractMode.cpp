@@ -19,12 +19,26 @@ void AttractMode::enter(unsigned long) {
 #ifdef RPU_OS_USE_SB100
    RPU_PlaySB100(0);
 #endif
-   RPU_DisableSolenoidStack();
-   RPU_TurnOffAllLamps();
-   RPU_SetDisableFlippers(true);
+   machine_->disableSolenoidStack();
+   machine_->turnOffAllLamps();
+   machine_->setDisableFlippers(true);
    DEBUG_MESSAGE("Entering Attract Mode\n\r");
-   lastHeadMode_      = 0;
    lastPlayfieldMode_ = 0;
+
+   if (versionMajor_ != 0) {
+      // Show firmware version on all four score displays for the first
+      // several seconds of attract mode before the normal display cycle begins.
+      machine_->setDisplay(0, versionMajor_);
+      machine_->setDisplay(1, versionMinor_);
+      machine_->setDisplay(2, rpuMajor_);
+      machine_->setDisplay(3, rpuMinor_);
+      machine_->setDisplayCredits(settings_->credits, true);
+      machine_->setDisplayBallInPlay(0, true);
+      settings_->resetScoresToClearVersion = true;
+      lastHeadMode_ = 1;   // suppress showPlayerScores until version display window expires
+   } else {
+      lastHeadMode_ = 0;
+   }
 }
 
 TopState AttractMode::update(unsigned long currentTime) {
@@ -34,8 +48,9 @@ TopState AttractMode::update(unsigned long currentTime) {
       if (lastHeadMode_ != 1) {
          game_->showPlayerScores(0xFF, false, false);
          game_->setPlayerLamps(0);
-         RPU_SetDisplayCredits(settings_->credits, true);
-         RPU_SetDisplayBallInPlay(0, true);
+         machine_->setDisplayCredits(settings_->credits, true);
+         machine_->setDisplayBallInPlay(0, true);
+         lastHeadMode_ = 1;
       }
    } else if ((currentTime / 8000) % 2 == 0) {
       if (lastHeadMode_ != 2) {
@@ -56,8 +71,8 @@ TopState AttractMode::update(unsigned long currentTime) {
          }
          RPU_SetLampState(HIGH_SCORE_TO_DATE, false);
          RPU_SetLampState(GAME_OVER, true);
-         RPU_SetDisplayCredits(settings_->credits, true);
-         RPU_SetDisplayBallInPlay(0, true);
+         machine_->setDisplayCredits(settings_->credits, true);
+         machine_->setDisplayBallInPlay(0, true);
          game_->markScoreChanged(currentTime);
       }
       game_->showPlayerScores(0xFF, false, false);
@@ -67,7 +82,7 @@ TopState AttractMode::update(unsigned long currentTime) {
 
    if ((currentTime / 10000) % 3 < 2) {
       if (lastPlayfieldMode_ != 1) {
-         RPU_TurnOffAllLamps();
+         machine_->turnOffAllLamps();
          game_->setGameMode(GAME_MODE_SKILL_SHOT);
       }
       game_->showSaucerLamps();
@@ -78,7 +93,7 @@ TopState AttractMode::update(unsigned long currentTime) {
       lastPlayfieldMode_ = 1;
    } else {
       if (lastPlayfieldMode_ != 2) {
-         RPU_TurnOffAllLamps();
+         machine_->turnOffAllLamps();
          lastLadderBonus_ = 1;
          lastLadderTime_  = currentTime;
       }

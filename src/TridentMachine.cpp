@@ -84,8 +84,8 @@ void TridentMachine::init(unsigned long currentTime) {
    }
    queueDiagNotification(SOUND_EFFECT_DIAG_STARTING_NEW_CODE, currentTime);
 
-   RPU_DisableSolenoidStack();
-   RPU_SetDisableFlippers(true);
+   disableSolenoidStack();
+   setDisableFlippers(true);
 }
 
 void TridentMachine::queueDiagNotification(unsigned short notificationNum,
@@ -187,6 +187,31 @@ void TridentMachine::readStoredParameters() {
    wavHandler_.setSoundFXVolume(settings_.sfxVolume);
    wavHandler_.setNotificationsVolume(settings_.calloutsVolume);
 #endif
+}
+
+void TridentMachine::setDisplay(uint8_t display, unsigned long value,
+                                   bool blankLeadingZeros, uint8_t minimumDigits) {
+   RPU_SetDisplay(display, value, blankLeadingZeros, minimumDigits);
+}
+
+void TridentMachine::setDisplayCredits(uint8_t credits, bool showCredits) {
+   RPU_SetDisplayCredits(credits, showCredits);
+}
+
+void TridentMachine::setDisplayBallInPlay(uint8_t ball, bool showBall) {
+   RPU_SetDisplayBallInPlay(ball, showBall);
+}
+
+void TridentMachine::turnOffAllLamps() {
+   RPU_TurnOffAllLamps();
+}
+
+void TridentMachine::disableSolenoidStack() {
+   RPU_DisableSolenoidStack();
+}
+
+void TridentMachine::setDisableFlippers(bool disable) {
+   RPU_SetDisableFlippers(disable);
 }
 
 void TridentMachine::playCallout(uint8_t track) {

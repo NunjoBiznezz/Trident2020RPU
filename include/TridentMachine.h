@@ -32,15 +32,26 @@ public:
    void playSoundEffect(uint8_t soundEffectNum) override;
    void playBackgroundSong(unsigned short songNum) override;
    void playBackgroundSongBasedOnBall(uint8_t ballNum) override;
+   void stopAllAudio() override;
+   void playCallout(uint8_t track) override;
+
    void addCredit(bool playSound, uint8_t numToAdd) override;
    void addSpecialCredit() override;
    void addCoinToAudit(uint8_t chuteNum) override;
    bool addCoin(uint8_t chuteNum) override;
+
+   void setDisplay(uint8_t display, unsigned long value,
+                   bool blankLeadingZeros, uint8_t minimumDigits) override;
+   void setDisplayCredits(uint8_t credits, bool showCredits) override;
+   void setDisplayBallInPlay(uint8_t ball, bool showBall) override;
+
+   void turnOffAllLamps() override;
+   void disableSolenoidStack() override;
+   void setDisableFlippers(bool disable) override;
+
    void setRolloverValue(uint8_t v) override        { rolloverValue_ = v; }
    void update(unsigned long currentTime) override;
-   void stopAllAudio() override;
    void readStoredParameters() override;
-   void playCallout(uint8_t track) override;
 
 private:
    MachineSettings settings_;
