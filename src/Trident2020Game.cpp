@@ -12,7 +12,7 @@
 #include "SelfTestAndAudit.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
-#include <EEPROM.h>
+// #include <EEPROM.h>
 
 
 #if defined(DEBUG_MESSAGES) && defined(DEBUG_PORT)

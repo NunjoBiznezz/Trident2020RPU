@@ -15,6 +15,8 @@ enum class TopState : uint8_t { SelfTest, Attract, Game };
 
 class MachineMode {
 public:
+   virtual ~MachineMode() = default;
+
    // Called once when this mode becomes active.
    virtual void enter(unsigned long currentTime) { (void)currentTime; }
 

@@ -20,14 +20,14 @@ struct MachineSettings {
    bool          scrollingScores          = true;
    uint8_t       scoreAwardReplay         = 0;
    uint8_t       maxTiltWarnings          = 2;
+   bool          matchFeature             = true;
+   bool          highScoreReplay          = true;
 
    // --- Scores / awards ---
    unsigned long highScore                = 0;
    unsigned long awardScores[3]           = {};
    unsigned long extraBallValue           = 0;
    unsigned long specialValue             = 0;
-   bool          highScoreReplay          = true;
-   bool          matchFeature             = true;
 
    // --- Game balance ---
    uint8_t       sharpShooterStartBonus   = 3;
