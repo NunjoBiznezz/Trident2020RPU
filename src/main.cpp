@@ -23,6 +23,7 @@
 // increase mode start time with new qualifier
 #include "AttractMode.h"
 #include "MachineMode.h"
+#include "MachineSettings.h"
 #include "MachineState.h"
 #include "RPU.h"
 #include "RPU_config.h"
@@ -36,10 +37,6 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <stdint.h>
-
-// Forward declarations
-uint8_t ReadSetting(int setting, uint8_t defaultValue);
-void    ReadStoredParameters();
 
 constexpr unsigned long TRIDENT2020_MAJOR_VERSION = 2020;
 constexpr unsigned long TRIDENT2020_MINOR_VERSION = 3;
@@ -70,120 +67,18 @@ static const BuildInfoRecord FIRMWARE_BUILD_INFO PROGMEM = {
 #endif
 
 /*********************************************************************
-    Machine state and options
+    Top-level objects — settings live inside machineOps
 *********************************************************************/
-static unsigned long HighScore    = 0;
-static unsigned long AwardScores[3];
-static uint8_t       Credits      = 0;
-static bool          FreePlayMode = true;
+static unsigned long CurrentTime = 0;
 
-static uint8_t       BallSaveNumSeconds = 0;
-static unsigned long ExtraBallValue     = 0;
-static unsigned long SpecialValue       = 0;
-static unsigned long CurrentTime        = 0;
-static uint8_t       MaximumCredits     = 40;
-static uint8_t       BallsPerGame       = 3;
-static uint8_t       DimLevel           = 2;
-static uint8_t       ScoreAwardReplay   = 0;
-static bool          HighScoreReplay    = true;
-static bool          MatchFeature       = true;
-static bool          TournamentScoring  = false;
-static bool          ResetScoresToClearVersion = false;
-static bool          ScrollingScores    = true;
-static uint8_t       MaxTiltWarnings    = 2;
-static uint8_t       SharpShooterStartBonus = 3;
-static uint8_t       TargetSpecialBonus = 4;
-static uint8_t       StandupSpecialLevel = 2;
-
+static TridentMachine  machineOps;
 static Trident2020Game game;
-
-static GameContext g_ctx = {
-   &Credits,
-   &MaximumCredits,
-   &BallsPerGame,
-   &BallSaveNumSeconds,
-   &FreePlayMode,
-   &TournamentScoring,
-   &ScrollingScores,
-   &HighScore,
-   AwardScores,
-   &ScoreAwardReplay,
-   &MaxTiltWarnings,
-   &ResetScoresToClearVersion,
-   &ExtraBallValue,
-   &SpecialValue,
-   &HighScoreReplay,
-   &MatchFeature,
-   &SharpShooterStartBonus,
-   &TargetSpecialBonus,
-   &StandupSpecialLevel,
-};
-
-static TridentMachine   pinballMachine;
-static SelfTestMode      selfTestMode;
-static AttractMode       attractMode;
+static SelfTestMode    selfTestMode;
+static AttractMode     attractMode;
 
 static TopState     topState   = TopState::Attract;
 static MachineMode* activeMode = &attractMode;
 
-// ---------------------------------------------------------------------------
-// Operator settings — game/hardware values read from EEPROM.
-// Audio settings are read by pinballMachine.readStoredParameters().
-// ---------------------------------------------------------------------------
-
-void ReadStoredParameters() {
-   HighScore = RPU_ReadULFromEEProm(RPU_HIGHSCORE_EEPROM_START_BYTE, 10000);
-   Credits   = RPU_ReadByteFromEEProm(RPU_CREDITS_EEPROM_BYTE);
-   if (Credits > MaximumCredits) Credits = MaximumCredits;
-
-   ReadSetting(EEPROM_FREE_PLAY_BYTE, 0);
-   FreePlayMode = (EEPROM.read(EEPROM_FREE_PLAY_BYTE)) != 0;
-
-   BallSaveNumSeconds = ReadSetting(EEPROM_BALL_SAVE_BYTE, 15);
-   if (BallSaveNumSeconds > 20) BallSaveNumSeconds = 20;
-
-   TournamentScoring = (ReadSetting(EEPROM_TOURNAMENT_SCORING_BYTE, 0)) != 0;
-
-   MaxTiltWarnings = ReadSetting(EEPROM_TILT_WARNING_BYTE, 2);
-   if (MaxTiltWarnings > 2) MaxTiltWarnings = 2;
-
-   uint8_t awardOverride = ReadSetting(EEPROM_AWARD_OVERRIDE_BYTE, 99);
-   if (awardOverride != 99) ScoreAwardReplay = awardOverride;
-
-   uint8_t ballsOverride = ReadSetting(EEPROM_BALLS_OVERRIDE_BYTE, 99);
-   if (ballsOverride == 3 || ballsOverride == 5) {
-      BallsPerGame = ballsOverride;
-   } else if (ballsOverride != 99) {
-      EEPROM.write(EEPROM_BALLS_OVERRIDE_BYTE, 99);
-   }
-
-   ScrollingScores = (ReadSetting(EEPROM_SCROLLING_SCORES_BYTE, 1)) != 0;
-
-   ExtraBallValue = RPU_ReadULFromEEProm(EEPROM_EXTRA_BALL_SCORE_BYTE);
-   if ((ExtraBallValue % 1000) != 0 || ExtraBallValue > 100000) ExtraBallValue = 20000;
-
-   SpecialValue = RPU_ReadULFromEEProm(EEPROM_SPECIAL_SCORE_BYTE);
-   if ((SpecialValue % 1000) != 0 || SpecialValue > 100000) SpecialValue = 40000;
-
-   DimLevel = ReadSetting(EEPROM_DIM_LEVEL_BYTE, 2);
-   if (DimLevel < 2 || DimLevel > 3) DimLevel = 2;
-   RPU_SetDimDivisor(1, DimLevel);
-
-   AwardScores[0] = RPU_ReadULFromEEProm(RPU_AWARD_SCORE_1_EEPROM_START_BYTE);
-   AwardScores[1] = RPU_ReadULFromEEProm(RPU_AWARD_SCORE_2_EEPROM_START_BYTE);
-   AwardScores[2] = RPU_ReadULFromEEProm(RPU_AWARD_SCORE_3_EEPROM_START_BYTE);
-
-   pinballMachine.readStoredParameters();
-}
-
-uint8_t ReadSetting(int setting, uint8_t defaultValue) {
-   uint8_t value = EEPROM.read(setting);
-   if (value == 0xFF) {
-      EEPROM.write(setting, defaultValue);
-      return defaultValue;
-   }
-   return value;
-}
 
 void setup() {
    // Opaque to LTO — prevents --gc-sections from discarding FIRMWARE_BUILD_INFO.
@@ -206,7 +101,7 @@ void setup() {
 #endif
 
    CurrentTime = millis();
-   pinballMachine.init(CurrentTime);
+   machineOps.init(CurrentTime);
 
    RPU_SetupGameSwitches(NUM_SWITCHES_WITH_TRIGGERS, NUM_PRIORITY_SWITCHES_WITH_TRIGGERS,
                           TriggeredSwitches);
@@ -216,47 +111,40 @@ void setup() {
       RPU_CMD_PERFORM_MPU_TEST, SW_CREDIT_RESET);
 
    if ((initResult & RPU_RET_SELECTOR_SWITCH_ON) != 0) {
-      pinballMachine.queueDiagNotification(SOUND_EFFECT_DIAG_SELECTOR_SWITCH_ON, CurrentTime);
+      machineOps.queueDiagNotification(SOUND_EFFECT_DIAG_SELECTOR_SWITCH_ON, CurrentTime);
    } else {
-      pinballMachine.queueDiagNotification(SOUND_EFFECT_DIAG_SELECTOR_SWITCH_OFF, CurrentTime);
+      machineOps.queueDiagNotification(SOUND_EFFECT_DIAG_SELECTOR_SWITCH_OFF, CurrentTime);
    }
    if ((initResult & RPU_RET_CREDIT_RESET_BUTTON_HIT) != 0) {
-      pinballMachine.queueDiagNotification(SOUND_EFFECT_DIAG_CREDIT_RESET_BUTTON, CurrentTime);
+      machineOps.queueDiagNotification(SOUND_EFFECT_DIAG_CREDIT_RESET_BUTTON, CurrentTime);
    }
    if ((initResult & RPU_RET_DIAGNOSTIC_REQUESTED) != 0) {
-      pinballMachine.queueDiagNotification(SOUND_EFFECT_DIAG_STARTING_DIAGNOSTICS_MODE, CurrentTime);
+      machineOps.queueDiagNotification(SOUND_EFFECT_DIAG_STARTING_DIAGNOSTICS_MODE, CurrentTime);
    }
    if ((initResult & RPU_RET_ORIGINAL_CODE_REQUESTED) != 0) {
       delay(100);
-      pinballMachine.queueDiagNotification(SOUND_EFFECT_DIAG_STARTING_ORIGINAL_CODE, CurrentTime);
+      machineOps.queueDiagNotification(SOUND_EFFECT_DIAG_STARTING_ORIGINAL_CODE, CurrentTime);
       while (1) ;
    }
-   pinballMachine.queueDiagNotification(SOUND_EFFECT_DIAG_STARTING_NEW_CODE, CurrentTime);
+   machineOps.queueDiagNotification(SOUND_EFFECT_DIAG_STARTING_NEW_CODE, CurrentTime);
 
    RPU_DisableSolenoidStack();
    RPU_SetDisableFlippers(true);
 
-   ReadStoredParameters();
+   machineOps.readStoredParameters();
 
-   pinballMachine.setContext(g_ctx);
-   game.setContext(g_ctx);
-   game.setMachine(pinballMachine);
-
-   static const SelfTestSettings stSettings = {
-      &FreePlayMode, &BallSaveNumSeconds, &TournamentScoring, &MaxTiltWarnings,
-      &ScoreAwardReplay, &BallsPerGame, &ScrollingScores, &ExtraBallValue,
-      &SpecialValue, &DimLevel,
-   };
-   selfTestMode.setDependencies(game, pinballMachine, stSettings);
-   selfTestMode.setReadParamsCallback(ReadStoredParameters);
-   attractMode.setDependencies(game, pinballMachine, g_ctx);
+   MachineSettings& s = machineOps.settings();
+   game.setSettings(s);
+   game.setMachine(machineOps);
+   selfTestMode.setDependencies(game, machineOps, s);
+   attractMode.setDependencies(game, machineOps, s);
 
    game.setScore(0, TRIDENT2020_MAJOR_VERSION);
    game.setCurrentPlayerScore(TRIDENT2020_MAJOR_VERSION);
    game.setScore(1, TRIDENT2020_MINOR_VERSION);
    game.setScore(2, RPU_OS_MAJOR_VERSION);
    game.setScore(3, RPU_OS_MINOR_VERSION);
-   ResetScoresToClearVersion = true;
+   s.resetScoresToClearVersion = true;
 
    attractMode.enter(CurrentTime);
 }
@@ -266,7 +154,7 @@ void loop() {
    CurrentTime = millis();
 
    // Tick audio handlers first so currentTime_ is fresh when game logic calls playSoundEffect.
-   pinballMachine.update(CurrentTime);
+   machineOps.update(CurrentTime);
 
    TopState newState = activeMode->update(CurrentTime);
    if (newState != topState) {

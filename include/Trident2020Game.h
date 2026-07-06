@@ -8,33 +8,9 @@
 
 #pragma once
 #include "MachineMode.h"
+#include "MachineSettings.h"
 #include "PinballMachine.h"
 #include <stdint.h>
-
-// Machine-level operator settings and persistent state. Populated in main.cpp
-// from EEPROM / ReadStoredParameters() and passed into each run() call so that
-// the game class does not need to access statics from another translation unit.
-struct GameContext {
-   uint8_t*       credits;
-   const uint8_t* maximumCredits;
-   const uint8_t* ballsPerGame;
-   const uint8_t* ballSaveNumSeconds;
-   const bool*    freePlayMode;
-   const bool*    tournamentScoring;
-   const bool*    scrollingScores;
-   unsigned long* highScore;
-   unsigned long* awardScores;          // points to AwardScores[3]
-   const uint8_t* scoreAwardReplay;
-   const uint8_t* maxTiltWarnings;
-   bool*          resetScoresToClearVersion;
-   const unsigned long* extraBallValue;
-   const unsigned long* specialValue;
-   const bool*    highScoreReplay;
-   const bool*    matchFeature;
-   const uint8_t* sharpShooterStartBonus;
-   const uint8_t* targetSpecialBonus;
-   const uint8_t* standupSpecialLevel;
-};
 
 class Trident2020Game : public MachineMode {
 public:
@@ -42,16 +18,17 @@ public:
 
    // Set once from main.cpp after construction; both remain valid for the
    // lifetime of the program.
-   void setContext(GameContext& ctx)      { ctx_     = &ctx; }
-   void setMachine(PinballMachine& m) { machine_ = &m;   }
+   void setSettings(MachineSettings& s)  { ctx_     = &s;   }
+   void setMachine(PinballMachine& m)    { machine_ = &m;   }
 
    // MachineMode interface
    void     enter(unsigned long currentTime) override;
    void     exit() override {}
    TopState update(unsigned long currentTime) override;
 
-   // Called from AttractMode and internally
-   bool addPlayer(bool resetNumPlayers, GameContext& ctx);
+   // Called from AttractMode and internally.
+   // Uses the MachineSettings already provided via setSettings().
+   bool addPlayer(bool resetNumPlayers);
 
    // Score/player accessors for attract mode and self-test
    unsigned long getScore(uint8_t player) const         { return CurrentScores[player]; }
@@ -77,8 +54,8 @@ public:
    void showLeftLaneLamps();
 
 private:
-   // Set once via setContext() / setMachine(); valid for the lifetime of the program.
-   GameContext*      ctx_     = nullptr;
+   // Set once via setSettings() / setMachine(); valid for the lifetime of the program.
+   MachineSettings*  ctx_     = nullptr;
    PinballMachine* machine_ = nullptr;
 
    // Top-level state machine: internal game state and change flag.

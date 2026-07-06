@@ -34,7 +34,7 @@ TopState AttractMode::update(unsigned long currentTime) {
       if (lastHeadMode_ != 1) {
          game_->showPlayerScores(0xFF, false, false);
          game_->setPlayerLamps(0);
-         RPU_SetDisplayCredits(*ctx_->credits, true);
+         RPU_SetDisplayCredits(settings_->credits, true);
          RPU_SetDisplayBallInPlay(0, true);
       }
    } else if ((currentTime / 8000) % 2 == 0) {
@@ -45,7 +45,7 @@ TopState AttractMode::update(unsigned long currentTime) {
          game_->markScoreChanged(currentTime);
       }
       lastHeadMode_ = 2;
-      game_->showPlayerScores(0xFF, false, false, *ctx_->highScore);
+      game_->showPlayerScores(0xFF, false, false, settings_->highScore);
    } else {
       if (lastHeadMode_ != 3) {
          if (currentTime < 32000) {
@@ -56,7 +56,7 @@ TopState AttractMode::update(unsigned long currentTime) {
          }
          RPU_SetLampState(HIGH_SCORE_TO_DATE, false);
          RPU_SetLampState(GAME_OVER, true);
-         RPU_SetDisplayCredits(*ctx_->credits, true);
+         RPU_SetDisplayCredits(settings_->credits, true);
          RPU_SetDisplayBallInPlay(0, true);
          game_->markScoreChanged(currentTime);
       }
@@ -93,7 +93,7 @@ TopState AttractMode::update(unsigned long currentTime) {
    uint8_t switchHit;
    while ((switchHit = RPU_PullFirstFromSwitchStack()) != SWITCH_STACK_EMPTY) {
       if (switchHit == SW_CREDIT_RESET) {
-         if (game_->addPlayer(true, *ctx_)) {
+         if (game_->addPlayer(true)) {
             returnState = MACHINE_STATE_INIT_GAMEPLAY;
          }
       }
@@ -108,7 +108,7 @@ TopState AttractMode::update(unsigned long currentTime) {
       }
    }
 
-   if (returnState < 0)                         return TopState::SelfTest;
+   if (returnState < 0)                            return TopState::SelfTest;
    if (returnState == MACHINE_STATE_INIT_GAMEPLAY) return TopState::Game;
    return TopState::Attract;
 }

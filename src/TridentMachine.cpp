@@ -2,15 +2,14 @@
  * TridentMachine.cpp
  *
  * Concrete PinballMachine for the Trident hardware. Owns the audio
- * subsystem and implements all credit / coin-mech operations that were
- * previously free functions in main.cpp.
+ * subsystem and MachineSettings; implements all credit / coin-mech
+ * operations that were previously free functions in main.cpp.
  **************************************************************************/
 
 #include "RPU.h"
 #include "SelfTestAndAudit.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
-#include "Trident2020Game.h"
 #include "TridentMachine.h"
 #include <EEPROM.h>
 
@@ -90,30 +89,74 @@ void TridentMachine::stopAllAudio() {
 }
 
 void TridentMachine::readStoredParameters() {
-   soundSelector_ = readSetting(EEPROM_SOUND_SELECTOR_BYTE, 3);
-   switch (soundSelector_) {
+   // --- Gameplay / operator settings ---
+   settings_.credits = RPU_ReadByteFromEEProm(RPU_CREDITS_EEPROM_BYTE);
+   if (settings_.credits > settings_.maximumCredits) settings_.credits = settings_.maximumCredits;
+
+   settings_.freePlayMode = (readSetting(EEPROM_FREE_PLAY_BYTE, 0)) != 0;
+
+   settings_.ballSaveNumSeconds = readSetting(EEPROM_BALL_SAVE_BYTE, 15);
+   if (settings_.ballSaveNumSeconds > 20) settings_.ballSaveNumSeconds = 20;
+
+   settings_.tournamentScoring = (readSetting(EEPROM_TOURNAMENT_SCORING_BYTE, 0)) != 0;
+
+   settings_.maxTiltWarnings = readSetting(EEPROM_TILT_WARNING_BYTE, 2);
+   if (settings_.maxTiltWarnings > 2) settings_.maxTiltWarnings = 2;
+
+   uint8_t awardOverride = readSetting(EEPROM_AWARD_OVERRIDE_BYTE, 99);
+   if (awardOverride != 99) settings_.scoreAwardReplay = awardOverride;
+
+   uint8_t ballsOverride = readSetting(EEPROM_BALLS_OVERRIDE_BYTE, 99);
+   if (ballsOverride == 3 || ballsOverride == 5) {
+      settings_.ballsPerGame = ballsOverride;
+   } else if (ballsOverride != 99) {
+      EEPROM.write(EEPROM_BALLS_OVERRIDE_BYTE, 99);
+   }
+
+   settings_.scrollingScores = (readSetting(EEPROM_SCROLLING_SCORES_BYTE, 1)) != 0;
+
+   settings_.extraBallValue = RPU_ReadULFromEEProm(EEPROM_EXTRA_BALL_SCORE_BYTE);
+   if ((settings_.extraBallValue % 1000) != 0 || settings_.extraBallValue > 100000)
+      settings_.extraBallValue = 20000;
+
+   settings_.specialValue = RPU_ReadULFromEEProm(EEPROM_SPECIAL_SCORE_BYTE);
+   if ((settings_.specialValue % 1000) != 0 || settings_.specialValue > 100000)
+      settings_.specialValue = 40000;
+
+   settings_.dimLevel = readSetting(EEPROM_DIM_LEVEL_BYTE, 2);
+   if (settings_.dimLevel < 2 || settings_.dimLevel > 3) settings_.dimLevel = 2;
+   RPU_SetDimDivisor(1, settings_.dimLevel);
+
+   settings_.highScore  = RPU_ReadULFromEEProm(RPU_HIGHSCORE_EEPROM_START_BYTE, 10000);
+   settings_.awardScores[0] = RPU_ReadULFromEEProm(RPU_AWARD_SCORE_1_EEPROM_START_BYTE);
+   settings_.awardScores[1] = RPU_ReadULFromEEProm(RPU_AWARD_SCORE_2_EEPROM_START_BYTE);
+   settings_.awardScores[2] = RPU_ReadULFromEEProm(RPU_AWARD_SCORE_3_EEPROM_START_BYTE);
+
+   // --- Audio settings ---
+   settings_.soundSelector = readSetting(EEPROM_SOUND_SELECTOR_BYTE, 3);
+   switch (settings_.soundSelector) {
    case SOUND_SELECTOR_NONE:
    case SOUND_SELECTOR_ORIGINAL:
    case SOUND_SELECTOR_TRIDENT2020:
       break;
    default:
-      soundSelector_ = SOUND_SELECTOR_TRIDENT2020;
+      settings_.soundSelector = SOUND_SELECTOR_TRIDENT2020;
    }
-   if (soundSelector_ > 3) soundSelector_ = 3;
+   if (settings_.soundSelector > 3) settings_.soundSelector = 3;
 
-   musicVolume_ = readSetting(EEPROM_MUSIC_VOLUME_BYTE, 10);
-   if (musicVolume_ > 10) musicVolume_ = 10;
+   settings_.musicVolume = readSetting(EEPROM_MUSIC_VOLUME_BYTE, 10);
+   if (settings_.musicVolume > 10) settings_.musicVolume = 10;
 
-   sfxVolume_ = readSetting(EEPROM_SFX_VOLUME_BYTE, 10);
-   if (sfxVolume_ > 10) sfxVolume_ = 10;
+   settings_.sfxVolume = readSetting(EEPROM_SFX_VOLUME_BYTE, 10);
+   if (settings_.sfxVolume > 10) settings_.sfxVolume = 10;
 
-   calloutsVolume_ = readSetting(EEPROM_CALLOUTS_VOLUME_BYTE, 10);
-   if (calloutsVolume_ > 10) calloutsVolume_ = 10;
+   settings_.calloutsVolume = readSetting(EEPROM_CALLOUTS_VOLUME_BYTE, 10);
+   if (settings_.calloutsVolume > 10) settings_.calloutsVolume = 10;
 
 #if defined(RPU_OS_USE_WAV_TRIGGER)
-   wavHandler_.setMusicVolume(musicVolume_);
-   wavHandler_.setSoundFXVolume(sfxVolume_);
-   wavHandler_.setNotificationsVolume(calloutsVolume_);
+   wavHandler_.setMusicVolume(settings_.musicVolume);
+   wavHandler_.setSoundFXVolume(settings_.sfxVolume);
+   wavHandler_.setNotificationsVolume(settings_.calloutsVolume);
 #endif
 }
 
@@ -126,7 +169,7 @@ void TridentMachine::playCallout(uint8_t track) {
 }
 
 void TridentMachine::playBackgroundSong(unsigned short songNum) {
-   if (musicVolume_ != 0 && soundSelector_ == SOUND_SELECTOR_TRIDENT2020) {
+   if (settings_.musicVolume != 0 && settings_.soundSelector == SOUND_SELECTOR_TRIDENT2020) {
 #if defined(RPU_OS_USE_WAV_TRIGGER)
       wavHandler_.playBackgroundSong(songNum, true);
 #else
@@ -136,10 +179,9 @@ void TridentMachine::playBackgroundSong(unsigned short songNum) {
 }
 
 void TridentMachine::playBackgroundSongBasedOnBall(uint8_t ballNum) {
-   uint8_t ballsPerGame = ctx_ ? *ctx_->ballsPerGame : 3;
    if (ballNum == 1) {
       playBackgroundSong(SOUND_EFFECT_BACKGROUND_1);
-   } else if (ballNum == ballsPerGame) {
+   } else if (ballNum == settings_.ballsPerGame) {
       playBackgroundSong(SOUND_EFFECT_BACKGROUND_6);
    } else {
       playBackgroundSong(SOUND_EFFECT_BACKGROUND_2 + currentTime_ % 4);
@@ -147,7 +189,7 @@ void TridentMachine::playBackgroundSongBasedOnBall(uint8_t ballNum) {
 }
 
 void TridentMachine::playSoundEffect(uint8_t soundEffectNum) {
-   switch (soundSelector_) {
+   switch (settings_.soundSelector) {
    case SOUND_SELECTOR_NONE:
       return;
 
@@ -301,18 +343,15 @@ void TridentMachine::playSoundEffect(uint8_t soundEffectNum) {
 // ---------------------------------------------------------------------------
 
 void TridentMachine::addCredit(bool playSound, uint8_t numToAdd) {
-   if (!ctx_) return;
-   uint8_t& credits    = *ctx_->credits;
-   uint8_t  maxCredits = *ctx_->maximumCredits;
-   if (credits < maxCredits) {
-      credits += numToAdd;
-      if (credits > maxCredits) credits = maxCredits;
-      RPU_WriteByteToEEProm(RPU_CREDITS_EEPROM_BYTE, credits);
+   if (settings_.credits < settings_.maximumCredits) {
+      settings_.credits += numToAdd;
+      if (settings_.credits > settings_.maximumCredits) settings_.credits = settings_.maximumCredits;
+      RPU_WriteByteToEEProm(RPU_CREDITS_EEPROM_BYTE, settings_.credits);
       if (playSound) playSoundEffect(SOUND_EFFECT_ADD_CREDIT);
-      RPU_SetDisplayCredits(credits, !*ctx_->freePlayMode);
+      RPU_SetDisplayCredits(settings_.credits, !settings_.freePlayMode);
       RPU_SetCoinLockout(false);
    } else {
-      RPU_SetDisplayCredits(credits, !*ctx_->freePlayMode);
+      RPU_SetDisplayCredits(settings_.credits, !settings_.freePlayMode);
       RPU_SetCoinLockout(true);
    }
 }

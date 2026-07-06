@@ -24,7 +24,6 @@ void SelfTestMode::enter(unsigned long) {
 
 void SelfTestMode::exit() {
    machine_->readStoredParameters();
-   if (readParamsCallback_) readParamsCallback_();
 }
 
 TopState SelfTestMode::update(unsigned long currentTime) {
@@ -85,18 +84,18 @@ TopState SelfTestMode::update(unsigned long currentTime) {
          }
          RPU_SetDisplayCredits(MACHINE_STATE_TEST_SOUNDS - curState);
          RPU_SetDisplayBallInPlay(0, false);
-         currentAdjustmentByte_       = nullptr;
-         currentAdjustmentUL_         = nullptr;
+         currentAdjustmentByte_        = nullptr;
+         currentAdjustmentUL_          = nullptr;
          currentAdjustmentStorageByte_ = 0;
 
-         adjustmentType_       = ADJ_TYPE_MIN_MAX;
-         adjustmentValues_[0]  = 0;
-         adjustmentValues_[1]  = 1;
-         tempValue_            = 0;
+         adjustmentType_      = ADJ_TYPE_MIN_MAX;
+         adjustmentValues_[0] = 0;
+         adjustmentValues_[1] = 1;
+         tempValue_           = 0;
 
          switch (curState) {
          case MACHINE_STATE_ADJUST_FREEPLAY:
-            currentAdjustmentByte_       = (uint8_t*)settings_.freePlayMode;
+            currentAdjustmentByte_        = (uint8_t*)&settings_->freePlayMode;
             currentAdjustmentStorageByte_ = EEPROM_FREE_PLAY_BYTE;
             break;
 
@@ -107,53 +106,53 @@ TopState SelfTestMode::update(unsigned long currentTime) {
             adjustmentValues_[2] = 10;
             adjustmentValues_[3] = 15;
             adjustmentValues_[4] = 20;
-            currentAdjustmentByte_       = settings_.ballSaveNumSeconds;
+            currentAdjustmentByte_        = &settings_->ballSaveNumSeconds;
             currentAdjustmentStorageByte_ = EEPROM_BALL_SAVE_BYTE;
             break;
 
          case MACHINE_STATE_ADJUST_SFX_AND_SOUNDTRACK:
             adjustmentType_      = ADJ_TYPE_MIN_MAX;
             adjustmentValues_[1] = 5;
-            currentAdjustmentByte_       = machine_->soundSelectorPtr();
+            currentAdjustmentByte_        = &settings_->soundSelector;
             currentAdjustmentStorageByte_ = EEPROM_SOUND_SELECTOR_BYTE;
             break;
 
          case MACHINE_STATE_ADJUST_MUSIC_VOLUME:
             adjustmentType_      = ADJ_TYPE_MIN_MAX;
             adjustmentValues_[1] = 10;
-            currentAdjustmentByte_       = machine_->musicVolumePtr();
+            currentAdjustmentByte_        = &settings_->musicVolume;
             currentAdjustmentStorageByte_ = EEPROM_MUSIC_VOLUME_BYTE;
             break;
 
          case MACHINE_STATE_ADJUST_SFX_VOLUME:
             adjustmentType_      = ADJ_TYPE_MIN_MAX;
             adjustmentValues_[1] = 10;
-            currentAdjustmentByte_       = machine_->sfxVolumePtr();
+            currentAdjustmentByte_        = &settings_->sfxVolume;
             currentAdjustmentStorageByte_ = EEPROM_SFX_VOLUME_BYTE;
             break;
 
          case MACHINE_STATE_ADJUST_CALLOUTS_VOLUME:
             adjustmentType_      = ADJ_TYPE_MIN_MAX;
             adjustmentValues_[1] = 10;
-            currentAdjustmentByte_       = machine_->calloutsVolumePtr();
+            currentAdjustmentByte_        = &settings_->calloutsVolume;
             currentAdjustmentStorageByte_ = EEPROM_CALLOUTS_VOLUME_BYTE;
             break;
 
          case MACHINE_STATE_ADJUST_TOURNAMENT_SCORING:
-            currentAdjustmentByte_       = (uint8_t*)settings_.tournamentScoring;
+            currentAdjustmentByte_        = (uint8_t*)&settings_->tournamentScoring;
             currentAdjustmentStorageByte_ = EEPROM_TOURNAMENT_SCORING_BYTE;
             break;
 
          case MACHINE_STATE_ADJUST_TILT_WARNING:
             adjustmentValues_[1] = 2;
-            currentAdjustmentByte_       = settings_.maxTiltWarnings;
+            currentAdjustmentByte_        = &settings_->maxTiltWarnings;
             currentAdjustmentStorageByte_ = EEPROM_TILT_WARNING_BYTE;
             break;
 
          case MACHINE_STATE_ADJUST_AWARD_OVERRIDE:
             adjustmentType_      = ADJ_TYPE_MIN_MAX_DEFAULT;
             adjustmentValues_[1] = 7;
-            currentAdjustmentByte_       = settings_.scoreAwardReplay;
+            currentAdjustmentByte_        = &settings_->scoreAwardReplay;
             currentAdjustmentStorageByte_ = EEPROM_AWARD_OVERRIDE_BYTE;
             break;
 
@@ -163,24 +162,24 @@ TopState SelfTestMode::update(unsigned long currentTime) {
             adjustmentValues_[0] = 3;
             adjustmentValues_[1] = 5;
             adjustmentValues_[2] = 99;
-            currentAdjustmentByte_       = settings_.ballsPerGame;
+            currentAdjustmentByte_        = &settings_->ballsPerGame;
             currentAdjustmentStorageByte_ = EEPROM_BALLS_OVERRIDE_BYTE;
             break;
 
          case MACHINE_STATE_ADJUST_SCROLLING_SCORES:
-            currentAdjustmentByte_       = (uint8_t*)settings_.scrollingScores;
+            currentAdjustmentByte_        = (uint8_t*)&settings_->scrollingScores;
             currentAdjustmentStorageByte_ = EEPROM_SCROLLING_SCORES_BYTE;
             break;
 
          case MACHINE_STATE_ADJUST_EXTRA_BALL_AWARD:
-            adjustmentType_             = ADJ_TYPE_SCORE_WITH_DEFAULT;
-            currentAdjustmentUL_        = settings_.extraBallValue;
+            adjustmentType_               = ADJ_TYPE_SCORE_WITH_DEFAULT;
+            currentAdjustmentUL_          = &settings_->extraBallValue;
             currentAdjustmentStorageByte_ = EEPROM_EXTRA_BALL_SCORE_BYTE;
             break;
 
          case MACHINE_STATE_ADJUST_SPECIAL_AWARD:
-            adjustmentType_             = ADJ_TYPE_SCORE_WITH_DEFAULT;
-            currentAdjustmentUL_        = settings_.specialValue;
+            adjustmentType_               = ADJ_TYPE_SCORE_WITH_DEFAULT;
+            currentAdjustmentUL_          = &settings_->specialValue;
             currentAdjustmentStorageByte_ = EEPROM_SPECIAL_SCORE_BYTE;
             break;
 
@@ -189,7 +188,7 @@ TopState SelfTestMode::update(unsigned long currentTime) {
             numAdjustmentValues_ = 2;
             adjustmentValues_[0] = 2;
             adjustmentValues_[1] = 3;
-            currentAdjustmentByte_       = settings_.dimLevel;
+            currentAdjustmentByte_        = &settings_->dimLevel;
             currentAdjustmentStorageByte_ = EEPROM_DIM_LEVEL_BYTE;
             for (int count = 0; count < 10; count++) {
                RPU_SetLampState(BONUS_1 + count, true, 1);
@@ -246,7 +245,7 @@ TopState SelfTestMode::update(unsigned long currentTime) {
          }
 
          if (curState == MACHINE_STATE_ADJUST_DIM_LEVEL) {
-            RPU_SetDimDivisor(1, *settings_.dimLevel);
+            RPU_SetDimDivisor(1, settings_->dimLevel);
          }
       }
 
