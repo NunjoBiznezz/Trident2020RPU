@@ -1,8 +1,8 @@
 /**************************************************************************
- * AdjustmentsMode.cpp  (file kept as SelfTestMode.cpp for build-system compat)
+ * AdjustmentsMode.cpp  (file kept as AdjustmentsMode.cpp for build-system compat)
  **************************************************************************/
 
-#include "SelfTestMode.h"
+#include "AdjustmentsMode.h"
 #include "RPU.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
@@ -31,7 +31,7 @@ TopState AdjustmentsMode::update(unsigned long currentTime) {
    int curState   = internalState_;
    int returnState = curState;
 
-   game_->setNumPlayers(0);
+   game_->setNumPlayers(0);   // ???
 
    if (curStateChanged) {
       machine_->stopAllAudio();

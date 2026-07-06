@@ -29,7 +29,7 @@
 #include "RPU.h"
 #include "RPU_config.h"
 #include "RPU_Internal.h"
-#include "SelfTestMode.h"
+#include "AdjustmentsMode.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
 #include "Trident2020Game.h"
@@ -71,10 +71,10 @@ static const BuildInfoRecord FIRMWARE_BUILD_INFO PROGMEM = {
 *********************************************************************/
 static unsigned long CurrentTime = 0;
 
-static TridentMachine  pinballMachine;
-static Trident2020Game game;
+static TridentMachine   pinballMachine;
+static Trident2020Game  game;
 static HardwareTestMode hardwareTestMode;
-static SelfTestMode     selfTestMode;   // SelfTestMode = AdjustmentsMode
+static AdjustmentsMode     selfTestMode;   // AdjustmentsMode = AdjustmentsMode
 static AttractMode      attractMode;
 
 static TopState     topState   = TopState::Attract;

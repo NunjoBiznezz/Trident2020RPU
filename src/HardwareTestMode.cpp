@@ -3,12 +3,11 @@
  **************************************************************************/
 
 #include "HardwareTestMode.h"
+#include "AdjustmentsMode.h"
 #include "MachineState.h"
 #include "RPU.h"
-#include "SelfTestMode.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
-
 
 constexpr uint8_t kNumCPCPairs = 9;
 

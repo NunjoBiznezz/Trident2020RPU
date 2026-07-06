@@ -1,5 +1,5 @@
 /**************************************************************************
- * AdjustmentsMode.h  (file kept as SelfTestMode.h for build-system compat)
+ * AdjustmentsMode.h  (file kept as AdjustmentsMode.h for build-system compat)
  *
  * Operator adjustment menu: the 14 game settings stored in EEPROM.
  * Entered from HardwareTestMode when the operator cycles past the last
@@ -56,4 +56,4 @@ public:
 };
 
 // Backwards-compat alias so main.cpp can be updated incrementally.
-using SelfTestMode = AdjustmentsMode;
+using AdjustmentsMode = AdjustmentsMode;
