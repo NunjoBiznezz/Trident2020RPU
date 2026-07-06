@@ -11,6 +11,7 @@
 #include "SoundEffects.h"
 #include "Trident2020.h"
 #include "TridentMachine.h"
+#include <Arduino.h>
 #include <EEPROM.h>
 
 // ---------------------------------------------------------------------------
@@ -57,6 +58,34 @@ void TridentMachine::init(unsigned long currentTime) {
    wavHandler_.setMusicDuckingGain(16);
    wavHandler_.queueSound(SOUND_EFFECT_TRIDENT_INTRO, currentTime + 5000);
 #endif
+
+   RPU_SetupGameSwitches(NUM_SWITCHES_WITH_TRIGGERS, NUM_PRIORITY_SWITCHES_WITH_TRIGGERS,
+                          TriggeredSwitches);
+
+   const auto initResult = RPU_InitializeMPU(
+      RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET | RPU_CMD_BOOT_ORIGINAL_IF_NOT_SWITCH_CLOSED |
+      RPU_CMD_PERFORM_MPU_TEST, SW_CREDIT_RESET);
+
+   if ((initResult & RPU_RET_SELECTOR_SWITCH_ON) != 0) {
+      queueDiagNotification(SOUND_EFFECT_DIAG_SELECTOR_SWITCH_ON, currentTime);
+   } else {
+      queueDiagNotification(SOUND_EFFECT_DIAG_SELECTOR_SWITCH_OFF, currentTime);
+   }
+   if ((initResult & RPU_RET_CREDIT_RESET_BUTTON_HIT) != 0) {
+      queueDiagNotification(SOUND_EFFECT_DIAG_CREDIT_RESET_BUTTON, currentTime);
+   }
+   if ((initResult & RPU_RET_DIAGNOSTIC_REQUESTED) != 0) {
+      queueDiagNotification(SOUND_EFFECT_DIAG_STARTING_DIAGNOSTICS_MODE, currentTime);
+   }
+   if ((initResult & RPU_RET_ORIGINAL_CODE_REQUESTED) != 0) {
+      delay(100);
+      queueDiagNotification(SOUND_EFFECT_DIAG_STARTING_ORIGINAL_CODE, currentTime);
+      while (1) ;
+   }
+   queueDiagNotification(SOUND_EFFECT_DIAG_STARTING_NEW_CODE, currentTime);
+
+   RPU_DisableSolenoidStack();
+   RPU_SetDisableFlippers(true);
 }
 
 void TridentMachine::queueDiagNotification(unsigned short notificationNum,

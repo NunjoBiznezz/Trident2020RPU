@@ -67,11 +67,11 @@ static const BuildInfoRecord FIRMWARE_BUILD_INFO PROGMEM = {
 #endif
 
 /*********************************************************************
-    Top-level objects — settings live inside machineOps
+    Top-level objects — settings live inside pinballMachine
 *********************************************************************/
 static unsigned long CurrentTime = 0;
 
-static TridentMachine  machineOps;
+static TridentMachine  pinballMachine;
 static Trident2020Game game;
 static SelfTestMode    selfTestMode;
 static AttractMode     attractMode;
@@ -101,43 +101,14 @@ void setup() {
 #endif
 
    CurrentTime = millis();
-   machineOps.init(CurrentTime);
+   pinballMachine.init(CurrentTime);    // hardware setup, RPU init, diag notifications
+   pinballMachine.readStoredParameters();
 
-   RPU_SetupGameSwitches(NUM_SWITCHES_WITH_TRIGGERS, NUM_PRIORITY_SWITCHES_WITH_TRIGGERS,
-                          TriggeredSwitches);
-
-   const auto initResult = RPU_InitializeMPU(
-      RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET | RPU_CMD_BOOT_ORIGINAL_IF_NOT_SWITCH_CLOSED |
-      RPU_CMD_PERFORM_MPU_TEST, SW_CREDIT_RESET);
-
-   if ((initResult & RPU_RET_SELECTOR_SWITCH_ON) != 0) {
-      machineOps.queueDiagNotification(SOUND_EFFECT_DIAG_SELECTOR_SWITCH_ON, CurrentTime);
-   } else {
-      machineOps.queueDiagNotification(SOUND_EFFECT_DIAG_SELECTOR_SWITCH_OFF, CurrentTime);
-   }
-   if ((initResult & RPU_RET_CREDIT_RESET_BUTTON_HIT) != 0) {
-      machineOps.queueDiagNotification(SOUND_EFFECT_DIAG_CREDIT_RESET_BUTTON, CurrentTime);
-   }
-   if ((initResult & RPU_RET_DIAGNOSTIC_REQUESTED) != 0) {
-      machineOps.queueDiagNotification(SOUND_EFFECT_DIAG_STARTING_DIAGNOSTICS_MODE, CurrentTime);
-   }
-   if ((initResult & RPU_RET_ORIGINAL_CODE_REQUESTED) != 0) {
-      delay(100);
-      machineOps.queueDiagNotification(SOUND_EFFECT_DIAG_STARTING_ORIGINAL_CODE, CurrentTime);
-      while (1) ;
-   }
-   machineOps.queueDiagNotification(SOUND_EFFECT_DIAG_STARTING_NEW_CODE, CurrentTime);
-
-   RPU_DisableSolenoidStack();
-   RPU_SetDisableFlippers(true);
-
-   machineOps.readStoredParameters();
-
-   MachineSettings& s = machineOps.settings();
+   MachineSettings& s = pinballMachine.settings();
    game.setSettings(s);
-   game.setMachine(machineOps);
-   selfTestMode.setDependencies(game, machineOps, s);
-   attractMode.setDependencies(game, machineOps, s);
+   game.setMachine(pinballMachine);
+   selfTestMode.setDependencies(game, pinballMachine, s);
+   attractMode.setDependencies(game, pinballMachine, s);
 
    game.setScore(0, TRIDENT2020_MAJOR_VERSION);
    game.setCurrentPlayerScore(TRIDENT2020_MAJOR_VERSION);
@@ -154,7 +125,7 @@ void loop() {
    CurrentTime = millis();
 
    // Tick audio handlers first so currentTime_ is fresh when game logic calls playSoundEffect.
-   machineOps.update(CurrentTime);
+   pinballMachine.update(CurrentTime);
 
    TopState newState = activeMode->update(CurrentTime);
    if (newState != topState) {
