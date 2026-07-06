@@ -8,6 +8,7 @@
 
 #pragma once
 #include "MachineMode.h"
+#include "PinballMachine.h"
 #include <stdint.h>
 
 // Machine-level operator settings and persistent state. Populated in main.cpp
@@ -39,9 +40,10 @@ class Trident2020Game : public MachineMode {
 public:
    Trident2020Game();
 
-   // Set once from main.cpp after construction; ctx_ remains valid for the
+   // Set once from main.cpp after construction; both remain valid for the
    // lifetime of the program.
-   void setContext(GameContext& ctx) { ctx_ = &ctx; }
+   void setContext(GameContext& ctx)      { ctx_     = &ctx; }
+   void setMachine(PinballMachine& m) { machine_ = &m;   }
 
    // MachineMode interface
    void     enter(unsigned long currentTime) override;
@@ -75,8 +77,9 @@ public:
    void showLeftLaneLamps();
 
 private:
-   // Set once via setContext(); valid for the lifetime of the program.
-   GameContext* ctx_ = nullptr;
+   // Set once via setContext() / setMachine(); valid for the lifetime of the program.
+   GameContext*      ctx_     = nullptr;
+   PinballMachine* machine_ = nullptr;
 
    // Top-level state machine: internal game state and change flag.
    int  internalState_    = 0;

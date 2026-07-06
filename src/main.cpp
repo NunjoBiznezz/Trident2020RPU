@@ -42,7 +42,11 @@
 // Forward declarations
 uint8_t ReadSetting(int setting, uint8_t defaultValue);
 void PlaySoundEffect(uint8_t soundEffectNum);
+void PlayBackgroundSong(unsigned short songNum);
 void PlayBackgroundSongBasedOnBall(uint8_t ballNum);
+void AddCoinToAudit(uint8_t chuteNum);
+void AddCredit(bool playSound, uint8_t numToAdd);
+void AddSpecialCredit();
 
 constexpr unsigned long TRIDENT2020_MAJOR_VERSION = 2020;
 constexpr unsigned long TRIDENT2020_MINOR_VERSION = 3;
@@ -173,8 +177,19 @@ public:
    TopState update(unsigned long) override;
 };
 
-static SelfTestMode selfTestMode;
-static AttractMode  attractMode;
+class TridentMachineOps : public PinballMachine {
+public:
+   void playSoundEffect(uint8_t n) override              { PlaySoundEffect(n); }
+   void playBackgroundSong(unsigned short n) override    { PlayBackgroundSong(n); }
+   void playBackgroundSongBasedOnBall(uint8_t b) override { PlayBackgroundSongBasedOnBall(b); }
+   void addCredit(bool snd, uint8_t n) override          { AddCredit(snd, n); }
+   void addSpecialCredit() override                      { AddSpecialCredit(); }
+   void addCoinToAudit(uint8_t c) override               { AddCoinToAudit(c); }
+};
+
+static SelfTestMode     selfTestMode;
+static AttractMode      attractMode;
+static TridentMachineOps machineOps;
 
 static TopState     topState   = TopState::Attract;
 static MachineMode* activeMode = &attractMode;
@@ -354,6 +369,7 @@ void setup() {
    ReadStoredParameters();
 
    game.setContext(g_ctx);
+   game.setMachine(machineOps);
 
    game.setScore(0, TRIDENT2020_MAJOR_VERSION);
    game.setCurrentPlayerScore(TRIDENT2020_MAJOR_VERSION);
