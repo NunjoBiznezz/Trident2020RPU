@@ -26,8 +26,8 @@ enum AdjustmentType_t : uint8_t {
 };
 
 class Trident2020AdjustmentsMode : public MachineMode {
-   static constexpr uint8_t kAdjFreeplay          =  1;
-   static constexpr uint8_t kAdjBallSave          =  2;
+   static constexpr uint8_t kAdjFreeplay          =  1;  // Free Play -> On/Off
+   static constexpr uint8_t kAdjBallSave          =  2;  // Ball save time in ms (1000)
    static constexpr uint8_t kAdjSfxAndSoundtrack  =  3;
    static constexpr uint8_t kAdjMusicVolume       =  4;
    static constexpr uint8_t kAdjSfxVolume         =  5;
@@ -69,4 +69,7 @@ public:
    void     enter(unsigned long currentTime) override;
    void     exit() override;
    TopState update(unsigned long currentTime) override;
+
+protected:
+   void enterSubstate(uint8_t subState, unsigned long currentTime);
 };

@@ -39,6 +39,7 @@ public:
    void          setCurrentPlayerScore(unsigned long v)   { CurrentPlayerCurrentScore = v; }
    void          setNumPlayers(uint8_t n)                 { CurrentNumPlayers = n; }
    void          setGameMode(uint8_t mode)                { GameMode = mode; }
+   void          setCurrentTime(unsigned long t)          { CurrentTime = t; }
    void          markScoreChanged(unsigned long t)        { LastTimeScoreChanged = t; }
    uint8_t       getRolloverValue() const                 { return RolloverValue; }
 
@@ -121,11 +122,8 @@ private:
 
    // Display management state
    unsigned long LastTimeScoreChanged = 0;
-   unsigned long LastTimeOverrideAnimated = 0;
-   unsigned long LastFlashOrDash = 0;
    unsigned long ScoreOverrideValue[4] = {};
    uint8_t       ScoreOverrideStatus = 0;
-   uint8_t       LastScrollPhase = 0;
    int           LastReportedValue = 0;
 
    // Bonus countdown state
@@ -141,9 +139,7 @@ private:
    uint8_t       ScoreMatches = 0;
 
    // --- Private helpers ---
-   uint8_t magnitudeOfScore(unsigned long score);
    void    overrideScoreDisplay(uint8_t displayNum, unsigned long value, bool animate);
-   uint8_t getDisplayMask(uint8_t numDigits);
 
    void showBonusLamps();
    void showBonusXLamps();

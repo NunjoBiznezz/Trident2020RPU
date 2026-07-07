@@ -41,6 +41,7 @@ void AttractMode::enter(unsigned long) {
 }
 
 TopState AttractMode::update(unsigned long currentTime) {
+   game_->setCurrentTime(currentTime);
    int returnState = MACHINE_STATE_ATTRACT;
 
    if (currentTime < 16000) {

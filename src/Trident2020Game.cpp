@@ -712,18 +712,6 @@ void Trident2020Game::showLeftLaneLamps() {
 // Display helpers
 // ===========================================================================
 
-uint8_t Trident2020Game::magnitudeOfScore(unsigned long score) {
-   if (score == 0) {
-      return 0;
-   }
-   uint8_t retval = 0;
-   while (score > 0) {
-      score = score / 10;
-      retval += 1;
-   }
-   return retval;
-}
-
 void Trident2020Game::overrideScoreDisplay(uint8_t displayNum, unsigned long value, bool animate) {
    if (displayNum > 3) {
       return;
@@ -737,137 +725,18 @@ void Trident2020Game::overrideScoreDisplay(uint8_t displayNum, unsigned long val
    ScoreOverrideValue[displayNum] = value;
 }
 
-uint8_t Trident2020Game::getDisplayMask(uint8_t numDigits) {
-   uint8_t displayMask = 0;
-   for (uint8_t digitCount = 0; digitCount < numDigits; digitCount++) {
-      displayMask |= (0x20 >> digitCount);
-   }
-   return displayMask;
-}
-
 void Trident2020Game::showPlayerScores(uint8_t displayToUpdate, bool flashCurrent, bool dashCurrent,
                                        unsigned long allScoresShowValue) {
    if (displayToUpdate == 0xFF) {
       ScoreOverrideStatus = 0;
    }
-
-   uint8_t displayMask = 0x3F;
-   unsigned long displayScore = 0;
-   unsigned long overrideAnimationSeed = CurrentTime / 250;
-   bool scrollPhaseChanged = false;
-
-   uint8_t scrollPhase = ((CurrentTime - LastTimeScoreChanged) / 250) % 16;
-   if (scrollPhase != LastScrollPhase) {
-      LastScrollPhase = scrollPhase;
-      scrollPhaseChanged = true;
+   for (uint8_t i = 0; i < 4; i++) {
+      machine_->setPlayerScore(i, (i == CurrentPlayer) ? CurrentPlayerCurrentScore : CurrentScores[i]);
    }
-
-   bool updateLastTimeAnimated = false;
-
-   for (uint8_t scoreCount = 0; scoreCount < 4; scoreCount++) {
-      if (allScoresShowValue == 0 && (ScoreOverrideStatus & (0x10 << scoreCount))) {
-         displayScore = ScoreOverrideValue[scoreCount];
-         uint8_t numDigits = magnitudeOfScore(displayScore);
-         if (numDigits == 0) {
-            numDigits = 1;
-         }
-         if (numDigits < (RPU_OS_NUM_DIGITS - 1) && (ScoreOverrideStatus & (0x01 << scoreCount))) {
-            if (overrideAnimationSeed != LastTimeOverrideAnimated) {
-               updateLastTimeAnimated = true;
-               uint8_t shiftDigits =
-                   (overrideAnimationSeed) % (((RPU_OS_NUM_DIGITS + 1) - numDigits) + ((RPU_OS_NUM_DIGITS - 1) - numDigits));
-               if (shiftDigits >= ((RPU_OS_NUM_DIGITS + 1) - numDigits)) {
-                  shiftDigits = (RPU_OS_NUM_DIGITS - numDigits) * 2 - shiftDigits;
-               }
-               uint8_t digitCount;
-               displayMask = getDisplayMask(numDigits);
-               for (digitCount = 0; digitCount < shiftDigits; digitCount++) {
-                  displayScore *= 10;
-                  displayMask = displayMask >> 1;
-               }
-               RPU_SetDisplayBlank(scoreCount, 0x00);
-               RPU_SetDisplay(scoreCount, displayScore, false);
-               RPU_SetDisplayBlank(scoreCount, displayMask);
-            }
-         } else {
-            RPU_SetDisplay(scoreCount, displayScore, true);
-         }
-
-      } else {
-         if (allScoresShowValue == 0) {
-            displayScore = (scoreCount == CurrentPlayer) ? CurrentPlayerCurrentScore : CurrentScores[scoreCount];
-         } else {
-            displayScore = allScoresShowValue;
-         }
-
-         if (displayToUpdate == 0xFF || displayToUpdate == scoreCount || displayScore > RPU_OS_MAX_DISPLAY_SCORE) {
-            if (displayToUpdate == 0xFF && (scoreCount >= CurrentNumPlayers && CurrentNumPlayers != 0) && allScoresShowValue == 0) {
-               RPU_SetDisplayBlank(scoreCount, 0x00);
-               continue;
-            }
-
-            if (displayScore > RPU_OS_MAX_DISPLAY_SCORE) {
-               if ((CurrentTime - LastTimeScoreChanged) < 4000) {
-                  RPU_SetDisplay(scoreCount, displayScore % (RPU_OS_MAX_DISPLAY_SCORE + 1), false);
-                  RPU_SetDisplayBlank(scoreCount, RPU_OS_ALL_DIGITS_MASK);
-               } else {
-                  if (scrollPhase < 11 && scrollPhaseChanged) {
-                     uint8_t numDigits = magnitudeOfScore(displayScore);
-                     unsigned long tempScore = displayScore;
-                     if (scrollPhase < RPU_OS_NUM_DIGITS) {
-                        displayMask = RPU_OS_ALL_DIGITS_MASK;
-                        for (uint8_t scrollCount = 0; scrollCount < scrollPhase; scrollCount++) {
-                           displayScore = (displayScore % (RPU_OS_MAX_DISPLAY_SCORE + 1)) * 10;
-                           displayMask = displayMask >> 1;
-                        }
-                     } else {
-                        displayScore = 0;
-                        displayMask = 0x00;
-                     }
-                     if ((numDigits + scrollPhase) > 10) {
-                        uint8_t numDigitsNeeded = (numDigits + scrollPhase) - 10;
-                        for (uint8_t scrollCount = 0; scrollCount < (numDigits - numDigitsNeeded); scrollCount++) {
-                           tempScore /= 10;
-                        }
-                        displayMask |= getDisplayMask(magnitudeOfScore(tempScore));
-                        displayScore += tempScore;
-                     }
-                     RPU_SetDisplayBlank(scoreCount, displayMask);
-                     RPU_SetDisplay(scoreCount, displayScore);
-                  }
-               }
-            } else {
-               if (flashCurrent) {
-                  unsigned long flashSeed = CurrentTime / 250;
-                  if (flashSeed != LastFlashOrDash) {
-                     LastFlashOrDash = flashSeed;
-                     if (((CurrentTime / 250) % 2) == 0) {
-                        RPU_SetDisplayBlank(scoreCount, 0x00);
-                     } else {
-                        RPU_SetDisplay(scoreCount, displayScore, true, 2);
-                     }
-                  }
-               } else if (dashCurrent) {
-                  unsigned long dashSeed = CurrentTime / 250;
-                  if (dashSeed != LastFlashOrDash) {
-                     LastFlashOrDash = dashSeed;
-                     if (((CurrentTime / 250) % 2) == 0) {
-                        RPU_SetDisplayBlank(scoreCount, 0x00);
-                     } else {
-                        RPU_SetDisplay(scoreCount, displayScore, true, 2);
-                     }
-                  }
-               } else {
-                  RPU_SetDisplay(scoreCount, displayScore, true, 2);
-               }
-            }
-         }
-      }
-   }
-
-   if (updateLastTimeAnimated) {
-      LastTimeOverrideAnimated = overrideAnimationSeed;
-   }
+   machine_->showScores(displayToUpdate, CurrentNumPlayers,
+                        flashCurrent, dashCurrent, allScoresShowValue,
+                        CurrentTime, LastTimeScoreChanged,
+                        ScoreOverrideStatus, ScoreOverrideValue);
 }
 
 // ===========================================================================

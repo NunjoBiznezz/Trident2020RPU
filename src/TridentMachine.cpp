@@ -289,6 +289,130 @@ void TridentMachine::cycleAllDisplays(unsigned long t, uint8_t curValue) {
    RPU_CycleAllDisplays(t, curValue);
 }
 
+uint8_t TridentMachine::magnitudeOfScore(unsigned long score) {
+   if (score == 0) return 0;
+   uint8_t retval = 0;
+   while (score > 0) { score /= 10; retval += 1; }
+   return retval;
+}
+
+uint8_t TridentMachine::getDisplayMask(uint8_t numDigits) {
+   uint8_t mask = 0;
+   for (uint8_t i = 0; i < numDigits; i++) mask |= (0x20 >> i);
+   return mask;
+}
+
+void TridentMachine::setPlayerScore(uint8_t player, unsigned long score) {
+   if (player < 4) playerScores_[player] = score;
+}
+
+void TridentMachine::showScores(uint8_t displayToUpdate, uint8_t numPlayers,
+                                bool flashCurrent, bool dashCurrent,
+                                unsigned long allScoresShowValue,
+                                unsigned long currentTime, unsigned long lastTimeScoreChanged,
+                                uint8_t overrideStatus, const unsigned long* overrideValues) {
+   uint8_t       displayMask           = 0x3F;
+   unsigned long displayScore          = 0;
+   unsigned long overrideAnimationSeed = currentTime / 250;
+   bool          scrollPhaseChanged    = false;
+
+   uint8_t scrollPhase = (uint8_t)(((currentTime - lastTimeScoreChanged) / 250) % 16);
+   if (scrollPhase != lastScrollPhase_) {
+      lastScrollPhase_ = scrollPhase;
+      scrollPhaseChanged = true;
+   }
+
+   bool updateLastTimeAnimated = false;
+
+   for (uint8_t scoreCount = 0; scoreCount < 4; scoreCount++) {
+      if (allScoresShowValue == 0 && overrideValues != nullptr && (overrideStatus & (0x10 << scoreCount))) {
+         displayScore = overrideValues[scoreCount];
+         uint8_t numDigits = magnitudeOfScore(displayScore);
+         if (numDigits == 0) numDigits = 1;
+
+         if (numDigits < (RPU_OS_NUM_DIGITS - 1) && (overrideStatus & (0x01 << scoreCount))) {
+            if (overrideAnimationSeed != lastTimeOverrideAnimated_) {
+               updateLastTimeAnimated = true;
+               uint8_t shiftDigits = (uint8_t)(overrideAnimationSeed %
+                  (((RPU_OS_NUM_DIGITS + 1) - numDigits) + ((RPU_OS_NUM_DIGITS - 1) - numDigits)));
+               if (shiftDigits >= ((RPU_OS_NUM_DIGITS + 1) - numDigits)) {
+                  shiftDigits = (RPU_OS_NUM_DIGITS - numDigits) * 2 - shiftDigits;
+               }
+               displayMask = getDisplayMask(numDigits);
+               for (uint8_t digitCount = 0; digitCount < shiftDigits; digitCount++) {
+                  displayScore *= 10;
+                  displayMask >>= 1;
+               }
+               RPU_SetDisplayBlank(scoreCount, 0x00);
+               RPU_SetDisplay(scoreCount, displayScore, false);
+               RPU_SetDisplayBlank(scoreCount, displayMask);
+            }
+         } else {
+            RPU_SetDisplay(scoreCount, displayScore, true);
+         }
+      } else {
+         displayScore = (allScoresShowValue != 0) ? allScoresShowValue : playerScores_[scoreCount];
+
+         if (displayToUpdate == 0xFF || displayToUpdate == scoreCount || displayScore > RPU_OS_MAX_DISPLAY_SCORE) {
+            if (displayToUpdate == 0xFF && (scoreCount >= numPlayers && numPlayers != 0) && allScoresShowValue == 0) {
+               RPU_SetDisplayBlank(scoreCount, 0x00);
+               continue;
+            }
+
+            if (displayScore > RPU_OS_MAX_DISPLAY_SCORE) {
+               if ((currentTime - lastTimeScoreChanged) < 4000) {
+                  RPU_SetDisplay(scoreCount, displayScore % (RPU_OS_MAX_DISPLAY_SCORE + 1), false);
+                  RPU_SetDisplayBlank(scoreCount, RPU_OS_ALL_DIGITS_MASK);
+               } else {
+                  if (scrollPhase < 11 && scrollPhaseChanged) {
+                     uint8_t numDigits   = magnitudeOfScore(displayScore);
+                     unsigned long tempScore = displayScore;
+                     if (scrollPhase < RPU_OS_NUM_DIGITS) {
+                        displayMask = RPU_OS_ALL_DIGITS_MASK;
+                        for (uint8_t scrollCount = 0; scrollCount < scrollPhase; scrollCount++) {
+                           displayScore = (displayScore % (RPU_OS_MAX_DISPLAY_SCORE + 1)) * 10;
+                           displayMask >>= 1;
+                        }
+                     } else {
+                        displayScore = 0;
+                        displayMask  = 0x00;
+                     }
+                     if ((numDigits + scrollPhase) > 10) {
+                        uint8_t numDigitsNeeded = (numDigits + scrollPhase) - 10;
+                        for (uint8_t scrollCount = 0; scrollCount < (numDigits - numDigitsNeeded); scrollCount++) {
+                           tempScore /= 10;
+                        }
+                        displayMask  |= getDisplayMask(magnitudeOfScore(tempScore));
+                        displayScore += tempScore;
+                     }
+                     RPU_SetDisplayBlank(scoreCount, displayMask);
+                     RPU_SetDisplay(scoreCount, displayScore);
+                  }
+               }
+            } else {
+               if (flashCurrent || dashCurrent) {
+                  unsigned long seed = currentTime / 250;
+                  if (seed != lastFlashOrDash_) {
+                     lastFlashOrDash_ = seed;
+                     if (((currentTime / 250) % 2) == 0) {
+                        RPU_SetDisplayBlank(scoreCount, 0x00);
+                     } else {
+                        RPU_SetDisplay(scoreCount, displayScore, true, 2);
+                     }
+                  }
+               } else {
+                  RPU_SetDisplay(scoreCount, displayScore, true, 2);
+               }
+            }
+         }
+      }
+   }
+
+   if (updateLastTimeAnimated) {
+      lastTimeOverrideAnimated_ = overrideAnimationSeed;
+   }
+}
+
 void TridentMachine::setCoinLockout(bool lock) {
    RPU_SetCoinLockout(lock);
 }

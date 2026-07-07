@@ -58,6 +58,12 @@ public:
 
    void    setDisplayBlank(uint8_t display, uint8_t mask) override;
    void    cycleAllDisplays(unsigned long t, uint8_t curValue) override;
+   void    setPlayerScore(uint8_t player, unsigned long score) override;
+   void    showScores(uint8_t displayToUpdate, uint8_t numPlayers,
+                      bool flashCurrent, bool dashCurrent,
+                      unsigned long allScoresShowValue,
+                      unsigned long currentTime, unsigned long lastTimeScoreChanged,
+                      uint8_t overrideStatus, const unsigned long* overrideValues) override;
 
    void    setCoinLockout(bool lock) override;
    void    playSoundCardEffect(uint8_t sound) override;
@@ -98,6 +104,12 @@ private:
    uint8_t       cpcSelection_[3]       = {};
    unsigned long selfTestChangedTime_   = 0;
 
+   // Score display state
+   unsigned long playerScores_[4]          = {};
+   uint8_t       lastScrollPhase_          = 0;
+   unsigned long lastFlashOrDash_          = 0;
+   unsigned long lastTimeOverrideAnimated_ = 0;
+
    static const unsigned short kChuteAuditByte[3];
    static const uint8_t        kCPCPairs[9][2];
    static const uint16_t       kCPCChuteByte[3];
@@ -106,4 +118,7 @@ private:
 
    static uint8_t readSetting(int addr, uint8_t defaultValue);
    static uint8_t switchToChuteNum(uint8_t switchHit);
+
+   static uint8_t magnitudeOfScore(unsigned long score);
+   static uint8_t getDisplayMask(uint8_t numDigits);
 };
