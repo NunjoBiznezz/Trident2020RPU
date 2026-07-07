@@ -4,6 +4,7 @@
 //
 
 #pragma once
+#include "RPU.h"
 #include <stdint.h>
 
 // Lamp Numbers (defines for lamps)

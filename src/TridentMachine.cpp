@@ -435,15 +435,7 @@ void TridentMachine::setCoinLockout(bool lock) {
 }
 
 void TridentMachine::playSoundCardEffect(uint8_t sound) {
-#if defined(RPU_OS_USE_SB100)
-   RPU_PlaySB100(sound);
-#elif defined(RPU_OS_USE_S_AND_T)
-   RPU_PlaySoundSAndT(sound);
-#elif defined(RPU_OS_USE_DASH51)
-   RPU_PlaySoundDash51(sound);
-#else
-   (void)sound;
-#endif
+   RPU_PlayNativeSound(sound);
 }
 
 uint8_t TridentMachine::readByteFromEEProm(uint16_t addr) {

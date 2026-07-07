@@ -12,6 +12,8 @@
 
 class PinballMachine {
 public:
+   static constexpr uint8_t SWITCH_STACK_EMPTY = 0xFF;
+
    virtual ~PinballMachine() = default;
 
    // --- Audio ---

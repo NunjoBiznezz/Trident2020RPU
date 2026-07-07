@@ -5,9 +5,7 @@
 #include "AttractMode.h"
 #include "LampAnimation.h"
 #include "MachineState.h"
-#include "RPU.h"
 #include "Trident.h"
-#include "Trident2020.h"
 
 #if defined(DEBUG_MESSAGES) && defined(DEBUG_PORT)
 #  define DEBUG_MESSAGE(x) DEBUG_PORT.write(x)
@@ -16,9 +14,7 @@
 #endif
 
 void AttractMode::enter(unsigned long) {
-#ifdef RPU_OS_USE_SB100
-   RPU_PlaySB100(0);
-#endif
+   machine_->playSoundCardEffect(0);
    machine_->disableSolenoidStack();
    machine_->turnOffAllLamps();
    machine_->setDisableFlippers(true);
@@ -99,7 +95,7 @@ TopState AttractMode::update(unsigned long currentTime) {
    }
 
    uint8_t switchHit;
-   while ((switchHit = machine_->pullFirstFromSwitchStack()) != SWITCH_STACK_EMPTY) {
+   while ((switchHit = machine_->pullFirstFromSwitchStack()) != PinballMachine::SWITCH_STACK_EMPTY) {
       if (switchHit == SW_CREDIT_RESET) {
          if (game_->addPlayer(true)) {
             returnState = MACHINE_STATE_INIT_GAMEPLAY;
