@@ -3,6 +3,7 @@
  **************************************************************************/
 
 #include "AttractMode.h"
+#include "LampAnimation.h"
 #include "MachineState.h"
 #include "RPU.h"
 #include "Trident.h"
@@ -54,8 +55,8 @@ TopState AttractMode::update(unsigned long currentTime) {
       }
    } else if ((currentTime / 8000) % 2 == 0) {
       if (lastHeadMode_ != 2) {
-         RPU_SetLampState(HIGH_SCORE_TO_DATE, true, 0, 250);
-         RPU_SetLampState(GAME_OVER, false);
+         machine_->setLampState(HIGH_SCORE_TO_DATE, true, 0, 250);
+         machine_->setLampState(GAME_OVER, false);
          game_->setPlayerLamps(0);
          game_->markScoreChanged(currentTime);
       }
@@ -69,8 +70,8 @@ TopState AttractMode::update(unsigned long currentTime) {
             }
             game_->setNumPlayers(0);
          }
-         RPU_SetLampState(HIGH_SCORE_TO_DATE, false);
-         RPU_SetLampState(GAME_OVER, true);
+         machine_->setLampState(HIGH_SCORE_TO_DATE, false);
+         machine_->setLampState(GAME_OVER, true);
          machine_->setDisplayCredits(settings_->credits, true);
          machine_->setDisplayBallInPlay(0, true);
          game_->markScoreChanged(currentTime);
@@ -80,33 +81,25 @@ TopState AttractMode::update(unsigned long currentTime) {
       lastHeadMode_ = 3;
    }
 
-   if ((currentTime / 10000) % 3 < 2) {
-      if (lastPlayfieldMode_ != 1) {
-         machine_->turnOffAllLamps();
-         game_->setGameMode(GAME_MODE_SKILL_SHOT);
-      }
-      game_->showSaucerLamps();
-      game_->showDropTargetLamps();
-      game_->showStandupTargetLamps();
-      game_->showLeftSpinnerLamps();
-      game_->showLeftLaneLamps();
+   if (lastPlayfieldMode_ != 1) {
       lastPlayfieldMode_ = 1;
-   } else {
-      if (lastPlayfieldMode_ != 2) {
-         machine_->turnOffAllLamps();
-         lastLadderBonus_ = 1;
-         lastLadderTime_  = currentTime;
+      animNum_           = 0;
+      animStep_          = 0;
+      lastAnimFrameTime_ = 0;
+   }
+   if ((currentTime - lastAnimFrameTime_) >= 100) {
+      lastAnimFrameTime_ = currentTime;
+      machine_->setLampAnimation(animNum_, animStep_);
+      if (++animStep_ >= LAMP_ANIMATION_STEPS) {
+         animStep_ = 0;
+         if (++animNum_ >= NUM_LAMP_ANIMATIONS) {
+            animNum_ = 0;
+         }
       }
-      if ((currentTime - lastLadderTime_) > 200) {
-         lastLadderBonus_ += 1;
-         lastLadderTime_   = currentTime;
-         game_->showBonusOnTree(lastLadderBonus_ % MAX_DISPLAY_BONUS);
-      }
-      lastPlayfieldMode_ = 2;
    }
 
    uint8_t switchHit;
-   while ((switchHit = RPU_PullFirstFromSwitchStack()) != SWITCH_STACK_EMPTY) {
+   while ((switchHit = machine_->pullFirstFromSwitchStack()) != SWITCH_STACK_EMPTY) {
       if (switchHit == SW_CREDIT_RESET) {
          if (game_->addPlayer(true)) {
             returnState = MACHINE_STATE_INIT_GAMEPLAY;

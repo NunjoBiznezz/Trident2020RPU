@@ -40,6 +40,7 @@ public:
    virtual void turnOffAllLamps()                                      {}
    virtual void setLampState(uint8_t lamp, bool on,
                               uint8_t dimmer = 0, uint16_t flashRate = 0) { (void)lamp; (void)on; (void)dimmer; (void)flashRate; }
+   virtual void setLampAnimation(uint8_t animationNum, uint8_t frameNum) { (void)animationNum; (void)frameNum; }
 
    // --- Solenoids / flippers ---
    virtual void disableSolenoidStack()                                 {}

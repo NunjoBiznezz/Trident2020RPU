@@ -6,6 +6,7 @@
  * operations that were previously free functions in main.cpp.
  **************************************************************************/
 
+#include "LampAnimation.h"
 #include "RPU.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
@@ -251,6 +252,13 @@ void TridentMachine::turnOffAllLamps() {
 
 void TridentMachine::setLampState(uint8_t lamp, bool on, uint8_t dimmer, uint16_t flashRate) {
    RPU_SetLampState(lamp, on, dimmer, flashRate);
+}
+
+void TridentMachine::setLampAnimation(uint8_t animationNum, uint8_t frameNum) {
+   const uint8_t* data = PeekAnimationBytes(animationNum, frameNum);
+   if (data) {
+      RPU_SetLampAnimation(data, NUM_LAMP_ANIMATION_BYTES);
+   }
 }
 
 void TridentMachine::disableSolenoidStack() {

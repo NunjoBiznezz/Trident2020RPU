@@ -47,6 +47,7 @@ public:
 
    void turnOffAllLamps() override;
    void setLampState(uint8_t lamp, bool on, uint8_t dimmer, uint16_t flashRate) override;
+   void setLampAnimation(uint8_t animationNum, uint8_t frameNum) override;
    void disableSolenoidStack() override;
    void enableSolenoidStack() override;
    void setDisableFlippers(bool disable) override;
