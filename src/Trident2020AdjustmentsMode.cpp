@@ -171,7 +171,7 @@ TopState Trident2020AdjustmentsMode::update(unsigned long currentTime) {
          currentAdjustmentByte_        = &settings_->dimLevel;
          currentAdjustmentStorageByte_ = EEPROM_DIM_LEVEL_BYTE;
          for (int count = 0; count < 10; count++) {
-            machine_->setLampState(BONUS_1 + count, true, 1);
+            machine_->setLampState(LAMP_BONUS_1 + count, true, 1);
          }
          break;
 
@@ -237,7 +237,7 @@ TopState Trident2020AdjustmentsMode::update(unsigned long currentTime) {
 
    if (curState == kAdjDimLevel) {
       for (int count = 0; count < 10; count++) {
-         machine_->setLampState(BONUS_1 + count, true, (uint8_t)((currentTime / 1000) % 2));
+         machine_->setLampState(LAMP_BONUS_1 + count, true, (uint8_t)((currentTime / 1000) % 2));
       }
    }
 

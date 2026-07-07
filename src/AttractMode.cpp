@@ -51,8 +51,8 @@ TopState AttractMode::update(unsigned long currentTime) {
       }
    } else if ((currentTime / 8000) % 2 == 0) {
       if (lastHeadMode_ != 2) {
-         machine_->setLampState(HIGH_SCORE_TO_DATE, true, 0, 250);
-         machine_->setLampState(GAME_OVER, false);
+         machine_->setLampState(LAMP_HIGH_SCORE_TO_DATE, true, 0, 250);
+         machine_->setLampState(LAMP_GAME_OVER, false);
          game_->setPlayerLamps(0);
          game_->markScoreChanged(currentTime);
       }
@@ -66,8 +66,8 @@ TopState AttractMode::update(unsigned long currentTime) {
             }
             game_->setNumPlayers(0);
          }
-         machine_->setLampState(HIGH_SCORE_TO_DATE, false);
-         machine_->setLampState(GAME_OVER, true);
+         machine_->setLampState(LAMP_HIGH_SCORE_TO_DATE, false);
+         machine_->setLampState(LAMP_GAME_OVER, true);
          machine_->setDisplayCredits(settings_->credits, true);
          machine_->setDisplayBallInPlay(0, true);
          game_->markScoreChanged(currentTime);
