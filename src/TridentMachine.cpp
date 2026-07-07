@@ -265,8 +265,13 @@ void TridentMachine::setDisableFlippers(bool disable) {
    RPU_SetDisableFlippers(disable);
 }
 
-void TridentMachine::pushToSolenoidStack(uint8_t sol, uint8_t duration) {
-   RPU_PushToSolenoidStack(sol, duration);
+void TridentMachine::pushToSolenoidStack(uint8_t sol, uint8_t duration, bool disableOverride) {
+   RPU_PushToSolenoidStack(sol, duration, disableOverride);
+}
+
+void TridentMachine::pushToTimedSolenoidStack(uint8_t sol, uint8_t numPushes,
+                                               unsigned long whenToFire, bool disableOverride) {
+   RPU_PushToTimedSolenoidStack(sol, numPushes, whenToFire, disableOverride);
 }
 
 uint8_t TridentMachine::pullFirstFromSwitchStack() {
@@ -283,6 +288,10 @@ bool TridentMachine::getUpDownSwitchState() {
 
 void TridentMachine::setDisplayBlank(uint8_t display, uint8_t mask) {
    RPU_SetDisplayBlank(display, mask);
+}
+
+uint8_t TridentMachine::getDisplayBlank(uint8_t display) {
+   return RPU_GetDisplayBlank(display);
 }
 
 void TridentMachine::cycleAllDisplays(unsigned long t, uint8_t curValue) {

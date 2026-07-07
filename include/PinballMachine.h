@@ -45,7 +45,11 @@ public:
    virtual void disableSolenoidStack()                                 {}
    virtual void enableSolenoidStack()                                  {}
    virtual void setDisableFlippers(bool disable)                       { (void)disable; }
-   virtual void pushToSolenoidStack(uint8_t sol, uint8_t duration)     { (void)sol; (void)duration; }
+   virtual void pushToSolenoidStack(uint8_t sol, uint8_t duration,
+                                     bool disableOverride = false)      { (void)sol; (void)duration; (void)disableOverride; }
+   virtual void pushToTimedSolenoidStack(uint8_t sol, uint8_t numPushes,
+                                          unsigned long whenToFire,
+                                          bool disableOverride = false)  { (void)sol; (void)numPushes; (void)whenToFire; (void)disableOverride; }
 
    // --- Switches ---
    virtual uint8_t pullFirstFromSwitchStack()                          { return 0xFF; }
@@ -54,6 +58,7 @@ public:
 
    // --- Displays (additional) ---
    virtual void    setDisplayBlank(uint8_t display, uint8_t mask)      { (void)display; (void)mask; }
+   virtual uint8_t getDisplayBlank(uint8_t display)                    { (void)display; return 0; }
    virtual void    cycleAllDisplays(unsigned long t, uint8_t curValue) { (void)t; (void)curValue; }
 
    // --- Multi-player score display ---

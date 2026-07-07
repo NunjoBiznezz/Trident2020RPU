@@ -50,13 +50,18 @@ public:
    void disableSolenoidStack() override;
    void enableSolenoidStack() override;
    void setDisableFlippers(bool disable) override;
-   void pushToSolenoidStack(uint8_t sol, uint8_t duration) override;
+   void pushToSolenoidStack(uint8_t sol, uint8_t duration,
+                            bool disableOverride = false) override;
+   void pushToTimedSolenoidStack(uint8_t sol, uint8_t numPushes,
+                                  unsigned long whenToFire,
+                                  bool disableOverride = false) override;
 
    uint8_t pullFirstFromSwitchStack() override;
    bool    readSingleSwitchState(uint8_t sw) override;
    bool    getUpDownSwitchState() override;
 
    void    setDisplayBlank(uint8_t display, uint8_t mask) override;
+   uint8_t getDisplayBlank(uint8_t display) override;
    void    cycleAllDisplays(unsigned long t, uint8_t curValue) override;
    void    setPlayerScore(uint8_t player, unsigned long score) override;
    void    showScores(uint8_t displayToUpdate, uint8_t numPlayers,

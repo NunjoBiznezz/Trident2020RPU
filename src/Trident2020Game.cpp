@@ -86,7 +86,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
             machine_->playSoundEffect(SOUND_EFFECT_GAME_OVER);
             setPlayerLamps(0);
             for (int count = 0; count < CurrentNumPlayers; count++) {
-               RPU_SetDisplay(count, CurrentScores[count], true, 2);
+               machine_->setDisplay(count, CurrentScores[count], true, 2);
             }
             returnState = MACHINE_STATE_MATCH_MODE;
          } else {
@@ -100,7 +100,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
    uint8_t switchHit;
 
    if (NumTiltWarnings <= ctx_->maxTiltWarnings) {
-      while ((switchHit = RPU_PullFirstFromSwitchStack()) != SWITCH_STACK_EMPTY) {
+      while ((switchHit = machine_->pullFirstFromSwitchStack()) != SWITCH_STACK_EMPTY) {
          switch (switchHit) {
          case SW_SLAM:
             break;
@@ -110,10 +110,10 @@ TopState Trident2020Game::update(unsigned long currentTime) {
                LastTiltWarningTime = CurrentTime;
                NumTiltWarnings += 1;
                if (NumTiltWarnings > ctx_->maxTiltWarnings) {
-                  RPU_DisableSolenoidStack();
-                  RPU_SetDisableFlippers(true);
-                  RPU_TurnOffAllLamps();
-                  RPU_SetLampState(TILT, true);
+                  machine_->disableSolenoidStack();
+                  machine_->setDisableFlippers(true);
+                  machine_->turnOffAllLamps();
+                  machine_->setLampState(TILT, true);
                }
                machine_->playSoundEffect(SOUND_EFFECT_TILT_WARNING);
             }
@@ -259,9 +259,9 @@ TopState Trident2020Game::update(unsigned long currentTime) {
                   GameMode = GAME_MODE_MINI_GAME_ENGAGED | GameModeFlagsQualified;
                   GameModeFlagsQualified = 0;
                   GameModeStartTime = 0;
-                  RPU_PushToTimedSolenoidStack(SOL_SAUCER, 5, CurrentTime + MODE_START_DISPLAY_DURATION);
+                  machine_->pushToTimedSolenoidStack(SOL_SAUCER, 5, CurrentTime + MODE_START_DISPLAY_DURATION);
                } else {
-                  RPU_PushToTimedSolenoidStack(SOL_SAUCER, 5, CurrentTime + SAUCER_DISPLAY_DURATION);
+                  machine_->pushToTimedSolenoidStack(SOL_SAUCER, 5, CurrentTime + SAUCER_DISPLAY_DURATION);
                }
             }
             if (BallFirstSwitchHitTime == 0) {
@@ -364,8 +364,8 @@ TopState Trident2020Game::update(unsigned long currentTime) {
                if (ctx_->credits >= 1 || ctx_->freePlayMode) {
                   if (!ctx_->freePlayMode) {
                      ctx_->credits -= 1;
-                     RPU_WriteByteToEEProm(RPU_CREDITS_EEPROM_BYTE, ctx_->credits);
-                     RPU_SetDisplayCredits(ctx_->credits);
+                     machine_->writeByteToEEProm(RPU_CREDITS_EEPROM_BYTE, ctx_->credits);
+                     machine_->setDisplayCredits(ctx_->credits);
                   }
                   returnState = MACHINE_STATE_INIT_GAMEPLAY;
                }
@@ -376,14 +376,14 @@ TopState Trident2020Game::update(unsigned long currentTime) {
       }
    } else {
       // Tilted — only service outhole and coin/test switches
-      while ((switchHit = RPU_PullFirstFromSwitchStack()) != SWITCH_STACK_EMPTY) {
+      while ((switchHit = machine_->pullFirstFromSwitchStack()) != SWITCH_STACK_EMPTY) {
          switch (switchHit) {
          case SW_SELF_TEST_SWITCH:
             returnState = -1;   // any negative; detected as hardware-test exit
             machine_->setSelfTestChangedTime(CurrentTime);
             break;
          case SW_SAUCER:
-            RPU_PushToSolenoidStack(SOL_SAUCER, 5, true);
+            machine_->pushToSolenoidStack(SOL_SAUCER, 5, true);
             break;
          case SW_COIN_1:
          case SW_COIN_2:
@@ -419,7 +419,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
                } else if (!ExtraBallCollected) {
                   ExtraBallCollected = true;
                   SamePlayerShootsAgain = true;
-                  RPU_SetLampState(SHOOT_AGAIN, SamePlayerShootsAgain);
+                  machine_->setLampState(SHOOT_AGAIN, SamePlayerShootsAgain);
                   machine_->playSoundEffect(SOUND_EFFECT_EXTRA_BALL);
                }
             }
@@ -453,19 +453,19 @@ bool Trident2020Game::addPlayer(bool resetNumPlayers) {
    }
 
    CurrentNumPlayers += 1;
-   RPU_SetDisplay(CurrentNumPlayers - 1, 0);
-   RPU_SetDisplayBlank(CurrentNumPlayers - 1, 0x30);
+   machine_->setDisplay(CurrentNumPlayers - 1, 0);
+   machine_->setDisplayBlank(CurrentNumPlayers - 1, 0x30);
 
    if (!ctx_->freePlayMode) {
       ctx_->credits -= 1;
-      RPU_WriteByteToEEProm(RPU_CREDITS_EEPROM_BYTE, ctx_->credits);
-      RPU_SetDisplayCredits(ctx_->credits);
-      RPU_SetCoinLockout(false);
+      machine_->writeByteToEEProm(RPU_CREDITS_EEPROM_BYTE, ctx_->credits);
+      machine_->setDisplayCredits(ctx_->credits);
+      machine_->setCoinLockout(false);
    }
    machine_->playSoundEffect(SOUND_EFFECT_ADD_PLAYER_1 + (CurrentNumPlayers - 1));
    setPlayerLamps(CurrentNumPlayers);
 
-   RPU_WriteULToEEProm(RPU_TOTAL_PLAYS_EEPROM_START_BYTE, RPU_ReadULFromEEProm(RPU_TOTAL_PLAYS_EEPROM_START_BYTE) + 1);
+   machine_->writeULToEEProm(RPU_TOTAL_PLAYS_EEPROM_START_BYTE, machine_->readULFromEEProm(RPU_TOTAL_PLAYS_EEPROM_START_BYTE) + 1);
 
    return true;
 }
@@ -476,7 +476,7 @@ bool Trident2020Game::addPlayer(bool resetNumPlayers) {
 
 void Trident2020Game::setPlayerLamps(uint8_t numPlayers, uint8_t playerOffset, int flashPeriod) {
    for (int count = 0; count < 4; count++) {
-      RPU_SetLampState(PLAYER_1 + playerOffset + count, (numPlayers == (count + 1)) ? 1 : 0, 0, flashPeriod);
+      machine_->setLampState(PLAYER_1 + playerOffset + count, (numPlayers == (count + 1)) ? 1 : 0, 0, flashPeriod);
    }
 }
 
@@ -488,7 +488,7 @@ void Trident2020Game::showBonusOnTree(uint8_t bonus, uint8_t dim) {
    uint8_t cap = 10;
 
    for (uint8_t turnOff = (bonus + 1); turnOff < 11; turnOff++) {
-      RPU_SetLampState(BONUS_1 + (turnOff - 1), false);
+      machine_->setLampState(BONUS_1 + (turnOff - 1), false);
    }
    if (bonus == 0) {
       return;
@@ -496,7 +496,7 @@ void Trident2020Game::showBonusOnTree(uint8_t bonus, uint8_t dim) {
 
    if (bonus >= cap) {
       while (bonus >= cap) {
-         RPU_SetLampState(BONUS_1 + (cap - 1), true, dim, 250);
+         machine_->setLampState(BONUS_1 + (cap - 1), true, dim, 250);
          bonus -= cap;
          cap -= 1;
          if (cap == 0) {
@@ -505,17 +505,17 @@ void Trident2020Game::showBonusOnTree(uint8_t bonus, uint8_t dim) {
          }
       }
       for (uint8_t turnOff = (bonus + 1); turnOff < (cap + 1); turnOff++) {
-         RPU_SetLampState(BONUS_1 + (turnOff - 1), false);
+         machine_->setLampState(BONUS_1 + (turnOff - 1), false);
       }
    }
 
    uint8_t bottom;
    for (bottom = 1; bottom < bonus; bottom++) {
-      RPU_SetLampState(BONUS_1 + (bottom - 1), false);
+      machine_->setLampState(BONUS_1 + (bottom - 1), false);
    }
 
    if (bottom <= cap) {
-      RPU_SetLampState(BONUS_1 + (bottom - 1), true, 0);
+      machine_->setLampState(BONUS_1 + (bottom - 1), true, 0);
    }
 }
 
@@ -523,7 +523,7 @@ void Trident2020Game::showSaucerLamps() {
    if (GameMode == GAME_MODE_MINI_GAME_QUALIFIED) {
       uint8_t lampPhase = ((CurrentTime - GameModeStartTime) / 100) % 4;
       for (uint8_t count = 0; count < 4; count++) {
-         RPU_SetLampState(TOP_EJECT_5K - count, count == lampPhase);
+         machine_->setLampState(TOP_EJECT_5K - count, count == lampPhase);
       }
    } else if (SaucerHitTime != 0 && (CurrentTime - SaucerHitTime) < SAUCER_DISPLAY_DURATION) {
       uint8_t saucerLamp = 0;
@@ -532,18 +532,18 @@ void Trident2020Game::showSaucerLamps() {
       }
       for (int count = 0; count < 4; count++) {
          if (count == saucerLamp) {
-            RPU_SetLampState(TOP_EJECT_5K - count, true, 0, 125);
+            machine_->setLampState(TOP_EJECT_5K - count, true, 0, 125);
          } else {
-            RPU_SetLampState(TOP_EJECT_5K - count, false);
+            machine_->setLampState(TOP_EJECT_5K - count, false);
          }
       }
    } else if (GameMode == GAME_MODE_SKILL_SHOT) {
       uint8_t lampPhase = ((CurrentTime - GameModeStartTime) / 250) % 28;
       if (lampPhase < 16) {
-         RPU_SetLampState(TOP_EJECT_5K, (lampPhase % 4) != 0, lampPhase % 2);
+         machine_->setLampState(TOP_EJECT_5K, (lampPhase % 4) != 0, lampPhase % 2);
          SaucerValue = 5;
          for (int count = 1; count < 4; count++) {
-            RPU_SetLampState(TOP_EJECT_5K - count, false);
+            machine_->setLampState(TOP_EJECT_5K - count, false);
          }
       } else {
          uint8_t saucerLamp;
@@ -552,10 +552,10 @@ void Trident2020Game::showSaucerLamps() {
          if (saucerLamp > 3) {
             saucerLamp = 6 - saucerLamp;
          }
-         RPU_SetLampState(TOP_EJECT_5K - saucerLamp, true);
+         machine_->setLampState(TOP_EJECT_5K - saucerLamp, true);
          for (int count = 0; count < 4; count++) {
             if (count != saucerLamp) {
-               RPU_SetLampState(TOP_EJECT_5K - count, false);
+               machine_->setLampState(TOP_EJECT_5K - count, false);
             }
          }
       }
@@ -571,7 +571,7 @@ void Trident2020Game::showSaucerLamps() {
          saucerLamp = SaucerValue / 10;
       }
       for (int count = 0; count < 4; count++) {
-         RPU_SetLampState(TOP_EJECT_5K - count, count == saucerLamp);
+         machine_->setLampState(TOP_EJECT_5K - count, count == saucerLamp);
       }
    }
 }
@@ -583,33 +583,33 @@ void Trident2020Game::showDropTargetLamps() {
          lampPhase = ((CurrentTime - GameModeStartTime) / 250) % 9;
       }
       for (uint8_t count = 0; count < 4; count++) {
-         RPU_SetLampState(DROP_TARGET_1 - count, lampPhase == 0, 1);
-         RPU_SetLampState(BONUS_2X_FEATURE - count, false);
+         machine_->setLampState(DROP_TARGET_1 - count, lampPhase == 0, 1);
+         machine_->setLampState(BONUS_2X_FEATURE - count, false);
       }
-      RPU_SetLampState(DROP_TARGET_5, lampPhase == 0, 1);
+      machine_->setLampState(DROP_TARGET_5, lampPhase == 0, 1);
    } else if ((GameMode & GAME_MODE_SHARP_SHOOTER_FLAG) != 0 ||
               (DropTargetClearTime != 0 && (CurrentTime - DropTargetClearTime) < DROP_TARGET_CLEAR_DURATION)) {
       uint8_t lampPhase = ((CurrentTime - DropTargetClearTime) / 50) % 5;
       for (uint8_t count = 0; count < 5; count++) {
-         RPU_SetLampState(DropTargetLampArray[count], lampPhase == count);
+         machine_->setLampState(DropTargetLampArray[count], lampPhase == count);
       }
       for (uint8_t count = 0; count < 4; count++) {
-         RPU_SetLampState(BONUS_2X_FEATURE - count, false);
+         machine_->setLampState(BONUS_2X_FEATURE - count, false);
       }
    } else if (GameMode == GAME_MODE_SKILL_SHOT) {
       uint8_t lampPhase = ((CurrentTime - GameModeStartTime) / 110) % 8;
       for (uint8_t count = 0; count < 5; count++) {
-         RPU_SetLampState(DropTargetLampArray[count], (count == lampPhase) || (count == (8 - lampPhase)));
+         machine_->setLampState(DropTargetLampArray[count], (count == lampPhase) || (count == (8 - lampPhase)));
       }
       for (uint8_t count = 0; count < 4; count++) {
-         RPU_SetLampState(BONUS_2X_FEATURE - count, false);
+         machine_->setLampState(BONUS_2X_FEATURE - count, false);
       }
    } else {
       for (uint8_t count = 0; count < 5; count++) {
-         RPU_SetLampState(DropTargetLampArray[count], !RPU_ReadSingleSwitchState(DropTargetSwitchArray[count]));
+         machine_->setLampState(DropTargetLampArray[count], !machine_->readSingleSwitchState(DropTargetSwitchArray[count]));
       }
       for (uint8_t count = 0; count < 4; count++) {
-         RPU_SetLampState(BONUS_2X_FEATURE - count, BonusX == (count + 1));
+         machine_->setLampState(BONUS_2X_FEATURE - count, BonusX == (count + 1));
       }
    }
 }
@@ -620,35 +620,35 @@ void Trident2020Game::showStandupTargetLamps() {
       if ((GameModeFlagsQualified & GAME_MODE_EXPLORE_THE_DEPTHS_FLAG) != 0) {
          lampPhase = ((CurrentTime - GameModeStartTime) / 250) % 9;
       }
-      RPU_SetLampState(STAND_UP_PURPLE, (lampPhase == 3), 1);
-      RPU_SetLampState(STAND_UP_YELLOW, (lampPhase == 3), 1);
-      RPU_SetLampState(STAND_UP_AMBER,  (lampPhase == 3), 1);
-      RPU_SetLampState(STAND_UP_GREEN,  (lampPhase == 3), 1);
-      RPU_SetLampState(STAND_UP_WHITE,  (lampPhase == 3), 1);
+      machine_->setLampState(STAND_UP_PURPLE, (lampPhase == 3), 1);
+      machine_->setLampState(STAND_UP_YELLOW, (lampPhase == 3), 1);
+      machine_->setLampState(STAND_UP_AMBER,  (lampPhase == 3), 1);
+      machine_->setLampState(STAND_UP_GREEN,  (lampPhase == 3), 1);
+      machine_->setLampState(STAND_UP_WHITE,  (lampPhase == 3), 1);
    } else if ((GameMode & GAME_MODE_EXPLORE_THE_DEPTHS_FLAG) == 0 && StandupDisplayEndTime != 0 && CurrentTime < StandupDisplayEndTime) {
-      RPU_SetLampState(STAND_UP_PURPLE, (CurrentStandupsHit & STANDUP_PURPLE_MASK) != 0, (LastStandupTargetHit & STANDUP_PURPLE_MASK) != 0 ? 0 : 1,
+      machine_->setLampState(STAND_UP_PURPLE, (CurrentStandupsHit & STANDUP_PURPLE_MASK) != 0, (LastStandupTargetHit & STANDUP_PURPLE_MASK) != 0 ? 0 : 1,
                        (LastStandupTargetHit & STANDUP_PURPLE_MASK) != 0 ? 50 : 0);
-      RPU_SetLampState(STAND_UP_YELLOW, (CurrentStandupsHit & STANDUP_YELLOW_MASK) != 0, (LastStandupTargetHit & STANDUP_YELLOW_MASK) != 0 ? 0 : 1,
+      machine_->setLampState(STAND_UP_YELLOW, (CurrentStandupsHit & STANDUP_YELLOW_MASK) != 0, (LastStandupTargetHit & STANDUP_YELLOW_MASK) != 0 ? 0 : 1,
                        (LastStandupTargetHit & STANDUP_YELLOW_MASK) != 0 ? 50 : 0);
-      RPU_SetLampState(STAND_UP_AMBER,  (CurrentStandupsHit & STANDUP_AMBER_MASK) != 0,  (LastStandupTargetHit & STANDUP_AMBER_MASK) != 0  ? 0 : 1,
+      machine_->setLampState(STAND_UP_AMBER,  (CurrentStandupsHit & STANDUP_AMBER_MASK) != 0,  (LastStandupTargetHit & STANDUP_AMBER_MASK) != 0  ? 0 : 1,
                        (LastStandupTargetHit & STANDUP_AMBER_MASK) != 0  ? 50 : 0);
-      RPU_SetLampState(STAND_UP_GREEN,  (CurrentStandupsHit & STANDUP_GREEN_MASK) != 0,  (LastStandupTargetHit & STANDUP_GREEN_MASK) != 0  ? 0 : 1,
+      machine_->setLampState(STAND_UP_GREEN,  (CurrentStandupsHit & STANDUP_GREEN_MASK) != 0,  (LastStandupTargetHit & STANDUP_GREEN_MASK) != 0  ? 0 : 1,
                        (LastStandupTargetHit & STANDUP_GREEN_MASK) != 0  ? 50 : 0);
-      RPU_SetLampState(STAND_UP_WHITE,  (CurrentStandupsHit & STANDUP_WHITE_MASK) != 0,  (LastStandupTargetHit & STANDUP_WHITE_MASK) != 0  ? 0 : 1,
+      machine_->setLampState(STAND_UP_WHITE,  (CurrentStandupsHit & STANDUP_WHITE_MASK) != 0,  (LastStandupTargetHit & STANDUP_WHITE_MASK) != 0  ? 0 : 1,
                        (LastStandupTargetHit & STANDUP_WHITE_MASK) != 0  ? 50 : 0);
    } else if (GameMode == GAME_MODE_SKILL_SHOT || (GameMode & GAME_MODE_EXPLORE_THE_DEPTHS_FLAG) != 0) {
       uint8_t lampPhase = ((CurrentTime - GameModeStartTime) / 100) % 5;
-      RPU_SetLampState(STAND_UP_PURPLE, lampPhase == 4 || lampPhase == 0, static_cast<uint8_t>(lampPhase == 0));
-      RPU_SetLampState(STAND_UP_YELLOW, lampPhase == 3 || lampPhase == 4, static_cast<uint8_t>(lampPhase == 4));
-      RPU_SetLampState(STAND_UP_AMBER,  lampPhase == 2 || lampPhase == 3, static_cast<uint8_t>(lampPhase == 3));
-      RPU_SetLampState(STAND_UP_GREEN,  lampPhase == 1 || lampPhase == 2, static_cast<uint8_t>(lampPhase == 2));
-      RPU_SetLampState(STAND_UP_WHITE,  lampPhase < 2,                    static_cast<uint8_t>(lampPhase == 1));
+      machine_->setLampState(STAND_UP_PURPLE, lampPhase == 4 || lampPhase == 0, static_cast<uint8_t>(lampPhase == 0));
+      machine_->setLampState(STAND_UP_YELLOW, lampPhase == 3 || lampPhase == 4, static_cast<uint8_t>(lampPhase == 4));
+      machine_->setLampState(STAND_UP_AMBER,  lampPhase == 2 || lampPhase == 3, static_cast<uint8_t>(lampPhase == 3));
+      machine_->setLampState(STAND_UP_GREEN,  lampPhase == 1 || lampPhase == 2, static_cast<uint8_t>(lampPhase == 2));
+      machine_->setLampState(STAND_UP_WHITE,  lampPhase < 2,                    static_cast<uint8_t>(lampPhase == 1));
    } else {
-      RPU_SetLampState(STAND_UP_PURPLE, (CurrentStandupsHit & STANDUP_PURPLE_MASK) != 0);
-      RPU_SetLampState(STAND_UP_YELLOW, (CurrentStandupsHit & STANDUP_YELLOW_MASK) != 0);
-      RPU_SetLampState(STAND_UP_AMBER,  (CurrentStandupsHit & STANDUP_AMBER_MASK) != 0);
-      RPU_SetLampState(STAND_UP_GREEN,  (CurrentStandupsHit & STANDUP_GREEN_MASK) != 0);
-      RPU_SetLampState(STAND_UP_WHITE,  (CurrentStandupsHit & STANDUP_WHITE_MASK) != 0);
+      machine_->setLampState(STAND_UP_PURPLE, (CurrentStandupsHit & STANDUP_PURPLE_MASK) != 0);
+      machine_->setLampState(STAND_UP_YELLOW, (CurrentStandupsHit & STANDUP_YELLOW_MASK) != 0);
+      machine_->setLampState(STAND_UP_AMBER,  (CurrentStandupsHit & STANDUP_AMBER_MASK) != 0);
+      machine_->setLampState(STAND_UP_GREEN,  (CurrentStandupsHit & STANDUP_GREEN_MASK) != 0);
+      machine_->setLampState(STAND_UP_WHITE,  (CurrentStandupsHit & STANDUP_WHITE_MASK) != 0);
    }
 }
 
@@ -658,31 +658,31 @@ void Trident2020Game::showLeftSpinnerLamps() {
       if ((GameModeFlagsQualified & GAME_MODE_FEEDING_FRENZY_FLAG) != 0) {
          lampPhase = ((CurrentTime - GameModeStartTime) / 250) % 9;
       }
-      RPU_SetLampState(LEFT_SPINNER_AMBER,  (lampPhase == 6), 1);
-      RPU_SetLampState(LEFT_SPINNER_WHITE,  (lampPhase == 6), 1);
-      RPU_SetLampState(LEFT_SPINNER_PURPLE, (lampPhase == 6), 1);
+      machine_->setLampState(LEFT_SPINNER_AMBER,  (lampPhase == 6), 1);
+      machine_->setLampState(LEFT_SPINNER_WHITE,  (lampPhase == 6), 1);
+      machine_->setLampState(LEFT_SPINNER_PURPLE, (lampPhase == 6), 1);
    } else if (GameMode == GAME_MODE_SKILL_SHOT) {
       uint8_t lampPhase = ((CurrentTime - GameModeStartTime) / 600) % 3;
-      RPU_SetLampState(LEFT_SPINNER_AMBER,  lampPhase == 0);
-      RPU_SetLampState(LEFT_SPINNER_WHITE,  lampPhase == 1);
-      RPU_SetLampState(LEFT_SPINNER_PURPLE, lampPhase == 2);
+      machine_->setLampState(LEFT_SPINNER_AMBER,  lampPhase == 0);
+      machine_->setLampState(LEFT_SPINNER_WHITE,  lampPhase == 1);
+      machine_->setLampState(LEFT_SPINNER_PURPLE, lampPhase == 2);
    } else {
       if ((GameMode & GAME_MODE_FEEDING_FRENZY_FLAG) != 0 ||
           (LastSpinnerHitTime != 0 && LastSpinnerSide == 2 && (CurrentTime - LastSpinnerHitTime) < MODE_QUALIFY_TIME)) {
          uint8_t lampPhase = ((CurrentTime - GameModeStartTime) / 100) % 3;
-         RPU_SetLampState(LEFT_SPINNER_AMBER,  lampPhase == 2);
-         RPU_SetLampState(LEFT_SPINNER_WHITE,  lampPhase == 1);
-         RPU_SetLampState(LEFT_SPINNER_PURPLE, lampPhase == 0);
+         machine_->setLampState(LEFT_SPINNER_AMBER,  lampPhase == 2);
+         machine_->setLampState(LEFT_SPINNER_WHITE,  lampPhase == 1);
+         machine_->setLampState(LEFT_SPINNER_PURPLE, lampPhase == 0);
       } else {
          int flashFrequency = 200;
          if ((StandupDisplayEndTime - CurrentTime) < 1000) {
             flashFrequency = 100;
          }
-         RPU_SetLampState(LEFT_SPINNER_AMBER,  (CurrentStandupsHit & STANDUP_AMBER_MASK) != 0, 0,
+         machine_->setLampState(LEFT_SPINNER_AMBER,  (CurrentStandupsHit & STANDUP_AMBER_MASK) != 0, 0,
                           (LastStandupTargetHit & STANDUP_AMBER_MASK) != 0 ? flashFrequency : 0);
-         RPU_SetLampState(LEFT_SPINNER_WHITE,  (CurrentStandupsHit & STANDUP_WHITE_MASK) != 0, 0,
+         machine_->setLampState(LEFT_SPINNER_WHITE,  (CurrentStandupsHit & STANDUP_WHITE_MASK) != 0, 0,
                           (LastStandupTargetHit & STANDUP_WHITE_MASK) != 0 ? flashFrequency : 0);
-         RPU_SetLampState(LEFT_SPINNER_PURPLE, (CurrentStandupsHit & STANDUP_PURPLE_MASK) != 0, 0,
+         machine_->setLampState(LEFT_SPINNER_PURPLE, (CurrentStandupsHit & STANDUP_PURPLE_MASK) != 0, 0,
                           (LastStandupTargetHit & STANDUP_PURPLE_MASK) != 0 ? flashFrequency : 0);
       }
    }
@@ -702,10 +702,10 @@ void Trident2020Game::showLeftLaneLamps() {
       }
    }
 
-   RPU_SetLampState(LEFT_LANE_2K, (valueToShow == 2  || valueToShow == 10), 0, valueFlash);
-   RPU_SetLampState(LEFT_LANE_4K, (valueToShow == 4  || valueToShow == 12), 0, valueFlash);
-   RPU_SetLampState(LEFT_LANE_6K, (valueToShow == 6  || valueToShow == 14), 0, valueFlash);
-   RPU_SetLampState(LEFT_LANE_8K, (valueToShow > 6),                        0, valueFlash);
+   machine_->setLampState(LEFT_LANE_2K, (valueToShow == 2  || valueToShow == 10), 0, valueFlash);
+   machine_->setLampState(LEFT_LANE_4K, (valueToShow == 4  || valueToShow == 12), 0, valueFlash);
+   machine_->setLampState(LEFT_LANE_6K, (valueToShow == 6  || valueToShow == 14), 0, valueFlash);
+   machine_->setLampState(LEFT_LANE_8K, (valueToShow > 6),                        0, valueFlash);
 }
 
 // ===========================================================================
@@ -747,7 +747,7 @@ void Trident2020Game::showBonusLamps() {
    if (GameMode == GAME_MODE_MINI_GAME_QUALIFIED) {
       uint8_t lightPhase = ((CurrentTime - GameModeStartTime) / 100) % 15;
       for (uint8_t count = 0; count < 10; count++) {
-         RPU_SetLampState(BONUS_1 + count, (lightPhase == count) || ((lightPhase - 1) == count),
+         machine_->setLampState(BONUS_1 + count, (lightPhase == count) || ((lightPhase - 1) == count),
                           static_cast<uint8_t>((lightPhase - 1) == count));
       }
    } else if (Bonus != LastBonusShown) {
@@ -759,11 +759,11 @@ void Trident2020Game::showBonusLamps() {
 void Trident2020Game::showBonusXLamps() {
    if (GameMode == GAME_MODE_MINI_GAME_QUALIFIED || (GameMode & GAME_MODE_SHARP_SHOOTER_FLAG) != 0) {
       for (int count = 2; count < 6; count++) {
-         RPU_SetLampState(BONUS_2X - (count - 2), false);
+         machine_->setLampState(BONUS_2X - (count - 2), false);
       }
    } else {
       for (int count = 2; count < 6; count++) {
-         RPU_SetLampState(BONUS_2X - (count - 2), (count == BonusX));
+         machine_->setLampState(BONUS_2X - (count - 2), (count == BonusX));
       }
    }
 }
@@ -774,48 +774,48 @@ void Trident2020Game::showRightSpinnerLamps() {
       if ((GameModeFlagsQualified & GAME_MODE_FEEDING_FRENZY_FLAG) != 0) {
          lampPhase = ((CurrentTime - GameModeStartTime) / 250) % 9;
       }
-      RPU_SetLampState(RIGHT_SPINNER_YELLOW, (lampPhase == 6), 1);
-      RPU_SetLampState(RIGHT_SPINNER_GREEN,  (lampPhase == 6), 1);
-      RPU_SetLampState(RIGHT_SPINNER_PURPLE, (lampPhase == 6), 1);
+      machine_->setLampState(RIGHT_SPINNER_YELLOW, (lampPhase == 6), 1);
+      machine_->setLampState(RIGHT_SPINNER_GREEN,  (lampPhase == 6), 1);
+      machine_->setLampState(RIGHT_SPINNER_PURPLE, (lampPhase == 6), 1);
    } else {
       if ((GameMode & GAME_MODE_FEEDING_FRENZY_FLAG) != 0 ||
           (LastSpinnerHitTime != 0 && LastSpinnerSide == 1 && (CurrentTime - LastSpinnerHitTime) < MODE_QUALIFY_TIME)) {
          uint8_t lampPhase = ((CurrentTime - GameModeStartTime) / 100) % 3;
-         RPU_SetLampState(RIGHT_SPINNER_YELLOW, lampPhase == 2);
-         RPU_SetLampState(RIGHT_SPINNER_GREEN,  lampPhase == 1);
-         RPU_SetLampState(RIGHT_SPINNER_PURPLE, lampPhase == 0);
+         machine_->setLampState(RIGHT_SPINNER_YELLOW, lampPhase == 2);
+         machine_->setLampState(RIGHT_SPINNER_GREEN,  lampPhase == 1);
+         machine_->setLampState(RIGHT_SPINNER_PURPLE, lampPhase == 0);
       } else {
          int flashFrequency = 200;
          if ((StandupDisplayEndTime - CurrentTime) < 1000) {
             flashFrequency = 100;
          }
-         RPU_SetLampState(RIGHT_SPINNER_YELLOW, (CurrentStandupsHit & STANDUP_YELLOW_MASK) != 0, 0,
+         machine_->setLampState(RIGHT_SPINNER_YELLOW, (CurrentStandupsHit & STANDUP_YELLOW_MASK) != 0, 0,
                           (LastStandupTargetHit & STANDUP_YELLOW_MASK) != 0 ? flashFrequency : 0);
-         RPU_SetLampState(RIGHT_SPINNER_GREEN,  (CurrentStandupsHit & STANDUP_GREEN_MASK) != 0, 0,
+         machine_->setLampState(RIGHT_SPINNER_GREEN,  (CurrentStandupsHit & STANDUP_GREEN_MASK) != 0, 0,
                           (LastStandupTargetHit & STANDUP_GREEN_MASK) != 0 ? flashFrequency : 0);
-         RPU_SetLampState(RIGHT_SPINNER_PURPLE, (CurrentStandupsHit & STANDUP_PURPLE_MASK) != 0, 0,
+         machine_->setLampState(RIGHT_SPINNER_PURPLE, (CurrentStandupsHit & STANDUP_PURPLE_MASK) != 0, 0,
                           (LastStandupTargetHit & STANDUP_PURPLE_MASK) != 0 ? flashFrequency : 0);
       }
    }
 }
 
 void Trident2020Game::showAwardLamps() {
-   RPU_SetLampState(EXTRA_BALL, ((NumberOfStandupClears == 1 && !ExtraBallCollected) || RescueFromTheDeepEndTime != 0), 0,
+   machine_->setLampState(EXTRA_BALL, ((NumberOfStandupClears == 1 && !ExtraBallCollected) || RescueFromTheDeepEndTime != 0), 0,
                     (RescueFromTheDeepEndTime != 0) ? 100 : 0);
-   RPU_SetLampState(DROP_TARGET_SPECIAL,
+   machine_->setLampState(DROP_TARGET_SPECIAL,
                     (BonusX == (ctx_->targetSpecialBonus - 1)) && (GameMode & GAME_MODE_SHARP_SHOOTER_FLAG) == 0);
-   RPU_SetLampState(STAND_UP_SPECIAL,
+   machine_->setLampState(STAND_UP_SPECIAL,
                     (NumberOfStandupClears == (ctx_->standupSpecialLevel - 1)) && (GameMode & GAME_MODE_EXPLORE_THE_DEPTHS_FLAG) == 0);
-   RPU_SetLampState(RIGHT_OUTLANE_SPECIAL, (NumberOfStandupClears == ctx_->standupSpecialLevel && !SpecialCollected));
+   machine_->setLampState(RIGHT_OUTLANE_SPECIAL, (NumberOfStandupClears == ctx_->standupSpecialLevel && !SpecialCollected));
 }
 
 void Trident2020Game::showShootAgainLamp() {
    if (!BallSaveUsed && ctx_->ballSaveNumSeconds > 0 &&
        (CurrentTime - BallFirstSwitchHitTime) < ((unsigned long)(ctx_->ballSaveNumSeconds - 1) * 1000)) {
       unsigned long msRemaining = ((unsigned long)(ctx_->ballSaveNumSeconds - 1) * 1000) - (CurrentTime - BallFirstSwitchHitTime);
-      RPU_SetLampState(SHOOT_AGAIN, true, 0, (msRemaining < 1000) ? 100 : 500);
+      machine_->setLampState(SHOOT_AGAIN, true, 0, (msRemaining < 1000) ? 100 : 500);
    } else {
-      RPU_SetLampState(SHOOT_AGAIN, SamePlayerShootsAgain);
+      machine_->setLampState(SHOOT_AGAIN, SamePlayerShootsAgain);
    }
 }
 
@@ -833,28 +833,28 @@ uint8_t Trident2020Game::countBits(uint8_t byteToBeCounted) {
 }
 
 void Trident2020Game::resetDropTargets() {
-   RPU_PushToTimedSolenoidStack(SOL_DROP_TARGET_RESET, 12, CurrentTime + 400);
+   machine_->pushToTimedSolenoidStack(SOL_DROP_TARGET_RESET, 12, CurrentTime + 400);
    DropTargetClearTime = CurrentTime;
 
    if ((GameMode & GAME_MODE_SHARP_SHOOTER_FLAG) != 0) {
-      if (SharpShooterTarget != 1) RPU_PushToTimedSolenoidStack(SOL_DROP_TARGET_1, 7, CurrentTime + 600);
-      if (SharpShooterTarget != 2) RPU_PushToTimedSolenoidStack(SOL_DROP_TARGET_2, 7, CurrentTime + 625);
-      if (SharpShooterTarget != 3) RPU_PushToTimedSolenoidStack(SOL_DROP_TARGET_3, 7, CurrentTime + 650);
-      if (SharpShooterTarget != 4) RPU_PushToTimedSolenoidStack(SOL_DROP_TARGET_4, 7, CurrentTime + 675);
-      if (SharpShooterTarget != 5) RPU_PushToTimedSolenoidStack(SOL_DROP_TARGET_5, 7, CurrentTime + 700);
+      if (SharpShooterTarget != 1) machine_->pushToTimedSolenoidStack(SOL_DROP_TARGET_1, 7, CurrentTime + 600);
+      if (SharpShooterTarget != 2) machine_->pushToTimedSolenoidStack(SOL_DROP_TARGET_2, 7, CurrentTime + 625);
+      if (SharpShooterTarget != 3) machine_->pushToTimedSolenoidStack(SOL_DROP_TARGET_3, 7, CurrentTime + 650);
+      if (SharpShooterTarget != 4) machine_->pushToTimedSolenoidStack(SOL_DROP_TARGET_4, 7, CurrentTime + 675);
+      if (SharpShooterTarget != 5) machine_->pushToTimedSolenoidStack(SOL_DROP_TARGET_5, 7, CurrentTime + 700);
       CurrentDropTargetsValid = 0x01 << (SharpShooterTarget - 1);
    } else {
       if (BonusX == 1) {
-         RPU_PushToTimedSolenoidStack(SOL_DROP_TARGET_1, 4, CurrentTime + 700);
-         RPU_PushToTimedSolenoidStack(SOL_DROP_TARGET_3, 4, CurrentTime + 750);
-         RPU_PushToTimedSolenoidStack(SOL_DROP_TARGET_5, 4, CurrentTime + 800);
+         machine_->pushToTimedSolenoidStack(SOL_DROP_TARGET_1, 4, CurrentTime + 700);
+         machine_->pushToTimedSolenoidStack(SOL_DROP_TARGET_3, 4, CurrentTime + 750);
+         machine_->pushToTimedSolenoidStack(SOL_DROP_TARGET_5, 4, CurrentTime + 800);
          CurrentDropTargetsValid = 0x0A;
       } else if (BonusX == 2) {
-         RPU_PushToTimedSolenoidStack(SOL_DROP_TARGET_2, 4, CurrentTime + 600);
-         RPU_PushToTimedSolenoidStack(SOL_DROP_TARGET_4, 4, CurrentTime + 650);
+         machine_->pushToTimedSolenoidStack(SOL_DROP_TARGET_2, 4, CurrentTime + 600);
+         machine_->pushToTimedSolenoidStack(SOL_DROP_TARGET_4, 4, CurrentTime + 650);
          CurrentDropTargetsValid = 0x15;
       } else if (BonusX == 3) {
-         RPU_PushToTimedSolenoidStack(SOL_DROP_TARGET_3, 4, CurrentTime + 600);
+         machine_->pushToTimedSolenoidStack(SOL_DROP_TARGET_3, 4, CurrentTime + 600);
          CurrentDropTargetsValid = 0x1B;
       } else {
          CurrentDropTargetsValid = 0x1F;
@@ -872,9 +872,9 @@ void Trident2020Game::handleDropTargetHit(uint8_t switchHit, unsigned long score
       uint8_t switchMask = 1 << (SW_DROP_TARGET_1 - switchHit);
 
       if ((switchMask & CurrentDropTargetsValid) != 0) {
-         if (RPU_ReadSingleSwitchState(SW_DROP_TARGET_1) && RPU_ReadSingleSwitchState(SW_DROP_TARGET_2) &&
-             RPU_ReadSingleSwitchState(SW_DROP_TARGET_3) && RPU_ReadSingleSwitchState(SW_DROP_TARGET_4) &&
-             RPU_ReadSingleSwitchState(SW_DROP_TARGET_5)) {
+         if (machine_->readSingleSwitchState(SW_DROP_TARGET_1) && machine_->readSingleSwitchState(SW_DROP_TARGET_2) &&
+             machine_->readSingleSwitchState(SW_DROP_TARGET_3) && machine_->readSingleSwitchState(SW_DROP_TARGET_4) &&
+             machine_->readSingleSwitchState(SW_DROP_TARGET_5)) {
             if ((GameMode & GAME_MODE_SHARP_SHOOTER_FLAG) == 0) {
                BonusX += 1;
                machine_->playSoundEffect(SOUND_EFFECT_DROP_TARGET_CLEAR_1 + (BonusX - 1));
@@ -986,19 +986,19 @@ void Trident2020Game::handleStandupHit(uint8_t switchHit, unsigned long scoreMul
 int Trident2020Game::initGamePlay() {
    DEBUG_MESSAGE("Starting game\n\r");
 
-   RPU_EnableSolenoidStack();
-   RPU_SetCoinLockout(ctx_->credits >= ctx_->maximumCredits);
-   RPU_TurnOffAllLamps();
+   machine_->enableSolenoidStack();
+   machine_->setCoinLockout(ctx_->credits >= ctx_->maximumCredits);
+   machine_->turnOffAllLamps();
    setPlayerLamps(1);
 
    ctx_->resetScoresToClearVersion = false;
 
    for (int count = 0; count < 4; count++) {
-      RPU_SetDisplay(count, 0);
+      machine_->setDisplay(count, 0);
       if (count == 0) {
-         RPU_SetDisplayBlank(count, 0x30);
+         machine_->setDisplayBlank(count, 0x30);
       } else {
-         RPU_SetDisplayBlank(count, 0x00);
+         machine_->setDisplayBlank(count, 0x00);
       }
       CurrentScores[count] = 0;
       SamePlayerShootsAgain = false;
@@ -1013,8 +1013,8 @@ int Trident2020Game::initGamePlay() {
    CurrentPlayer = 0;
    showPlayerScores(0xFF, false, false);
 
-   if (RPU_ReadSingleSwitchState(SW_SAUCER)) {
-      RPU_PushToSolenoidStack(SOL_SAUCER, 5);
+   if (machine_->readSingleSwitchState(SW_SAUCER)) {
+      machine_->pushToSolenoidStack(SOL_SAUCER, 5);
    }
 
    return MACHINE_STATE_INIT_NEW_BALL;
@@ -1025,21 +1025,21 @@ int Trident2020Game::initNewBall(bool curStateChanged, uint8_t playerNum, int ba
       SamePlayerShootsAgain = false;
       BallFirstSwitchHitTime = 0;
 
-      RPU_SetDisableFlippers(false);
-      RPU_EnableSolenoidStack();
-      RPU_SetDisplayCredits(ctx_->credits, true);
+      machine_->setDisableFlippers(false);
+      machine_->enableSolenoidStack();
+      machine_->setDisplayCredits(ctx_->credits, true);
       setPlayerLamps(playerNum + 1, 4);
       if (CurrentNumPlayers > 1 && (ballNum != 1 || playerNum != 0)) {
          machine_->playSoundEffect(SOUND_EFFECT_PLAYER_1_UP + playerNum);
       }
       machine_->playBackgroundSongBasedOnBall(ballNum);
 
-      RPU_SetDisplayBallInPlay(ballNum);
-      RPU_SetLampState(BALL_IN_PLAY, true);
-      RPU_SetLampState(TILT, false);
+      machine_->setDisplayBallInPlay(ballNum);
+      machine_->setLampState(BALL_IN_PLAY, true);
+      machine_->setLampState(TILT, false);
 
       if (ctx_->ballSaveNumSeconds > 0) {
-         RPU_SetLampState(SHOOT_AGAIN, true, 0, 500);
+         machine_->setLampState(SHOOT_AGAIN, true, 0, 500);
       }
 
       Bonus = 1;
@@ -1078,14 +1078,14 @@ int Trident2020Game::initNewBall(bool curStateChanged, uint8_t playerNum, int ba
       CurrentPlayerCurrentScore = CurrentScores[CurrentPlayer];
       CurrentStandupsHit = StandupsHit[CurrentPlayer];
 
-      if (RPU_ReadSingleSwitchState(SW_OUTHOLE)) {
-         RPU_PushToTimedSolenoidStack(SOL_OUTHOLE, 4, CurrentTime + 100);
+      if (machine_->readSingleSwitchState(SW_OUTHOLE)) {
+         machine_->pushToTimedSolenoidStack(SOL_OUTHOLE, 4, CurrentTime + 100);
       }
 
-      RPU_PushToTimedSolenoidStack(SOL_DROP_TARGET_RESET, 12, CurrentTime);
+      machine_->pushToTimedSolenoidStack(SOL_DROP_TARGET_RESET, 12, CurrentTime);
    }
 
-   if (RPU_ReadSingleSwitchState(SW_OUTHOLE)) {
+   if (machine_->readSingleSwitchState(SW_OUTHOLE)) {
       return MACHINE_STATE_INIT_NEW_BALL;
    } else {
       return MACHINE_STATE_NORMAL_GAMEPLAY;
@@ -1357,25 +1357,25 @@ int Trident2020Game::manageGameMode() {
    }
 
    // Check to see if ball is in the outhole
-   if (RPU_ReadSingleSwitchState(SW_OUTHOLE)) {
+   if (machine_->readSingleSwitchState(SW_OUTHOLE)) {
       if (BallTimeInTrough == 0) {
          BallTimeInTrough = CurrentTime;
       } else {
          if ((CurrentTime - BallTimeInTrough) > 500) {
             if (BallFirstSwitchHitTime == 0 && NumTiltWarnings <= ctx_->maxTiltWarnings) {
-               RPU_PushToTimedSolenoidStack(SOL_OUTHOLE, 4, CurrentTime);
+               machine_->pushToTimedSolenoidStack(SOL_OUTHOLE, 4, CurrentTime);
                BallTimeInTrough = 0;
                returnState = MACHINE_STATE_NORMAL_GAMEPLAY;
             } else {
                if (!BallSaveUsed && ((CurrentTime - BallFirstSwitchHitTime) / 1000) < ((unsigned long)ctx_->ballSaveNumSeconds)) {
-                  RPU_PushToTimedSolenoidStack(SOL_OUTHOLE, 4, CurrentTime + 100);
+                  machine_->pushToTimedSolenoidStack(SOL_OUTHOLE, 4, CurrentTime + 100);
                   BallSaveUsed = true;
                   machine_->playSoundEffect(SOUND_EFFECT_SWIM_AGAIN);
-                  RPU_SetLampState(SHOOT_AGAIN, false);
+                  machine_->setLampState(SHOOT_AGAIN, false);
                   BallTimeInTrough = CurrentTime;
                   returnState = MACHINE_STATE_NORMAL_GAMEPLAY;
                } else if (RescueFromTheDeepEndTime != 0 && CurrentTime < RescueFromTheDeepEndTime) {
-                  RPU_PushToTimedSolenoidStack(SOL_OUTHOLE, 4, CurrentTime + 100);
+                  machine_->pushToTimedSolenoidStack(SOL_OUTHOLE, 4, CurrentTime + 100);
                   machine_->playSoundEffect(SOUND_EFFECT_RESCUE_FROM_THE_DEEP);
                   RescueFromTheDeepAvailable = false;
                   BallTimeInTrough = CurrentTime;
@@ -1400,7 +1400,7 @@ int Trident2020Game::manageGameMode() {
 
 int Trident2020Game::countdownBonus(bool curStateChanged) {
    if (curStateChanged) {
-      RPU_SetLampState(BALL_IN_PLAY, true, 0, 250);
+      machine_->setLampState(BALL_IN_PLAY, true, 0, 250);
       CountdownStartTime = CurrentTime;
       showBonusOnTree(Bonus);
       LastCountdownReportTime = CountdownStartTime;
@@ -1417,7 +1417,7 @@ int Trident2020Game::countdownBonus(bool curStateChanged) {
          showBonusOnTree(Bonus);
       } else if (BonusCountDownEndTime == 0xFFFFFFFF) {
          machine_->playSoundEffect(SOUND_EFFECT_BALL_OVER);
-         RPU_SetLampState(BONUS_1, false);
+         machine_->setLampState(BONUS_1, false);
          BonusCountDownEndTime = CurrentTime + 1000;
       }
       LastCountdownReportTime = CurrentTime;
@@ -1445,22 +1445,22 @@ void Trident2020Game::checkHighScores() {
       ctx_->highScore = highestScore;
       if (ctx_->highScoreReplay) {
          machine_->addCredit(false, 3);
-         RPU_WriteULToEEProm(RPU_TOTAL_REPLAYS_EEPROM_START_BYTE, RPU_ReadULFromEEProm(RPU_TOTAL_REPLAYS_EEPROM_START_BYTE) + 3);
+         machine_->writeULToEEProm(RPU_TOTAL_REPLAYS_EEPROM_START_BYTE, machine_->readULFromEEProm(RPU_TOTAL_REPLAYS_EEPROM_START_BYTE) + 3);
       }
-      RPU_WriteULToEEProm(RPU_HIGHSCORE_EEPROM_START_BYTE, highestScore);
-      RPU_WriteULToEEProm(RPU_TOTAL_HISCORE_BEATEN_START_BYTE, RPU_ReadULFromEEProm(RPU_TOTAL_HISCORE_BEATEN_START_BYTE) + 1);
+      machine_->writeULToEEProm(RPU_HIGHSCORE_EEPROM_START_BYTE, highestScore);
+      machine_->writeULToEEProm(RPU_TOTAL_HISCORE_BEATEN_START_BYTE, machine_->readULFromEEProm(RPU_TOTAL_HISCORE_BEATEN_START_BYTE) + 1);
 
       for (int count = 0; count < 4; count++) {
          if (count == highScorePlayerNum) {
-            RPU_SetDisplay(count, CurrentScores[count], true, 2);
+            machine_->setDisplay(count, CurrentScores[count], true, 2);
          } else {
-            RPU_SetDisplayBlank(count, 0x00);
+            machine_->setDisplayBlank(count, 0x00);
          }
       }
 
-      RPU_PushToTimedSolenoidStack(SOL_KNOCKER, 3, CurrentTime, true);
-      RPU_PushToTimedSolenoidStack(SOL_KNOCKER, 3, CurrentTime + 300, true);
-      RPU_PushToTimedSolenoidStack(SOL_KNOCKER, 3, CurrentTime + 600, true);
+      machine_->pushToTimedSolenoidStack(SOL_KNOCKER, 3, CurrentTime, true);
+      machine_->pushToTimedSolenoidStack(SOL_KNOCKER, 3, CurrentTime + 300, true);
+      machine_->pushToTimedSolenoidStack(SOL_KNOCKER, 3, CurrentTime + 600, true);
    }
 }
 
@@ -1474,10 +1474,10 @@ int Trident2020Game::showMatchSequence(bool curStateChanged) {
       MatchDelay = 1500;
       MatchDigit = CurrentTime % 10;
       NumMatchSpins = 0;
-      RPU_SetLampState(MATCH, true, 0);
-      RPU_SetDisableFlippers();
+      machine_->setLampState(MATCH, true, 0);
+      machine_->setDisableFlippers(true);
       ScoreMatches = 0;
-      RPU_SetLampState(BALL_IN_PLAY, false);
+      machine_->setLampState(BALL_IN_PLAY, false);
    }
 
    if (NumMatchSpins < 40) {
@@ -1487,13 +1487,13 @@ int Trident2020Game::showMatchSequence(bool curStateChanged) {
             MatchDigit = 0;
          }
          machine_->playSoundEffect(SOUND_EFFECT_MATCH_SPIN);
-         RPU_SetDisplayBallInPlay((int)MatchDigit * 10);
+         machine_->setDisplayBallInPlay((int)MatchDigit * 10);
          MatchDelay += 50 + 4 * NumMatchSpins;
          NumMatchSpins += 1;
-         RPU_SetLampState(MATCH, (NumMatchSpins % 2) != 0, 0);
+         machine_->setLampState(MATCH, (NumMatchSpins % 2) != 0, 0);
 
          if (NumMatchSpins == 40) {
-            RPU_SetLampState(MATCH, false);
+            machine_->setLampState(MATCH, false);
             MatchDelay = CurrentTime - MatchSequenceStartTime;
          }
       }
@@ -1506,7 +1506,7 @@ int Trident2020Game::showMatchSequence(bool curStateChanged) {
             machine_->addSpecialCredit();
             MatchDelay += 1000;
             NumMatchSpins += 1;
-            RPU_SetLampState(MATCH, true);
+            machine_->setLampState(MATCH, true);
          } else {
             NumMatchSpins += 1;
          }
@@ -1525,9 +1525,9 @@ int Trident2020Game::showMatchSequence(bool curStateChanged) {
    for (int count = 0; count < 4; count++) {
       if ((ScoreMatches >> count) & 0x01) {
          if ((CurrentTime / 200) % 2 != 0) {
-            RPU_SetDisplayBlank(count, RPU_GetDisplayBlank(count) & 0x0F);
+            machine_->setDisplayBlank(count, machine_->getDisplayBlank(count) & 0x0F);
          } else {
-            RPU_SetDisplayBlank(count, RPU_GetDisplayBlank(count) | 0x30);
+            machine_->setDisplayBlank(count, machine_->getDisplayBlank(count) | 0x30);
          }
       }
    }
