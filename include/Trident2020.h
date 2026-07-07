@@ -85,3 +85,6 @@ constexpr uint8_t SOUND_SELECTOR_NONE = 0;
 constexpr uint8_t SOUND_SELECTOR_ORIGINAL = 1;
 constexpr uint8_t SOUND_SELECTOR_TRIDENT2020 = 3;
 
+// How many standup clears before Explore the Depths qualifies
+constexpr uint8_t ExploreTheDepthsStart = 1;
+
