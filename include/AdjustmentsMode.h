@@ -1,16 +1,16 @@
 /**************************************************************************
- * AdjustmentsMode.h  (file kept as AdjustmentsMode.h for build-system compat)
+ * AdjustmentsMode.h
  *
  * Operator adjustment menu: the 14 game settings stored in EEPROM.
- * Entered from HardwareTestMode when the operator cycles past the last
- * hardware test; exits to AttractMode when the operator cycles past
- * ADJUST_DONE or hits the slam switch.
+ * Entered from MachineEepromMode when the operator cycles past the last
+ * EEPROM setting; exits to AttractMode when the operator cycles past
+ * the last adjustment or hits the slam switch.
+ * Adjustment numbering is local to this mode (1 = free play … 14 = dim level).
  **************************************************************************/
 
 #pragma once
 #include "MachineMode.h"
 #include "MachineSettings.h"
-#include "MachineState.h"
 #include "PinballMachine.h"
 #include "Trident2020Game.h"
 #include <stdint.h>
@@ -26,8 +26,24 @@ enum AdjustmentType_t : uint8_t {
 };
 
 class AdjustmentsMode : public MachineMode {
-   int  internalState_ = MACHINE_STATE_ADJUST_FREEPLAY;
-   bool stateChanged_  = false;
+   static constexpr uint8_t kAdjFreeplay          =  1;
+   static constexpr uint8_t kAdjBallSave          =  2;
+   static constexpr uint8_t kAdjSfxAndSoundtrack  =  3;
+   static constexpr uint8_t kAdjMusicVolume       =  4;
+   static constexpr uint8_t kAdjSfxVolume         =  5;
+   static constexpr uint8_t kAdjCalloutsVolume    =  6;
+   static constexpr uint8_t kAdjTournamentScoring =  7;
+   static constexpr uint8_t kAdjTiltWarning       =  8;
+   static constexpr uint8_t kAdjAwardOverride     =  9;
+   static constexpr uint8_t kAdjBallsOverride     = 10;
+   static constexpr uint8_t kAdjScrollingScores   = 11;
+   static constexpr uint8_t kAdjExtraBallAward    = 12;
+   static constexpr uint8_t kAdjSpecialAward      = 13;
+   static constexpr uint8_t kAdjDimLevel          = 14;
+   static constexpr uint8_t kAdjDone              = 15;
+
+   uint8_t internalState_ = 0;
+   bool    stateChanged_  = false;
 
    Trident2020Game* game_     = nullptr;
    PinballMachine*  machine_  = nullptr;
@@ -54,6 +70,3 @@ public:
    void     exit() override;
    TopState update(unsigned long currentTime) override;
 };
-
-// Backwards-compat alias so main.cpp can be updated incrementally.
-using AdjustmentsMode = AdjustmentsMode;

@@ -120,7 +120,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
             break;
 
          case SW_SELF_TEST_SWITCH:
-            returnState = MACHINE_STATE_TEST_LAMPS;
+            returnState = -1;   // any negative; detected as hardware-test exit
             machine_->setSelfTestChangedTime(CurrentTime);
             break;
 
@@ -379,7 +379,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
       while ((switchHit = RPU_PullFirstFromSwitchStack()) != SWITCH_STACK_EMPTY) {
          switch (switchHit) {
          case SW_SELF_TEST_SWITCH:
-            returnState = MACHINE_STATE_TEST_LAMPS;
+            returnState = -1;   // any negative; detected as hardware-test exit
             machine_->setSelfTestChangedTime(CurrentTime);
             break;
          case SW_SAUCER:

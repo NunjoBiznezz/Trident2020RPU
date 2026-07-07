@@ -1,5 +1,5 @@
 /**************************************************************************
- * AdjustmentsMode.cpp  (file kept as AdjustmentsMode.cpp for build-system compat)
+ * AdjustmentsMode.cpp
  **************************************************************************/
 
 #include "AdjustmentsMode.h"
@@ -8,8 +8,7 @@
 #include "Trident2020.h"
 #include <EEPROM.h>
 
-// Callouts for adjustment states -21 (ADJUST_FREEPLAY) through -35 (ADJUST_DONE).
-// Index 0 = ADJUST_FREEPLAY, index 14 = ADJUST_DONE.
+// Callout index 0 = adjustment 1 (free play) … index 14 = adjustment 15 (done).
 static const uint8_t kAdjustmentCalloutMap[15] = {
    153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 171, 0
 };
@@ -17,7 +16,7 @@ static const uint8_t kAdjustmentCalloutMap[15] = {
 static const uint8_t kSoundSelectorToCalloutsMap[] = {190, 191, 199, 197, 198, 196};
 
 void AdjustmentsMode::enter(unsigned long /*currentTime*/) {
-   internalState_ = MACHINE_STATE_ADJUST_FREEPLAY;
+   internalState_ = kAdjFreeplay;
    stateChanged_  = true;
 }
 
@@ -26,16 +25,16 @@ void AdjustmentsMode::exit() {
 }
 
 TopState AdjustmentsMode::update(unsigned long currentTime) {
-   bool curStateChanged = stateChanged_;
-   stateChanged_ = false;
-   int curState   = internalState_;
-   int returnState = curState;
+   bool    curStateChanged = stateChanged_;
+   stateChanged_           = false;
+   uint8_t curState        = internalState_;
+   uint8_t returnState     = curState;
 
    game_->setNumPlayers(0);   // ???
 
    if (curStateChanged) {
       machine_->stopAllAudio();
-      uint8_t callout = kAdjustmentCalloutMap[-curState - 21];
+      uint8_t callout = kAdjustmentCalloutMap[curState - 1];
       machine_->playCallout(callout);
       soundSettingTimeout_ = 0;
    } else {
@@ -50,11 +49,11 @@ TopState AdjustmentsMode::update(unsigned long currentTime) {
    if (curSwitch == SW_SELF_TEST_SWITCH &&
        (currentTime - machine_->getSelfTestChangedTime()) > 250) {
       machine_->setSelfTestChangedTime(currentTime);
-      returnState -= 1;
+      returnState += 1;
    }
 
    if (curSwitch == SW_SLAM) {
-      returnState = MACHINE_STATE_ATTRACT;
+      returnState = 0;
    }
 
    if (curStateChanged) {
@@ -62,7 +61,7 @@ TopState AdjustmentsMode::update(unsigned long currentTime) {
          machine_->setDisplay(count, 0);
          machine_->setDisplayBlank(count, 0x00);
       }
-      machine_->setDisplayCredits((uint8_t)(MACHINE_STATE_TEST_SOUNDS - curState), true);
+      machine_->setDisplayCredits(curState, true);
       machine_->setDisplayBallInPlay(0, false);
       currentAdjustmentByte_        = nullptr;
       currentAdjustmentUL_          = nullptr;
@@ -74,12 +73,12 @@ TopState AdjustmentsMode::update(unsigned long currentTime) {
       tempValue_           = 0;
 
       switch (curState) {
-      case MACHINE_STATE_ADJUST_FREEPLAY:
+      case kAdjFreeplay:
          currentAdjustmentByte_        = (uint8_t*)&settings_->freePlayMode;
          currentAdjustmentStorageByte_ = EEPROM_FREE_PLAY_BYTE;
          break;
 
-      case MACHINE_STATE_ADJUST_BALL_SAVE:
+      case kAdjBallSave:
          adjustmentType_      = ADJ_TYPE_LIST;
          numAdjustmentValues_ = 5;
          adjustmentValues_[1] = 5;
@@ -90,53 +89,53 @@ TopState AdjustmentsMode::update(unsigned long currentTime) {
          currentAdjustmentStorageByte_ = EEPROM_BALL_SAVE_BYTE;
          break;
 
-      case MACHINE_STATE_ADJUST_SFX_AND_SOUNDTRACK:
+      case kAdjSfxAndSoundtrack:
          adjustmentType_      = ADJ_TYPE_MIN_MAX;
          adjustmentValues_[1] = 5;
          currentAdjustmentByte_        = &settings_->soundSelector;
          currentAdjustmentStorageByte_ = EEPROM_SOUND_SELECTOR_BYTE;
          break;
 
-      case MACHINE_STATE_ADJUST_MUSIC_VOLUME:
+      case kAdjMusicVolume:
          adjustmentType_      = ADJ_TYPE_MIN_MAX;
          adjustmentValues_[1] = 10;
          currentAdjustmentByte_        = &settings_->musicVolume;
          currentAdjustmentStorageByte_ = EEPROM_MUSIC_VOLUME_BYTE;
          break;
 
-      case MACHINE_STATE_ADJUST_SFX_VOLUME:
+      case kAdjSfxVolume:
          adjustmentType_      = ADJ_TYPE_MIN_MAX;
          adjustmentValues_[1] = 10;
          currentAdjustmentByte_        = &settings_->sfxVolume;
          currentAdjustmentStorageByte_ = EEPROM_SFX_VOLUME_BYTE;
          break;
 
-      case MACHINE_STATE_ADJUST_CALLOUTS_VOLUME:
+      case kAdjCalloutsVolume:
          adjustmentType_      = ADJ_TYPE_MIN_MAX;
          adjustmentValues_[1] = 10;
          currentAdjustmentByte_        = &settings_->calloutsVolume;
          currentAdjustmentStorageByte_ = EEPROM_CALLOUTS_VOLUME_BYTE;
          break;
 
-      case MACHINE_STATE_ADJUST_TOURNAMENT_SCORING:
+      case kAdjTournamentScoring:
          currentAdjustmentByte_        = (uint8_t*)&settings_->tournamentScoring;
          currentAdjustmentStorageByte_ = EEPROM_TOURNAMENT_SCORING_BYTE;
          break;
 
-      case MACHINE_STATE_ADJUST_TILT_WARNING:
+      case kAdjTiltWarning:
          adjustmentValues_[1]          = 2;
          currentAdjustmentByte_        = &settings_->maxTiltWarnings;
          currentAdjustmentStorageByte_ = EEPROM_TILT_WARNING_BYTE;
          break;
 
-      case MACHINE_STATE_ADJUST_AWARD_OVERRIDE:
+      case kAdjAwardOverride:
          adjustmentType_      = ADJ_TYPE_MIN_MAX_DEFAULT;
          adjustmentValues_[1] = 7;
          currentAdjustmentByte_        = &settings_->scoreAwardReplay;
          currentAdjustmentStorageByte_ = EEPROM_AWARD_OVERRIDE_BYTE;
          break;
 
-      case MACHINE_STATE_ADJUST_BALLS_OVERRIDE:
+      case kAdjBallsOverride:
          adjustmentType_      = ADJ_TYPE_LIST;
          numAdjustmentValues_ = 3;
          adjustmentValues_[0] = 3;
@@ -146,24 +145,24 @@ TopState AdjustmentsMode::update(unsigned long currentTime) {
          currentAdjustmentStorageByte_ = EEPROM_BALLS_OVERRIDE_BYTE;
          break;
 
-      case MACHINE_STATE_ADJUST_SCROLLING_SCORES:
+      case kAdjScrollingScores:
          currentAdjustmentByte_        = (uint8_t*)&settings_->scrollingScores;
          currentAdjustmentStorageByte_ = EEPROM_SCROLLING_SCORES_BYTE;
          break;
 
-      case MACHINE_STATE_ADJUST_EXTRA_BALL_AWARD:
+      case kAdjExtraBallAward:
          adjustmentType_               = ADJ_TYPE_SCORE_WITH_DEFAULT;
          currentAdjustmentUL_          = &settings_->extraBallValue;
          currentAdjustmentStorageByte_ = EEPROM_EXTRA_BALL_SCORE_BYTE;
          break;
 
-      case MACHINE_STATE_ADJUST_SPECIAL_AWARD:
+      case kAdjSpecialAward:
          adjustmentType_               = ADJ_TYPE_SCORE_WITH_DEFAULT;
          currentAdjustmentUL_          = &settings_->specialValue;
          currentAdjustmentStorageByte_ = EEPROM_SPECIAL_SCORE_BYTE;
          break;
 
-      case MACHINE_STATE_ADJUST_DIM_LEVEL:
+      case kAdjDimLevel:
          adjustmentType_      = ADJ_TYPE_LIST;
          numAdjustmentValues_ = 2;
          adjustmentValues_[0] = 2;
@@ -175,8 +174,8 @@ TopState AdjustmentsMode::update(unsigned long currentTime) {
          }
          break;
 
-      case MACHINE_STATE_ADJUST_DONE:
-         returnState = MACHINE_STATE_ATTRACT;
+      case kAdjDone:
+         returnState = 0;
          break;
       }
    }
@@ -224,7 +223,7 @@ TopState AdjustmentsMode::update(unsigned long currentTime) {
          }
       }
 
-      if (curState == MACHINE_STATE_ADJUST_DIM_LEVEL) {
+      if (curState == kAdjDimLevel) {
          machine_->setDimDivisor(1, settings_->dimLevel);
       }
    }
@@ -235,7 +234,7 @@ TopState AdjustmentsMode::update(unsigned long currentTime) {
       machine_->setDisplay(0, (*currentAdjustmentUL_), true);
    }
 
-   if (curState == MACHINE_STATE_ADJUST_DIM_LEVEL) {
+   if (curState == kAdjDimLevel) {
       for (int count = 0; count < 10; count++) {
          machine_->setLampState(BONUS_1 + count, true, (uint8_t)((currentTime / 1000) % 2));
       }
@@ -245,5 +244,5 @@ TopState AdjustmentsMode::update(unsigned long currentTime) {
       internalState_ = returnState;
       stateChanged_  = true;
    }
-   return (internalState_ == MACHINE_STATE_ATTRACT) ? TopState::Attract : TopState::Adjustments;
+   return (internalState_ == 0) ? TopState::Attract : TopState::Adjustments;
 }

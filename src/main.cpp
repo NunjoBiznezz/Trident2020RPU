@@ -23,6 +23,7 @@
 // increase mode start time with new qualifier
 #include "AttractMode.h"
 #include "HardwareTestMode.h"
+#include "MachineEepromMode.h"
 #include "MachineMode.h"
 #include "MachineSettings.h"
 #include "MachineState.h"
@@ -71,11 +72,12 @@ static const BuildInfoRecord FIRMWARE_BUILD_INFO PROGMEM = {
 *********************************************************************/
 static unsigned long CurrentTime = 0;
 
-static TridentMachine   pinballMachine;
-static Trident2020Game  game;
-static HardwareTestMode hardwareTestMode;
-static AdjustmentsMode     selfTestMode;   // AdjustmentsMode = AdjustmentsMode
-static AttractMode      attractMode;
+static TridentMachine    pinballMachine;
+static Trident2020Game   game;
+static HardwareTestMode  hardwareTestMode;
+static MachineEepromMode machineEepromMode;
+static AdjustmentsMode   adjustmentsMode;
+static AttractMode       attractMode;
 
 static TopState     topState   = TopState::Attract;
 static MachineMode* activeMode = &attractMode;
@@ -109,7 +111,8 @@ void setup() {
    game.setSettings(s);
    game.setMachine(pinballMachine);
    hardwareTestMode.setDependencies(pinballMachine);
-   selfTestMode.setDependencies(game, pinballMachine, s);
+   machineEepromMode.setDependencies(pinballMachine);
+   adjustmentsMode.setDependencies(game, pinballMachine, s);
    attractMode.setDependencies(game, pinballMachine, s);
    attractMode.setVersionInfo(TRIDENT2020_MAJOR_VERSION, TRIDENT2020_MINOR_VERSION,
                                RPU_OS_MAJOR_VERSION, RPU_OS_MINOR_VERSION);
@@ -129,10 +132,11 @@ void loop() {
       activeMode->exit();
       topState = newState;
       switch (topState) {
-      case TopState::HardwareTest: activeMode = &hardwareTestMode; break;
-      case TopState::Adjustments:  activeMode = &selfTestMode;     break;
-      case TopState::Attract:      activeMode = &attractMode;      break;
-      case TopState::Game:         activeMode = &game;             break;
+      case TopState::HardwareTest: activeMode = &hardwareTestMode;  break;
+      case TopState::MachineEeprom: activeMode = &machineEepromMode; break;
+      case TopState::Adjustments:  activeMode = &adjustmentsMode;   break;
+      case TopState::Attract:      activeMode = &attractMode;       break;
+      case TopState::Game:         activeMode = &game;              break;
       }
       activeMode->enter(CurrentTime);
    }
