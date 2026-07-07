@@ -1,5 +1,5 @@
 /**************************************************************************
- * AdjustmentsMode.h
+ * Trident2020AdjustmentsMode.h
  *
  * Operator adjustment menu: the 14 game settings stored in EEPROM.
  * Entered from MachineEepromMode when the operator cycles past the last
@@ -25,7 +25,7 @@ enum AdjustmentType_t : uint8_t {
    ADJ_TYPE_SCORE_NO_DEFAULT   = 6
 };
 
-class AdjustmentsMode : public MachineMode {
+class Trident2020AdjustmentsMode : public MachineMode {
    static constexpr uint8_t kAdjFreeplay          =  1;
    static constexpr uint8_t kAdjBallSave          =  2;
    static constexpr uint8_t kAdjSfxAndSoundtrack  =  3;

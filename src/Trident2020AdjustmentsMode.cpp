@@ -1,11 +1,11 @@
 /**************************************************************************
- * AdjustmentsMode.cpp
+ * Trident2020AdjustmentsMode.cpp
  **************************************************************************/
 
-#include "AdjustmentsMode.h"
 #include "RPU.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
+#include "Trident2020AdjustmentsMode.h"
 #include <EEPROM.h>
 
 // Callout index 0 = adjustment 1 (free play) … index 14 = adjustment 15 (done).
@@ -15,16 +15,16 @@ static const uint8_t kAdjustmentCalloutMap[15] = {
 
 static const uint8_t kSoundSelectorToCalloutsMap[] = {190, 191, 199, 197, 198, 196};
 
-void AdjustmentsMode::enter(unsigned long /*currentTime*/) {
+void Trident2020AdjustmentsMode::enter(unsigned long /*currentTime*/) {
    internalState_ = kAdjFreeplay;
    stateChanged_  = true;
 }
 
-void AdjustmentsMode::exit() {
+void Trident2020AdjustmentsMode::exit() {
    machine_->readStoredParameters();
 }
 
-TopState AdjustmentsMode::update(unsigned long currentTime) {
+TopState Trident2020AdjustmentsMode::update(unsigned long currentTime) {
    bool    curStateChanged = stateChanged_;
    stateChanged_           = false;
    uint8_t curState        = internalState_;
@@ -219,7 +219,7 @@ TopState AdjustmentsMode::update(unsigned long currentTime) {
          if (adjustmentType_ == ADJ_TYPE_SCORE_NO_DEFAULT && curVal == 0) curVal = 5000;
          *currentAdjustmentUL_ = curVal;
          if (currentAdjustmentStorageByte_ != 0) {
-            machine_->writeULToEEProm(currentAdjustmentStorageByte_, curVal);
+            EEPROM.put(currentAdjustmentStorageByte_, curVal);
          }
       }
 

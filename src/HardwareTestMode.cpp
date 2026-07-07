@@ -207,6 +207,6 @@ TopState HardwareTestMode::update(unsigned long currentTime) {
    }
 
    if (internalState_ == 0) return TopState::Attract;
-   if (internalState_ > kTestSounds) return TopState::MachineEeprom;
+   if (internalState_ > kTestSounds) return TopState::StoredAdjustments;
    return TopState::HardwareTest;
 }
