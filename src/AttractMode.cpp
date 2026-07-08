@@ -13,17 +13,16 @@
 #  define DEBUG_MESSAGE(x)
 #endif
 
-void AttractMode::enter(unsigned long) {
+void AttractMode::enter(unsigned long currentTime) {
    machine_->playSoundCardEffect(0);
    machine_->disableSolenoidStack();
    machine_->turnOffAllLamps();
    machine_->setDisableFlippers(true);
    DEBUG_MESSAGE("Entering Attract Mode\n\r");
    lastPlayfieldMode_ = 0;
+   enterTime_         = currentTime;
 
    if (versionMajor_ != 0) {
-      // Show firmware version on all four score displays for the first
-      // several seconds of attract mode before the normal display cycle begins.
       machine_->setDisplay(0, versionMajor_);
       machine_->setDisplay(1, versionMinor_);
       machine_->setDisplay(2, rpuMajor_);
@@ -31,7 +30,7 @@ void AttractMode::enter(unsigned long) {
       machine_->setDisplayCredits(settings_->credits, true);
       machine_->setDisplayBallInPlay(0, true);
       settings_->resetScoresToClearVersion = true;
-      lastHeadMode_ = 1;   // suppress showPlayerScores until version display window expires
+      lastHeadMode_ = 1;
    } else {
       lastHeadMode_ = 0;
    }
@@ -40,7 +39,7 @@ void AttractMode::enter(unsigned long) {
 TopState AttractMode::update(unsigned long currentTime) {
    int returnState = MACHINE_STATE_ATTRACT;
 
-   if (currentTime < 16000) {
+   if ((currentTime - enterTime_) < 5000) {
       if (lastHeadMode_ != 1) {
          machine_->showScores(0xFF, savedNumPlayers_, false, false, 0, savedScores_, currentTime, 0, 0, nullptr);
          for (uint8_t i = 0; i < 4; i++) machine_->setLampState(LAMP_PLAYER_1 + i, false);
