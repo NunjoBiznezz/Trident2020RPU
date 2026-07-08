@@ -10,6 +10,8 @@
 #pragma once
 #include <stdint.h>
 
+class MachineSettings;
+
 class PinballMachine {
 public:
    static constexpr uint8_t SWITCH_STACK_EMPTY = 0xFF;
@@ -33,6 +35,8 @@ public:
    virtual void setDisplay(uint8_t display, unsigned long value,
                             bool blankLeadingZeros = false,
                             uint8_t minimumDigits  = 0)               { (void)display; (void)value; (void)blankLeadingZeros; (void)minimumDigits; }
+   virtual void setDisplayFlash(uint8_t display, unsigned long value,
+                                 uint16_t period = 500)               { (void)display; (void)value; (void)period; }
    virtual void setDisplayCredits(uint8_t credits,
                                    bool showCredits = true)           { (void)credits; (void)showCredits; }
    virtual void setDisplayBallInPlay(uint8_t ball,
@@ -64,19 +68,6 @@ public:
    virtual uint8_t getDisplayBlank(uint8_t display)                    { (void)display; return 0; }
    virtual void    cycleAllDisplays(unsigned long t, uint8_t curValue) { (void)t; (void)curValue; }
 
-   // --- Multi-player score display ---
-   // Render player score displays. scores[4] provides the values to show;
-   // overrideValues may be nullptr when overrideStatus == 0.
-   virtual void showScores(uint8_t displayToUpdate, uint8_t numPlayers,
-                            bool flashCurrent, bool dashCurrent,
-                            unsigned long allScoresShowValue,
-                            const unsigned long* scores,
-                            unsigned long currentTime, unsigned long lastTimeScoreChanged,
-                            uint8_t overrideStatus, const unsigned long* overrideValues) {
-      (void)displayToUpdate; (void)numPlayers; (void)flashCurrent; (void)dashCurrent;
-      (void)allScoresShowValue; (void)scores; (void)currentTime; (void)lastTimeScoreChanged;
-      (void)overrideStatus; (void)overrideValues;
-   }
 
    // --- Coin lockout ---
    virtual void    setCoinLockout(bool lock)                           { (void)lock; }
@@ -107,4 +98,9 @@ public:
    virtual void setRolloverValue(uint8_t v)                           { (void)v; }
    virtual void update(unsigned long currentTime)                     { (void)currentTime; }
    virtual void readStoredParameters()                                 {}
+
+   virtual uint8_t getCredits() const = 0;
+   virtual unsigned long getHighScore() const = 0;
+   virtual bool getFreePlayMode() const = 0;
+   virtual MachineSettings& getSettings() = 0;
 };

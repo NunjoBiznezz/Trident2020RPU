@@ -121,9 +121,10 @@ private:
    unsigned long LastMiniGameBonusTime = 0;
 
    // Display management state
-   unsigned long LastTimeScoreChanged = 0;
-   unsigned long ScoreOverrideValue[4] = {};
-   uint8_t       ScoreOverrideStatus = 0;
+   unsigned long LastTimeScoreChanged      = 0;
+   unsigned long ScoreOverrideValue[4]     = {};
+   uint8_t       ScoreOverrideStatus       = 0;
+   unsigned long lastTimeOverrideAnimated_ = 0;
    int           LastReportedValue = 0;
 
    // Bonus countdown state

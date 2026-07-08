@@ -42,6 +42,7 @@ public:
 
    void setDisplay(uint8_t display, unsigned long value,
                    bool blankLeadingZeros, uint8_t minimumDigits) override;
+   void setDisplayFlash(uint8_t display, unsigned long value, uint16_t period) override;
    void setDisplayCredits(uint8_t credits, bool showCredits) override;
    void setDisplayBallInPlay(uint8_t ball, bool showBall) override;
 
@@ -64,12 +65,6 @@ public:
    void    setDisplayBlank(uint8_t display, uint8_t mask) override;
    uint8_t getDisplayBlank(uint8_t display) override;
    void    cycleAllDisplays(unsigned long t, uint8_t curValue) override;
-   void    showScores(uint8_t displayToUpdate, uint8_t numPlayers,
-                      bool flashCurrent, bool dashCurrent,
-                      unsigned long allScoresShowValue,
-                      const unsigned long* scores,
-                      unsigned long currentTime, unsigned long lastTimeScoreChanged,
-                      uint8_t overrideStatus, const unsigned long* overrideValues) override;
 
    void    setCoinLockout(bool lock) override;
    void    playSoundCardEffect(uint8_t sound) override;
@@ -93,6 +88,21 @@ public:
    void update(unsigned long currentTime) override;
    void readStoredParameters() override;
 
+   uint8_t getCredits() const override {
+      return settings_.credits;
+   }
+
+   unsigned long getHighScore() const override {
+      return settings_.highScore;
+   }
+
+   bool getFreePlayMode() const override {
+      return settings_.freePlayMode;
+   }
+
+   MachineSettings& getSettings() override;
+
+
 private:
    MachineSettings settings_;
 
@@ -110,10 +120,11 @@ private:
    uint8_t       cpcSelection_[3]       = {};
    unsigned long selfTestChangedTime_   = 0;
 
-   // Score display animation state
-   uint8_t       lastScrollPhase_          = 0;
-   unsigned long lastFlashOrDash_          = 0;
-   unsigned long lastTimeOverrideAnimated_ = 0;
+   // Per-display large-value scroll state
+   unsigned long displayValue_[4]       = {};
+   unsigned long displayValueSetTime_[4] = {};
+   uint8_t       displayScrollPhase_[4]  = {0xFF, 0xFF, 0xFF, 0xFF};
+   bool haveSettings_ = false;
 
    static const unsigned short kChuteAuditByte[3];
    static const uint8_t        kCPCPairs[9][2];

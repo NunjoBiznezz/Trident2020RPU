@@ -22,7 +22,6 @@ class AttractMode : public MachineMode {
    unsigned long    enterTime_         = 0;
 
    PinballMachine*  machine_  = nullptr;
-   MachineSettings* settings_ = nullptr;
 
    // Firmware version shown on the score displays at startup.
    unsigned long versionMajor_ = 0;
@@ -31,9 +30,8 @@ class AttractMode : public MachineMode {
    unsigned long rpuMinor_     = 0;
 
 public:
-   void setDependencies(PinballMachine& machine, MachineSettings& s) {
+   void setDependencies(PinballMachine& machine) {
       machine_  = &machine;
-      settings_ = &s;
    }
 
    void setLastGameScores(uint8_t numPlayers, const unsigned long* scores) {

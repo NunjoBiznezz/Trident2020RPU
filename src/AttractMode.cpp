@@ -27,9 +27,8 @@ void AttractMode::enter(unsigned long currentTime) {
       machine_->setDisplay(1, versionMinor_);
       machine_->setDisplay(2, rpuMajor_);
       machine_->setDisplay(3, rpuMinor_);
-      machine_->setDisplayCredits(settings_->credits, true);
+      machine_->setDisplayCredits(machine_->getCredits(), true);
       machine_->setDisplayBallInPlay(0, true);
-      settings_->resetScoresToClearVersion = true;
       lastHeadMode_ = 1;
    } else {
       lastHeadMode_ = 0;
@@ -41,9 +40,12 @@ TopState AttractMode::update(unsigned long currentTime) {
 
    if ((currentTime - enterTime_) < 5000) {
       if (lastHeadMode_ != 1) {
-         machine_->showScores(0xFF, savedNumPlayers_, false, false, 0, savedScores_, currentTime, 0, 0, nullptr);
+         for (uint8_t i = 0; i < 4; i++) {
+            if (savedNumPlayers_ > 0 && i >= savedNumPlayers_) machine_->setDisplayBlank(i, 0x00);
+            else                                                machine_->setDisplay(i, savedScores_[i], true, 2);
+         }
          for (uint8_t i = 0; i < 4; i++) machine_->setLampState(LAMP_PLAYER_1 + i, false);
-         machine_->setDisplayCredits(settings_->credits, true);
+         machine_->setDisplayCredits(machine_->getCredits(), true);
          machine_->setDisplayBallInPlay(0, true);
          lastHeadMode_ = 1;
       }
@@ -52,17 +54,20 @@ TopState AttractMode::update(unsigned long currentTime) {
          machine_->setLampState(LAMP_HIGH_SCORE_TO_DATE, true, 0, 250);
          machine_->setLampState(LAMP_GAME_OVER, false);
          for (uint8_t i = 0; i < 4; i++) machine_->setLampState(LAMP_PLAYER_1 + i, false);
+         for (uint8_t i = 0; i < 4; i++) machine_->setDisplay(i, machine_->getHighScore(), true, 2);
       }
       lastHeadMode_ = 2;
-      machine_->showScores(0xFF, savedNumPlayers_, false, false, settings_->highScore, savedScores_, currentTime, 0, 0, nullptr);
    } else {
       if (lastHeadMode_ != 3) {
          machine_->setLampState(LAMP_HIGH_SCORE_TO_DATE, false);
          machine_->setLampState(LAMP_GAME_OVER, true);
-         machine_->setDisplayCredits(settings_->credits, true);
+         machine_->setDisplayCredits(machine_->getCredits(), true);
          machine_->setDisplayBallInPlay(0, true);
+         for (uint8_t i = 0; i < 4; i++) {
+            if (savedNumPlayers_ > 0 && i >= savedNumPlayers_) machine_->setDisplayBlank(i, 0x00);
+            else                                                machine_->setDisplay(i, savedScores_[i], true, 2);
+         }
       }
-      machine_->showScores(0xFF, savedNumPlayers_, false, false, 0, savedScores_, currentTime, 0, 0, nullptr);
       uint8_t activePlayer = (uint8_t)((currentTime / 250) % 4);
       for (uint8_t i = 0; i < 4; i++) machine_->setLampState(LAMP_PLAYER_1 + i, i == activePlayer);
       lastHeadMode_ = 3;
@@ -88,7 +93,7 @@ TopState AttractMode::update(unsigned long currentTime) {
    uint8_t switchHit;
    while ((switchHit = machine_->pullFirstFromSwitchStack()) != PinballMachine::SWITCH_STACK_EMPTY) {
       if (switchHit == SW_CREDIT_RESET) {
-         if (settings_->credits >= 1 || settings_->freePlayMode) {
+         if (machine_->getCredits() >= 1 || machine_->getFreePlayMode()) {
             returnState = MACHINE_STATE_INIT_GAMEPLAY;
          }
       }

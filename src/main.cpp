@@ -109,10 +109,11 @@ void setup() {
    MachineSettings& s = pinballMachine.settings();
    game.setSettings(s);
    game.setMachine(pinballMachine);
+
    hardwareTestMode.setDependencies(pinballMachine);
    storedAdjustmentsMode.setDependencies(pinballMachine);
-   adjustmentsMode.setDependencies(game, pinballMachine, s);
-   attractMode.setDependencies(pinballMachine, s);
+   adjustmentsMode.setDependencies(game, pinballMachine);
+   attractMode.setDependencies(pinballMachine);
    attractMode.setVersionInfo(TRIDENT2020_MAJOR_VERSION, TRIDENT2020_MINOR_VERSION,
                                RPU_OS_MAJOR_VERSION, RPU_OS_MINOR_VERSION);
 

@@ -60,10 +60,10 @@ class Trident2020AdjustmentsMode : public MachineMode {
    unsigned long  soundSettingTimeout_         = 0;
 
 public:
-   void setDependencies(Trident2020Game& game, PinballMachine& machine, MachineSettings& s) {
+   void setDependencies(Trident2020Game& game, PinballMachine& machine) {
       game_     = &game;
       machine_  = &machine;
-      settings_ = &s;
+      settings_ = &machine.getSettings();
    }
 
    void     enter(unsigned long currentTime) override;

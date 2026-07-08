@@ -727,19 +727,76 @@ void Trident2020Game::overrideScoreDisplay(uint8_t displayNum, unsigned long val
    ScoreOverrideValue[displayNum] = value;
 }
 
+static uint8_t scoreDigitCount(unsigned long score) {
+   if (score == 0) return 0;
+   uint8_t n = 0;
+   while (score > 0) { score /= 10; n++; }
+   return n;
+}
+
+static uint8_t scoreDisplayMask(uint8_t numDigits) {
+   uint8_t mask = 0;
+   for (uint8_t i = 0; i < numDigits; i++) mask |= (0x20 >> i);
+   return mask;
+}
+
 void Trident2020Game::showPlayerScores(uint8_t displayToUpdate, bool flashCurrent, bool dashCurrent,
                                        unsigned long allScoresShowValue) {
-   if (displayToUpdate == 0xFF) {
-      ScoreOverrideStatus = 0;
+   if (displayToUpdate == 0xFF) ScoreOverrideStatus = 0;
+
+   unsigned long overrideAnimSeed = CurrentTime / 250;
+   bool          animUpdated      = false;
+
+   for (uint8_t n = 0; n < 4; n++) {
+      // Override display: always render regardless of displayToUpdate
+      if (allScoresShowValue == 0 && (ScoreOverrideStatus & (0x10 << n))) {
+         unsigned long overVal   = ScoreOverrideValue[n];
+         bool          animated  = (ScoreOverrideStatus & (0x01 << n)) != 0;
+         if (animated && overrideAnimSeed != lastTimeOverrideAnimated_) {
+            uint8_t numDigits = scoreDigitCount(overVal);
+            if (numDigits == 0) numDigits = 1;
+            if (numDigits < (int)RPU_OS_NUM_DIGITS - 1) {
+               uint8_t range = ((RPU_OS_NUM_DIGITS + 1) - numDigits) + ((RPU_OS_NUM_DIGITS - 1) - numDigits);
+               uint8_t shift = (uint8_t)(overrideAnimSeed % range);
+               if (shift >= ((RPU_OS_NUM_DIGITS + 1) - numDigits)) {
+                  shift = (uint8_t)((RPU_OS_NUM_DIGITS - numDigits) * 2 - shift);
+               }
+               unsigned long shifted = overVal;
+               uint8_t       mask    = scoreDisplayMask(numDigits);
+               for (uint8_t d = 0; d < shift; d++) { shifted *= 10; mask >>= 1; }
+               machine_->setDisplayBlank(n, 0x00);
+               machine_->setDisplay(n, shifted, false);
+               machine_->setDisplayBlank(n, mask);
+               animUpdated = true;
+            } else {
+               machine_->setDisplay(n, overVal, true);
+            }
+         } else if (!animated) {
+            machine_->setDisplay(n, overVal, true);
+         }
+         continue;
+      }
+
+      // For partial updates, skip non-target slots
+      if (displayToUpdate != 0xFF && displayToUpdate != n) continue;
+
+      // Blank unused player slots during full updates
+      if (displayToUpdate == 0xFF && allScoresShowValue == 0 && n >= CurrentNumPlayers) {
+         machine_->setDisplayBlank(n, 0x00);
+         continue;
+      }
+
+      unsigned long score = allScoresShowValue ? allScoresShowValue :
+                            (n == CurrentPlayer ? CurrentPlayerCurrentScore : CurrentScores[n]);
+
+      if (flashCurrent || dashCurrent) {
+         machine_->setDisplayFlash(n, score, 500);
+      } else {
+         machine_->setDisplay(n, score, true, 2);
+      }
    }
-   unsigned long displayScores[4];
-   for (uint8_t i = 0; i < 4; i++) {
-      displayScores[i] = (i == CurrentPlayer) ? CurrentPlayerCurrentScore : CurrentScores[i];
-   }
-   machine_->showScores(displayToUpdate, CurrentNumPlayers,
-                        flashCurrent, dashCurrent, allScoresShowValue,
-                        displayScores, CurrentTime, LastTimeScoreChanged,
-                        ScoreOverrideStatus, ScoreOverrideValue);
+
+   if (animUpdated) lastTimeOverrideAnimated_ = overrideAnimSeed;
 }
 
 // ===========================================================================
