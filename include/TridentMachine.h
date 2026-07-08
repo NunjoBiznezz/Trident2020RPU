@@ -64,10 +64,10 @@ public:
    void    setDisplayBlank(uint8_t display, uint8_t mask) override;
    uint8_t getDisplayBlank(uint8_t display) override;
    void    cycleAllDisplays(unsigned long t, uint8_t curValue) override;
-   void    setPlayerScore(uint8_t player, unsigned long score) override;
    void    showScores(uint8_t displayToUpdate, uint8_t numPlayers,
                       bool flashCurrent, bool dashCurrent,
                       unsigned long allScoresShowValue,
+                      const unsigned long* scores,
                       unsigned long currentTime, unsigned long lastTimeScoreChanged,
                       uint8_t overrideStatus, const unsigned long* overrideValues) override;
 
@@ -110,8 +110,7 @@ private:
    uint8_t       cpcSelection_[3]       = {};
    unsigned long selfTestChangedTime_   = 0;
 
-   // Score display state
-   unsigned long playerScores_[4]          = {};
+   // Score display animation state
    uint8_t       lastScrollPhase_          = 0;
    unsigned long lastFlashOrDash_          = 0;
    unsigned long lastTimeOverrideAnimated_ = 0;

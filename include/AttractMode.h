@@ -18,6 +18,8 @@ class AttractMode : public MachineMode {
    uint8_t          animNum_           = 0;
    uint8_t          animStep_          = 0;
    unsigned long    lastAnimFrameTime_ = 0;
+   unsigned long    savedScores_[4]    = {};
+   uint8_t          savedNumPlayers_   = 0;
 
    Trident2020Game* game_     = nullptr;
    PinballMachine*  machine_  = nullptr;

@@ -65,17 +65,16 @@ public:
    virtual void    cycleAllDisplays(unsigned long t, uint8_t curValue) { (void)t; (void)curValue; }
 
    // --- Multi-player score display ---
-   // Store one player's score (display copy only; game owns the authoritative value).
-   virtual void setPlayerScore(uint8_t player, unsigned long score)    { (void)player; (void)score; }
-   // Render all player score displays, handling overflow scroll, flash, dash, and
-   // score-override animations.  overrideValues may be nullptr when overrideStatus == 0.
+   // Render player score displays. scores[4] provides the values to show;
+   // overrideValues may be nullptr when overrideStatus == 0.
    virtual void showScores(uint8_t displayToUpdate, uint8_t numPlayers,
                             bool flashCurrent, bool dashCurrent,
                             unsigned long allScoresShowValue,
+                            const unsigned long* scores,
                             unsigned long currentTime, unsigned long lastTimeScoreChanged,
                             uint8_t overrideStatus, const unsigned long* overrideValues) {
       (void)displayToUpdate; (void)numPlayers; (void)flashCurrent; (void)dashCurrent;
-      (void)allScoresShowValue; (void)currentTime; (void)lastTimeScoreChanged;
+      (void)allScoresShowValue; (void)scores; (void)currentTime; (void)lastTimeScoreChanged;
       (void)overrideStatus; (void)overrideValues;
    }
 

@@ -319,13 +319,10 @@ uint8_t TridentMachine::getDisplayMask(uint8_t numDigits) {
    return mask;
 }
 
-void TridentMachine::setPlayerScore(uint8_t player, unsigned long score) {
-   if (player < 4) playerScores_[player] = score;
-}
-
 void TridentMachine::showScores(uint8_t displayToUpdate, uint8_t numPlayers,
                                 bool flashCurrent, bool dashCurrent,
                                 unsigned long allScoresShowValue,
+                                const unsigned long* scores,
                                 unsigned long currentTime, unsigned long lastTimeScoreChanged,
                                 uint8_t overrideStatus, const unsigned long* overrideValues) {
    uint8_t       displayMask           = 0x3F;
@@ -368,7 +365,7 @@ void TridentMachine::showScores(uint8_t displayToUpdate, uint8_t numPlayers,
             RPU_SetDisplay(scoreCount, displayScore, true);
          }
       } else {
-         displayScore = (allScoresShowValue != 0) ? allScoresShowValue : playerScores_[scoreCount];
+         displayScore = (allScoresShowValue != 0) ? allScoresShowValue : (scores ? scores[scoreCount] : 0);
 
          if (displayToUpdate == 0xFF || displayToUpdate == scoreCount || displayScore > RPU_OS_MAX_DISPLAY_SCORE) {
             if (displayToUpdate == 0xFF && (scoreCount >= numPlayers && numPlayers != 0) && allScoresShowValue == 0) {

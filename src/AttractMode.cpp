@@ -21,6 +21,9 @@ void AttractMode::enter(unsigned long) {
    DEBUG_MESSAGE("Entering Attract Mode\n\r");
    lastPlayfieldMode_ = 0;
 
+   savedNumPlayers_ = game_->getNumPlayers();
+   for (uint8_t i = 0; i < 4; i++) savedScores_[i] = game_->getScore(i);
+
    if (versionMajor_ != 0) {
       // Show firmware version on all four score displays for the first
       // several seconds of attract mode before the normal display cycle begins.
@@ -38,13 +41,12 @@ void AttractMode::enter(unsigned long) {
 }
 
 TopState AttractMode::update(unsigned long currentTime) {
-   game_->setCurrentTime(currentTime);
    int returnState = MACHINE_STATE_ATTRACT;
 
    if (currentTime < 16000) {
       if (lastHeadMode_ != 1) {
-         game_->showPlayerScores(0xFF, false, false);
-         game_->setPlayerLamps(0);
+         machine_->showScores(0xFF, savedNumPlayers_, false, false, 0, savedScores_, currentTime, 0, 0, nullptr);
+         for (uint8_t i = 0; i < 4; i++) machine_->setLampState(LAMP_PLAYER_1 + i, false);
          machine_->setDisplayCredits(settings_->credits, true);
          machine_->setDisplayBallInPlay(0, true);
          lastHeadMode_ = 1;
@@ -53,27 +55,20 @@ TopState AttractMode::update(unsigned long currentTime) {
       if (lastHeadMode_ != 2) {
          machine_->setLampState(LAMP_HIGH_SCORE_TO_DATE, true, 0, 250);
          machine_->setLampState(LAMP_GAME_OVER, false);
-         game_->setPlayerLamps(0);
-         game_->markScoreChanged(currentTime);
+         for (uint8_t i = 0; i < 4; i++) machine_->setLampState(LAMP_PLAYER_1 + i, false);
       }
       lastHeadMode_ = 2;
-      game_->showPlayerScores(0xFF, false, false, settings_->highScore);
+      machine_->showScores(0xFF, savedNumPlayers_, false, false, settings_->highScore, savedScores_, currentTime, 0, 0, nullptr);
    } else {
       if (lastHeadMode_ != 3) {
-         if (currentTime < 32000) {
-            for (int count = 0; count < 4; count++) {
-               game_->setScore(count, 0);
-            }
-            game_->setNumPlayers(0);
-         }
          machine_->setLampState(LAMP_HIGH_SCORE_TO_DATE, false);
          machine_->setLampState(LAMP_GAME_OVER, true);
          machine_->setDisplayCredits(settings_->credits, true);
          machine_->setDisplayBallInPlay(0, true);
-         game_->markScoreChanged(currentTime);
       }
-      game_->showPlayerScores(0xFF, false, false);
-      game_->setPlayerLamps(((currentTime / 250) % 4) + 1);
+      machine_->showScores(0xFF, savedNumPlayers_, false, false, 0, savedScores_, currentTime, 0, 0, nullptr);
+      uint8_t activePlayer = (uint8_t)((currentTime / 250) % 4);
+      for (uint8_t i = 0; i < 4; i++) machine_->setLampState(LAMP_PLAYER_1 + i, i == activePlayer);
       lastHeadMode_ = 3;
    }
 
