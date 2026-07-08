@@ -36,6 +36,7 @@ Trident2020Game::Trident2020Game() {}
 
 void Trident2020Game::enter(unsigned long currentTime) {
    CurrentTime = currentTime;
+   addPlayer(true);
    internalState_ = MACHINE_STATE_INIT_GAMEPLAY;
    internalStateChanged_ = true;
 }
@@ -475,8 +476,9 @@ bool Trident2020Game::addPlayer(bool resetNumPlayers) {
 // ===========================================================================
 
 void Trident2020Game::setPlayerLamps(uint8_t numPlayers, uint8_t playerOffset, int flashPeriod) {
-   for (int count = 0; count < 4; count++) {
-      machine_->setLampState(LAMP_PLAYER_1 + playerOffset + count, (numPlayers == (count + 1)) ? 1 : 0, 0, flashPeriod);
+   for (uint8_t i = 0; i < 4; i++) {
+      machine_->setLampState(LAMP_PLAYER_1 + playerOffset + i,
+                             (numPlayers == (i + 1)) ? 1 : 0, 0, (uint16_t)flashPeriod);
    }
 }
 
@@ -730,12 +732,13 @@ void Trident2020Game::showPlayerScores(uint8_t displayToUpdate, bool flashCurren
    if (displayToUpdate == 0xFF) {
       ScoreOverrideStatus = 0;
    }
+   unsigned long displayScores[4];
    for (uint8_t i = 0; i < 4; i++) {
-      machine_->setPlayerScore(i, (i == CurrentPlayer) ? CurrentPlayerCurrentScore : CurrentScores[i]);
+      displayScores[i] = (i == CurrentPlayer) ? CurrentPlayerCurrentScore : CurrentScores[i];
    }
    machine_->showScores(displayToUpdate, CurrentNumPlayers,
                         flashCurrent, dashCurrent, allScoresShowValue,
-                        CurrentTime, LastTimeScoreChanged,
+                        displayScores, CurrentTime, LastTimeScoreChanged,
                         ScoreOverrideStatus, ScoreOverrideValue);
 }
 
