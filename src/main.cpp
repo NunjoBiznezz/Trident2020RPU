@@ -112,7 +112,7 @@ void setup() {
    hardwareTestMode.setDependencies(pinballMachine);
    storedAdjustmentsMode.setDependencies(pinballMachine);
    adjustmentsMode.setDependencies(game, pinballMachine, s);
-   attractMode.setDependencies(game, pinballMachine, s);
+   attractMode.setDependencies(pinballMachine, s);
    attractMode.setVersionInfo(TRIDENT2020_MAJOR_VERSION, TRIDENT2020_MINOR_VERSION,
                                RPU_OS_MAJOR_VERSION, RPU_OS_MINOR_VERSION);
 
@@ -135,7 +135,13 @@ void loop() {
       case TopState::MachineEeprom:     activeMode = &storedAdjustmentsMode;  break;
       case TopState::StoredAdjustments: activeMode = &storedAdjustmentsMode;  break;
       case TopState::Adjustments:       activeMode = &adjustmentsMode;        break;
-      case TopState::Attract:           activeMode = &attractMode;            break;
+      case TopState::Attract: {
+         unsigned long scores[4];
+         for (uint8_t i = 0; i < 4; i++) scores[i] = game.getScore(i);
+         attractMode.setLastGameScores(game.getNumPlayers(), scores);
+         activeMode = &attractMode;
+         break;
+      }
       case TopState::Game:              activeMode = &game;                   break;
       }
       activeMode->enter(CurrentTime);

@@ -36,6 +36,7 @@ Trident2020Game::Trident2020Game() {}
 
 void Trident2020Game::enter(unsigned long currentTime) {
    CurrentTime = currentTime;
+   addPlayer(true);
    internalState_ = MACHINE_STATE_INIT_GAMEPLAY;
    internalStateChanged_ = true;
 }

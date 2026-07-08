@@ -21,9 +21,6 @@ void AttractMode::enter(unsigned long) {
    DEBUG_MESSAGE("Entering Attract Mode\n\r");
    lastPlayfieldMode_ = 0;
 
-   savedNumPlayers_ = game_->getNumPlayers();
-   for (uint8_t i = 0; i < 4; i++) savedScores_[i] = game_->getScore(i);
-
    if (versionMajor_ != 0) {
       // Show firmware version on all four score displays for the first
       // several seconds of attract mode before the normal display cycle begins.
@@ -92,7 +89,7 @@ TopState AttractMode::update(unsigned long currentTime) {
    uint8_t switchHit;
    while ((switchHit = machine_->pullFirstFromSwitchStack()) != PinballMachine::SWITCH_STACK_EMPTY) {
       if (switchHit == SW_CREDIT_RESET) {
-         if (game_->addPlayer(true)) {
+         if (settings_->credits >= 1 || settings_->freePlayMode) {
             returnState = MACHINE_STATE_INIT_GAMEPLAY;
          }
       }

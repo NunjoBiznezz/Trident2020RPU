@@ -9,7 +9,6 @@
 #include "MachineMode.h"
 #include "MachineSettings.h"
 #include "PinballMachine.h"
-#include "Trident2020Game.h"
 #include <stdint.h>
 
 class AttractMode : public MachineMode {
@@ -21,7 +20,6 @@ class AttractMode : public MachineMode {
    unsigned long    savedScores_[4]    = {};
    uint8_t          savedNumPlayers_   = 0;
 
-   Trident2020Game* game_     = nullptr;
    PinballMachine*  machine_  = nullptr;
    MachineSettings* settings_ = nullptr;
 
@@ -32,10 +30,14 @@ class AttractMode : public MachineMode {
    unsigned long rpuMinor_     = 0;
 
 public:
-   void setDependencies(Trident2020Game& game, PinballMachine& machine, MachineSettings& s) {
-      game_     = &game;
+   void setDependencies(PinballMachine& machine, MachineSettings& s) {
       machine_  = &machine;
       settings_ = &s;
+   }
+
+   void setLastGameScores(uint8_t numPlayers, const unsigned long* scores) {
+      savedNumPlayers_ = numPlayers;
+      for (uint8_t i = 0; i < 4; i++) savedScores_[i] = scores[i];
    }
 
    void setVersionInfo(unsigned long major, unsigned long minor,
