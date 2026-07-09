@@ -16,6 +16,7 @@ class AttractMode : public MachineMode {
    uint8_t          lastPlayfieldMode_ = 255;
    uint8_t          animNum_           = 0;
    uint8_t          animStep_          = 0;
+   uint8_t          animCount_         = 0; // Repeat animations 3 times
    unsigned long    lastAnimFrameTime_ = 0;
    unsigned long    savedScores_[4]    = {};
    uint8_t          savedNumPlayers_   = 0;
@@ -32,11 +33,6 @@ class AttractMode : public MachineMode {
 public:
    void setDependencies(PinballMachine& machine) {
       machine_  = &machine;
-   }
-
-   void setLastGameScores(uint8_t numPlayers, const unsigned long* scores) {
-      savedNumPlayers_ = numPlayers;
-      for (uint8_t i = 0; i < 4; i++) savedScores_[i] = scores[i];
    }
 
    void setVersionInfo(unsigned long major, unsigned long minor,

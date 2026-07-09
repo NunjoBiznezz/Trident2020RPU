@@ -6,7 +6,6 @@
  * operations that were previously free functions in main.cpp.
  **************************************************************************/
 
-#include "LampAnimation.h"
 #include "RPU.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
@@ -304,11 +303,8 @@ void TridentMachine::setLampState(uint8_t lamp, bool on, uint8_t dimmer, uint16_
    RPU_SetLampState(lamp, on, dimmer, flashRate);
 }
 
-void TridentMachine::setLampAnimation(uint8_t animationNum, uint8_t frameNum) {
-   const uint8_t* data = PeekAnimationBytes(animationNum, frameNum);
-   if (data) {
-      RPU_SetLampAnimation(data, NUM_LAMP_ANIMATION_BYTES);
-   }
+void TridentMachine::setLampAnimationBytes(const uint8_t* bytes, uint8_t count) {
+   if (bytes) RPU_SetLampAnimation(bytes, count);
 }
 
 void TridentMachine::disableSolenoidStack() {
@@ -640,4 +636,9 @@ MachineSettings& TridentMachine::getSettings() {
       readStoredParameters();
    }
    return settings_;
+}
+
+void TridentMachine::setLastGameResult(uint8_t numPlayers, const unsigned long* scores) {
+   lastGameNumPlayers_ = numPlayers;
+   for (uint8_t i = 0; i < 4; i++) lastGameScores_[i] = scores[i];
 }

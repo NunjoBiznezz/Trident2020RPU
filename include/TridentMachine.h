@@ -48,7 +48,7 @@ public:
 
    void turnOffAllLamps() override;
    void setLampState(uint8_t lamp, bool on, uint8_t dimmer, uint16_t flashRate) override;
-   void setLampAnimation(uint8_t animationNum, uint8_t frameNum) override;
+   void setLampAnimationBytes(const uint8_t* bytes, uint8_t count) override;
    void disableSolenoidStack() override;
    void enableSolenoidStack() override;
    void setDisableFlippers(bool disable) override;
@@ -102,6 +102,11 @@ public:
 
    MachineSettings& getSettings() override;
 
+   void          setLastGameResult(uint8_t numPlayers, const unsigned long* scores) override;
+   uint8_t       getLastGameNumPlayers() const override { return lastGameNumPlayers_; }
+   unsigned long getLastGameScore(uint8_t player) const override {
+      return (player < 4) ? lastGameScores_[player] : 0;
+   }
 
 private:
    MachineSettings settings_;
@@ -125,6 +130,10 @@ private:
    unsigned long displayValueSetTime_[4] = {};
    uint8_t       displayScrollPhase_[4]  = {0xFF, 0xFF, 0xFF, 0xFF};
    bool haveSettings_ = false;
+
+   // Last completed game results (for attract mode)
+   unsigned long lastGameScores_[4]   = {};
+   uint8_t       lastGameNumPlayers_  = 0;
 
    static const unsigned short kChuteAuditByte[3];
    static const uint8_t        kCPCPairs[9][2];

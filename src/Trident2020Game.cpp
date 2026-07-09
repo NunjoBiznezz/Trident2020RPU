@@ -797,6 +797,14 @@ void Trident2020Game::showPlayerScores(uint8_t displayToUpdate, bool flashCurren
    }
 
    if (animUpdated) lastTimeOverrideAnimated_ = overrideAnimSeed;
+
+   if (allScoresShowValue == 0) {
+      unsigned long scores[4];
+      for (uint8_t n = 0; n < 4; n++) {
+         scores[n] = (n == CurrentPlayer) ? CurrentPlayerCurrentScore : CurrentScores[n];
+      }
+      machine_->setLastGameResult(CurrentNumPlayers, scores);
+   }
 }
 
 // ===========================================================================

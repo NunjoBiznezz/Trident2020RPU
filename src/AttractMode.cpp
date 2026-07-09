@@ -13,6 +13,9 @@
 #  define DEBUG_MESSAGE(x)
 #endif
 
+static constexpr int REPEAT_LAMP_ANIMATIONS = 3;
+
+
 void AttractMode::enter(unsigned long currentTime) {
    machine_->playSoundCardEffect(0);
    machine_->disableSolenoidStack();
@@ -21,6 +24,9 @@ void AttractMode::enter(unsigned long currentTime) {
    DEBUG_MESSAGE("Entering Attract Mode\n\r");
    lastPlayfieldMode_ = 0;
    enterTime_         = currentTime;
+
+   savedNumPlayers_ = machine_->getLastGameNumPlayers();
+   for (uint8_t i = 0; i < 4; i++) savedScores_[i] = machine_->getLastGameScore(i);
 
    if (versionMajor_ != 0) {
       machine_->setDisplay(0, versionMajor_);
@@ -75,17 +81,23 @@ TopState AttractMode::update(unsigned long currentTime) {
 
    if (lastPlayfieldMode_ != 1) {
       lastPlayfieldMode_ = 1;
+      animCount_         = 0;
       animNum_           = 0;
       animStep_          = 0;
       lastAnimFrameTime_ = 0;
    }
    if ((currentTime - lastAnimFrameTime_) >= 100) {
       lastAnimFrameTime_ = currentTime;
-      machine_->setLampAnimation(animNum_, animStep_);
+      const uint8_t* animBytes = PeekAnimationBytes(animNum_, animStep_);
+      machine_->setLampAnimationBytes(animBytes, NUM_LAMP_ANIMATION_BYTES);
       if (++animStep_ >= LAMP_ANIMATION_STEPS) {
          animStep_ = 0;
-         if (++animNum_ >= NUM_LAMP_ANIMATIONS) {
-            animNum_ = 0;
+         animCount_++;
+         if (animCount_ > REPEAT_LAMP_ANIMATIONS) {
+            animCount_ = 0;
+            if (++animNum_ >= NUM_LAMP_ANIMATIONS) {
+               animNum_ = 0;
+            }
          }
       }
    }

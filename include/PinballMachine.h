@@ -46,7 +46,7 @@ public:
    virtual void turnOffAllLamps()                                      {}
    virtual void setLampState(uint8_t lamp, bool on,
                               uint8_t dimmer = 0, uint16_t flashRate = 0) { (void)lamp; (void)on; (void)dimmer; (void)flashRate; }
-   virtual void setLampAnimation(uint8_t animationNum, uint8_t frameNum) { (void)animationNum; (void)frameNum; }
+   virtual void setLampAnimationBytes(const uint8_t* bytes, uint8_t count) { (void)bytes; (void)count; }
 
    // --- Solenoids / flippers ---
    virtual void disableSolenoidStack()                                 {}
@@ -103,4 +103,9 @@ public:
    virtual unsigned long getHighScore() const = 0;
    virtual bool getFreePlayMode() const = 0;
    virtual MachineSettings& getSettings() = 0;
+
+   // --- Last-game scores (persisted for attract mode) ---
+   virtual void          setLastGameResult(uint8_t numPlayers, const unsigned long* scores) { (void)numPlayers; (void)scores; }
+   virtual uint8_t       getLastGameNumPlayers() const                                       { return 0; }
+   virtual unsigned long getLastGameScore(uint8_t player) const                              { (void)player; return 0; }
 };

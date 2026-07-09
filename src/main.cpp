@@ -136,13 +136,7 @@ void loop() {
       case TopState::MachineEeprom:     activeMode = &storedAdjustmentsMode;  break;
       case TopState::StoredAdjustments: activeMode = &storedAdjustmentsMode;  break;
       case TopState::Adjustments:       activeMode = &adjustmentsMode;        break;
-      case TopState::Attract: {
-         unsigned long scores[4];
-         for (uint8_t i = 0; i < 4; i++) scores[i] = game.getScore(i);
-         attractMode.setLastGameScores(game.getNumPlayers(), scores);
-         activeMode = &attractMode;
-         break;
-      }
+      case TopState::Attract:      activeMode = &attractMode;            break;
       case TopState::Game:              activeMode = &game;                   break;
       }
       activeMode->enter(CurrentTime);
