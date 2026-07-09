@@ -69,11 +69,6 @@ public:
    void    setCoinLockout(bool lock) override;
    void    playSoundCardEffect(uint8_t sound) override;
 
-   uint8_t getCPCSelection(uint8_t chuteNum) override;
-   uint8_t getCPCPairCoins(uint8_t pairIndex) override;
-   uint8_t getCPCPairCredits(uint8_t pairIndex) override;
-   void    setCPCSelection(uint8_t chuteNum, uint8_t pairIdx) override;
-
    uint8_t       readByteFromEEProm(uint16_t addr) override;
    void          writeByteToEEProm(uint16_t addr, uint8_t val) override;
    unsigned long readULFromEEProm(uint16_t addr) override;
@@ -119,10 +114,7 @@ private:
    unsigned long nextSoundEffectTime_ = 0;
    uint8_t       rolloverValue_       = 2;
    unsigned long currentTime_         = 0;
-   uint8_t       chuteCoinsInProgress_[3] = {};
 
-   bool          cpcSelectionsRead_     = false;
-   uint8_t       cpcSelection_[3]       = {};
    unsigned long selfTestChangedTime_   = 0;
 
    // Per-display large-value scroll state
@@ -136,10 +128,6 @@ private:
    uint8_t       lastGameNumPlayers_  = 0;
 
    static const unsigned short kChuteAuditByte[3];
-   static const uint8_t        kCPCPairs[9][2];
-   static const uint16_t       kCPCChuteByte[3];
-
-   void ensureCPCRead();
 
    static uint8_t readSetting(int addr, uint8_t defaultValue);
    static uint8_t switchToChuteNum(uint8_t switchHit);

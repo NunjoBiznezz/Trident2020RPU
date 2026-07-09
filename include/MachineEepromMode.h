@@ -3,7 +3,7 @@
  *
  * Machine EEPROM settings mode: score levels, high score, credits, audit
  * counters, and coin-per-credit selectors.
- * Setting numbering is local to this mode (1 = score level 1 … 15 = CPC chute 3).
+ * Setting numbering is local to this mode (1 = score level 1 … 12 = boot).
  **************************************************************************/
 
 #pragma once
@@ -24,9 +24,6 @@ class MachineEepromMode : public MachineMode {
    static constexpr uint8_t kEepromChute1Coins  = 10;
    static constexpr uint8_t kEepromChute3Coins  = 11;
    static constexpr uint8_t kEepromBoot         = 12;
-   static constexpr uint8_t kEepromCpcChute1    = 13;
-   static constexpr uint8_t kEepromCpcChute2    = 14;
-   static constexpr uint8_t kEepromCpcChute3    = 15;
 
    uint8_t internalState_ = 0;
    bool    stateChanged_  = false;

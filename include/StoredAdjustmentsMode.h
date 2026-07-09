@@ -6,7 +6,7 @@
  * Arduino's own EEPROM (via EEPROM.h) at addresses 148–191, independent
  * of the RPU library's reserved address space (0–52).
  *
- * Setting numbering is local to this mode (1 = score level 1 … 15 = CPC chute 3).
+ * Setting numbering is local to this mode (1 = score level 1 … 12 = boot).
  **************************************************************************/
 
 #pragma once
@@ -28,9 +28,6 @@ class StoredAdjustmentsMode : public MachineMode {
    static constexpr uint8_t kSaChute1Coins  = 10;
    static constexpr uint8_t kSaChute3Coins  = 11;
    static constexpr uint8_t kSaBoot         = 12;
-   static constexpr uint8_t kSaCpcChute1    = 13;
-   static constexpr uint8_t kSaCpcChute2    = 14;
-   static constexpr uint8_t kSaCpcChute3    = 15;
 
    // --- Arduino EEPROM addresses (148–191, after game-settings block ending at 147) ---
    static constexpr int kEeScoreLevel1  = 148;   // unsigned long (4 bytes)

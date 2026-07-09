@@ -6,11 +6,11 @@
  * operations that were previously free functions in main.cpp.
  **************************************************************************/
 
+#include "TridentMachine.h"
+#include "MachineSettings.h"
 #include "RPU.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
-#include "TridentMachine.h"
-#include "MachineSettings.h"
 #include <Arduino.h>
 #include <EEPROM.h>
 
@@ -19,58 +19,14 @@
 // ---------------------------------------------------------------------------
 
 const unsigned short TridentMachine::kChuteAuditByte[3] = {
-   RPU_CHUTE_1_COINS_START_BYTE,
-   RPU_CHUTE_2_COINS_START_BYTE,
-   RPU_CHUTE_3_COINS_START_BYTE,
-};
-
-const uint8_t TridentMachine::kCPCPairs[9][2] = {
-   {1, 5}, {1, 4}, {1, 3}, {1, 2}, {1, 1},
-   {2, 3}, {2, 1}, {3, 1}, {4, 1}
-};
-
-const uint16_t TridentMachine::kCPCChuteByte[3] = {
-   RPU_CPC_CHUTE_1_SELECTION_BYTE,
-   RPU_CPC_CHUTE_2_SELECTION_BYTE,
-   RPU_CPC_CHUTE_3_SELECTION_BYTE,
+    RPU_CHUTE_1_COINS_START_BYTE,
+    RPU_CHUTE_2_COINS_START_BYTE,
+    RPU_CHUTE_3_COINS_START_BYTE,
 };
 
 // ---------------------------------------------------------------------------
 // Private helpers
 // ---------------------------------------------------------------------------
-
-void TridentMachine::ensureCPCRead() {
-   if (cpcSelectionsRead_) return;
-   for (uint8_t i = 0; i < 3; i++) {
-      cpcSelection_[i] = RPU_ReadByteFromEEProm(kCPCChuteByte[i]);
-      if (cpcSelection_[i] >= 9) {
-         cpcSelection_[i] = 4;
-         RPU_WriteByteToEEProm(kCPCChuteByte[i], 4);
-      }
-   }
-   cpcSelectionsRead_ = true;
-}
-
-uint8_t TridentMachine::getCPCSelection(uint8_t chuteNum) {
-   if (chuteNum > 2) return 0xFF;
-   ensureCPCRead();
-   return cpcSelection_[chuteNum];
-}
-
-uint8_t TridentMachine::getCPCPairCoins(uint8_t pairIndex) {
-   return (pairIndex < 9) ? kCPCPairs[pairIndex][0] : 1;
-}
-
-uint8_t TridentMachine::getCPCPairCredits(uint8_t pairIndex) {
-   return (pairIndex < 9) ? kCPCPairs[pairIndex][1] : 1;
-}
-
-void TridentMachine::setCPCSelection(uint8_t chuteNum, uint8_t pairIdx) {
-   if (chuteNum >= 3) return;
-   ensureCPCRead();
-   cpcSelection_[chuteNum] = pairIdx;
-   RPU_WriteByteToEEProm(kCPCChuteByte[chuteNum], pairIdx);
-}
 
 uint8_t TridentMachine::readSetting(int addr, uint8_t defaultValue) {
    uint8_t value = EEPROM.read(addr);
@@ -82,8 +38,12 @@ uint8_t TridentMachine::readSetting(int addr, uint8_t defaultValue) {
 }
 
 uint8_t TridentMachine::switchToChuteNum(uint8_t switchHit) {
-   if (switchHit == SW_COIN_2) return 1;
-   if (switchHit == SW_COIN_3) return 2;
+   if (switchHit == SW_COIN_2) {
+      return 1;
+   }
+   if (switchHit == SW_COIN_3) {
+      return 2;
+   }
    return 0;
 }
 
@@ -103,12 +63,10 @@ void TridentMachine::init(unsigned long currentTime) {
    wavHandler_.queueSound(SOUND_EFFECT_TRIDENT_INTRO, currentTime + 5000);
 #endif
 
-   RPU_SetupGameSwitches(NUM_SWITCHES_WITH_TRIGGERS, NUM_PRIORITY_SWITCHES_WITH_TRIGGERS,
-                          TriggeredSwitches);
+   RPU_SetupGameSwitches(NUM_SWITCHES_WITH_TRIGGERS, NUM_PRIORITY_SWITCHES_WITH_TRIGGERS, TriggeredSwitches);
 
    const auto initResult = RPU_InitializeMPU(
-      RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET | RPU_CMD_BOOT_ORIGINAL_IF_NOT_SWITCH_CLOSED |
-      RPU_CMD_PERFORM_MPU_TEST, SW_CREDIT_RESET);
+       RPU_CMD_BOOT_ORIGINAL_IF_CREDIT_RESET | RPU_CMD_BOOT_ORIGINAL_IF_NOT_SWITCH_CLOSED | RPU_CMD_PERFORM_MPU_TEST, SW_CREDIT_RESET);
 
    if ((initResult & RPU_RET_SELECTOR_SWITCH_ON) != 0) {
       queueDiagNotification(SOUND_EFFECT_DIAG_SELECTOR_SWITCH_ON, currentTime);
@@ -124,7 +82,8 @@ void TridentMachine::init(unsigned long currentTime) {
    if ((initResult & RPU_RET_ORIGINAL_CODE_REQUESTED) != 0) {
       delay(100);
       queueDiagNotification(SOUND_EFFECT_DIAG_STARTING_ORIGINAL_CODE, currentTime);
-      while (1) ;
+      while (1)
+         ;
    }
    queueDiagNotification(SOUND_EFFECT_DIAG_STARTING_NEW_CODE, currentTime);
 
@@ -132,8 +91,7 @@ void TridentMachine::init(unsigned long currentTime) {
    setDisableFlippers(true);
 }
 
-void TridentMachine::queueDiagNotification(unsigned short notificationNum,
-                                               unsigned long  currentTime) {
+void TridentMachine::queueDiagNotification(unsigned short notificationNum, unsigned long currentTime) {
 #if defined(RPU_OS_USE_WAV_TRIGGER)
    wavHandler_.queuePrioritizedNotification(notificationNum, 0, 10, currentTime);
 #else
@@ -164,20 +122,28 @@ void TridentMachine::stopAllAudio() {
 void TridentMachine::readStoredParameters() {
    // --- Gameplay / operator settings ---
    settings_.credits = RPU_ReadByteFromEEProm(RPU_CREDITS_EEPROM_BYTE);
-   if (settings_.credits > settings_.maximumCredits) settings_.credits = settings_.maximumCredits;
+   if (settings_.credits > settings_.maximumCredits) {
+      settings_.credits = settings_.maximumCredits;
+   }
 
    settings_.freePlayMode = (readSetting(EEPROM_FREE_PLAY_BYTE, 0)) != 0;
 
    settings_.ballSaveNumSeconds = readSetting(EEPROM_BALL_SAVE_BYTE, 15);
-   if (settings_.ballSaveNumSeconds > 20) settings_.ballSaveNumSeconds = 20;
+   if (settings_.ballSaveNumSeconds > 20) {
+      settings_.ballSaveNumSeconds = 20;
+   }
 
    settings_.tournamentScoring = (readSetting(EEPROM_TOURNAMENT_SCORING_BYTE, 0)) != 0;
 
    settings_.maxTiltWarnings = readSetting(EEPROM_TILT_WARNING_BYTE, 2);
-   if (settings_.maxTiltWarnings > 2) settings_.maxTiltWarnings = 2;
+   if (settings_.maxTiltWarnings > 2) {
+      settings_.maxTiltWarnings = 2;
+   }
 
    uint8_t awardOverride = readSetting(EEPROM_AWARD_OVERRIDE_BYTE, 99);
-   if (awardOverride != 99) settings_.scoreAwardReplay = awardOverride;
+   if (awardOverride != 99) {
+      settings_.scoreAwardReplay = awardOverride;
+   }
 
    uint8_t ballsOverride = readSetting(EEPROM_BALLS_OVERRIDE_BYTE, 99);
    if (ballsOverride == 3 || ballsOverride == 5) {
@@ -189,18 +155,22 @@ void TridentMachine::readStoredParameters() {
    settings_.scrollingScores = (readSetting(EEPROM_SCROLLING_SCORES_BYTE, 1)) != 0;
 
    settings_.extraBallValue = RPU_ReadULFromEEProm(EEPROM_EXTRA_BALL_SCORE_BYTE);
-   if ((settings_.extraBallValue % 1000) != 0 || settings_.extraBallValue > 100000)
+   if ((settings_.extraBallValue % 1000) != 0 || settings_.extraBallValue > 100000) {
       settings_.extraBallValue = 20000;
+   }
 
    settings_.specialValue = RPU_ReadULFromEEProm(EEPROM_SPECIAL_SCORE_BYTE);
-   if ((settings_.specialValue % 1000) != 0 || settings_.specialValue > 100000)
+   if ((settings_.specialValue % 1000) != 0 || settings_.specialValue > 100000) {
       settings_.specialValue = 40000;
+   }
 
    settings_.dimLevel = readSetting(EEPROM_DIM_LEVEL_BYTE, 2);
-   if (settings_.dimLevel < 2 || settings_.dimLevel > 3) settings_.dimLevel = 2;
+   if (settings_.dimLevel < 2 || settings_.dimLevel > 3) {
+      settings_.dimLevel = 2;
+   }
    RPU_SetDimDivisor(1, settings_.dimLevel);
 
-   settings_.highScore  = RPU_ReadULFromEEProm(RPU_HIGHSCORE_EEPROM_START_BYTE, 10000);
+   settings_.highScore = RPU_ReadULFromEEProm(RPU_HIGHSCORE_EEPROM_START_BYTE, 10000);
    settings_.awardScores[0] = RPU_ReadULFromEEProm(RPU_AWARD_SCORE_1_EEPROM_START_BYTE);
    settings_.awardScores[1] = RPU_ReadULFromEEProm(RPU_AWARD_SCORE_2_EEPROM_START_BYTE);
    settings_.awardScores[2] = RPU_ReadULFromEEProm(RPU_AWARD_SCORE_3_EEPROM_START_BYTE);
@@ -215,16 +185,24 @@ void TridentMachine::readStoredParameters() {
    default:
       settings_.soundSelector = SOUND_SELECTOR_TRIDENT2020;
    }
-   if (settings_.soundSelector > 3) settings_.soundSelector = 3;
+   if (settings_.soundSelector > 3) {
+      settings_.soundSelector = 3;
+   }
 
    settings_.musicVolume = readSetting(EEPROM_MUSIC_VOLUME_BYTE, 10);
-   if (settings_.musicVolume > 10) settings_.musicVolume = 10;
+   if (settings_.musicVolume > 10) {
+      settings_.musicVolume = 10;
+   }
 
    settings_.sfxVolume = readSetting(EEPROM_SFX_VOLUME_BYTE, 10);
-   if (settings_.sfxVolume > 10) settings_.sfxVolume = 10;
+   if (settings_.sfxVolume > 10) {
+      settings_.sfxVolume = 10;
+   }
 
    settings_.calloutsVolume = readSetting(EEPROM_CALLOUTS_VOLUME_BYTE, 10);
-   if (settings_.calloutsVolume > 10) settings_.calloutsVolume = 10;
+   if (settings_.calloutsVolume > 10) {
+      settings_.calloutsVolume = 10;
+   }
 
 #if defined(RPU_OS_USE_WAV_TRIGGER)
    wavHandler_.setMusicVolume(settings_.musicVolume);
@@ -235,13 +213,12 @@ void TridentMachine::readStoredParameters() {
    this->haveSettings_ = true;
 }
 
-void TridentMachine::setDisplay(uint8_t display, unsigned long value,
-                                bool blankLeadingZeros, uint8_t minimumDigits) {
+void TridentMachine::setDisplay(uint8_t display, unsigned long value, bool blankLeadingZeros, uint8_t minimumDigits) {
    if (display <= 3 && value > RPU_OS_MAX_DISPLAY_SCORE) {
       if (value != displayValue_[display]) {
-         displayValue_[display]       = value;
+         displayValue_[display] = value;
          displayValueSetTime_[display] = currentTime_;
-         displayScrollPhase_[display]  = 0xFF;
+         displayScrollPhase_[display] = 0xFF;
       }
       unsigned long elapsed = currentTime_ - displayValueSetTime_[display];
       if (elapsed < 4000) {
@@ -253,7 +230,7 @@ void TridentMachine::setDisplay(uint8_t display, unsigned long value,
             displayScrollPhase_[display] = phase;
             if (phase < 11) {
                unsigned long displayScore = value;
-               uint8_t       displayMask;
+               uint8_t displayMask;
                if (phase < RPU_OS_NUM_DIGITS) {
                   displayMask = RPU_OS_ALL_DIGITS_MASK;
                   for (uint8_t sc = 0; sc < phase; sc++) {
@@ -264,13 +241,15 @@ void TridentMachine::setDisplay(uint8_t display, unsigned long value,
                   if ((unsigned)(numDigits + phase) > RPU_OS_NUM_DIGITS) {
                      uint8_t numNeeded = (numDigits + phase) - RPU_OS_NUM_DIGITS;
                      unsigned long tempScore = value;
-                     for (uint8_t sc = 0; sc < (numDigits - numNeeded); sc++) tempScore /= 10;
+                     for (uint8_t sc = 0; sc < (numDigits - numNeeded); sc++) {
+                        tempScore /= 10;
+                     }
                      displayMask |= getDisplayMask(magnitudeOfScore(tempScore));
                      displayScore += tempScore;
                   }
                } else {
                   displayScore = 0;
-                  displayMask  = 0x00;
+                  displayMask = 0x00;
                }
                RPU_SetDisplayBlank(display, displayMask);
                RPU_SetDisplay(display, displayScore);
@@ -279,7 +258,9 @@ void TridentMachine::setDisplay(uint8_t display, unsigned long value,
       }
       return;
    }
-   if (display <= 3) displayValue_[display] = 0;
+   if (display <= 3) {
+      displayValue_[display] = 0;
+   }
    RPU_SetDisplay(display, value, blankLeadingZeros, minimumDigits);
 }
 
@@ -304,7 +285,9 @@ void TridentMachine::setLampState(uint8_t lamp, bool on, uint8_t dimmer, uint16_
 }
 
 void TridentMachine::setLampAnimationBytes(const uint8_t* bytes, uint8_t count) {
-   if (bytes) RPU_SetLampAnimation(bytes, count);
+   if (bytes) {
+      RPU_SetLampAnimation(bytes, count);
+   }
 }
 
 void TridentMachine::disableSolenoidStack() {
@@ -323,8 +306,7 @@ void TridentMachine::pushToSolenoidStack(uint8_t sol, uint8_t duration, bool dis
    RPU_PushToSolenoidStack(sol, duration, disableOverride);
 }
 
-void TridentMachine::pushToTimedSolenoidStack(uint8_t sol, uint8_t numPushes,
-                                               unsigned long whenToFire, bool disableOverride) {
+void TridentMachine::pushToTimedSolenoidStack(uint8_t sol, uint8_t numPushes, unsigned long whenToFire, bool disableOverride) {
    RPU_PushToTimedSolenoidStack(sol, numPushes, whenToFire, disableOverride);
 }
 
@@ -353,18 +335,24 @@ void TridentMachine::cycleAllDisplays(unsigned long t, uint8_t curValue) {
 }
 
 uint8_t TridentMachine::magnitudeOfScore(unsigned long score) {
-   if (score == 0) return 0;
+   if (score == 0) {
+      return 0;
+   }
    uint8_t retval = 0;
-   while (score > 0) { score /= 10; retval += 1; }
+   while (score > 0) {
+      score /= 10;
+      retval += 1;
+   }
    return retval;
 }
 
 uint8_t TridentMachine::getDisplayMask(uint8_t numDigits) {
    uint8_t mask = 0;
-   for (uint8_t i = 0; i < numDigits; i++) mask |= (0x20 >> i);
+   for (uint8_t i = 0; i < numDigits; i++) {
+      mask |= (0x20 >> i);
+   }
    return mask;
 }
-
 
 void TridentMachine::setCoinLockout(bool lock) {
    RPU_SetCoinLockout(lock);
@@ -579,9 +567,13 @@ void TridentMachine::playSoundEffect(uint8_t soundEffectNum) {
 void TridentMachine::addCredit(bool playSound, uint8_t numToAdd) {
    if (settings_.credits < settings_.maximumCredits) {
       settings_.credits += numToAdd;
-      if (settings_.credits > settings_.maximumCredits) settings_.credits = settings_.maximumCredits;
+      if (settings_.credits > settings_.maximumCredits) {
+         settings_.credits = settings_.maximumCredits;
+      }
       RPU_WriteByteToEEProm(RPU_CREDITS_EEPROM_BYTE, settings_.credits);
-      if (playSound) playSoundEffect(SOUND_EFFECT_ADD_CREDIT);
+      if (playSound) {
+         playSoundEffect(SOUND_EFFECT_ADD_CREDIT);
+      }
       RPU_SetDisplayCredits(settings_.credits, !settings_.freePlayMode);
       RPU_SetCoinLockout(false);
    } else {
@@ -593,42 +585,24 @@ void TridentMachine::addCredit(bool playSound, uint8_t numToAdd) {
 void TridentMachine::addSpecialCredit() {
    addCredit(false, 1);
    RPU_PushToTimedSolenoidStack(SOL_KNOCKER, 3, currentTime_, true);
-   RPU_WriteULToEEProm(RPU_TOTAL_REPLAYS_EEPROM_START_BYTE,
-                        RPU_ReadULFromEEProm(RPU_TOTAL_REPLAYS_EEPROM_START_BYTE) + 1);
+   RPU_WriteULToEEProm(RPU_TOTAL_REPLAYS_EEPROM_START_BYTE, RPU_ReadULFromEEProm(RPU_TOTAL_REPLAYS_EEPROM_START_BYTE) + 1);
 }
 
 void TridentMachine::addCoinToAudit(uint8_t chuteNum) {
-   if (chuteNum > 2) return;
+   if (chuteNum > 2) {
+      return;
+   }
    unsigned short coinAuditStartByte = kChuteAuditByte[chuteNum];
    RPU_WriteULToEEProm(coinAuditStartByte, RPU_ReadULFromEEProm(coinAuditStartByte) + 1);
 }
 
 bool TridentMachine::addCoin(uint8_t chuteNum) {
-   if (chuteNum > 2) return false;
-   uint8_t cpcSelection = getCPCSelection(chuteNum);
-
-   uint8_t chuteNumToUse;
-   for (chuteNumToUse = 0; chuteNumToUse <= chuteNum; chuteNumToUse++) {
-      if (getCPCSelection(chuteNumToUse) == cpcSelection) break;
+   if (chuteNum > 2) {
+      return false;
    }
-
    playSoundEffect(SOUND_EFFECT_COIN_DROP_1 + (currentTime_ % 3));
-
-   uint8_t cpcCoins          = getCPCPairCoins(cpcSelection);
-   uint8_t cpcCredits        = getCPCPairCredits(cpcSelection);
-   uint8_t coinProgressBefore = chuteCoinsInProgress_[chuteNumToUse];
-   chuteCoinsInProgress_[chuteNumToUse] += 1;
-
-   bool creditAdded = false;
-   if (chuteCoinsInProgress_[chuteNumToUse] == cpcCoins) {
-      addCredit(cpcCredits > cpcCoins ? (cpcCredits - coinProgressBefore) : cpcCredits, 1);
-      chuteCoinsInProgress_[chuteNumToUse] = 0;
-      creditAdded = true;
-   } else if (cpcCredits > cpcCoins) {
-      addCredit(true, 1);
-      creditAdded = true;
-   }
-   return creditAdded;
+   addCredit(true, 1);
+   return true;
 }
 
 MachineSettings& TridentMachine::getSettings() {
@@ -640,5 +614,7 @@ MachineSettings& TridentMachine::getSettings() {
 
 void TridentMachine::setLastGameResult(uint8_t numPlayers, const unsigned long* scores) {
    lastGameNumPlayers_ = numPlayers;
-   for (uint8_t i = 0; i < 4; i++) lastGameScores_[i] = scores[i];
+   for (uint8_t i = 0; i < 4; i++) {
+      lastGameScores_[i] = scores[i];
+   }
 }

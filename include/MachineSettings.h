@@ -12,7 +12,7 @@
 struct MachineSettings {
    // --- Credits / play options ---
    uint8_t       credits                  = 0;
-   uint8_t       maximumCredits           = 40;
+   uint8_t       maximumCredits           = 99;
    uint8_t       ballsPerGame             = 3;
    uint8_t       ballSaveNumSeconds       = 0;
    bool          freePlayMode             = true;
@@ -46,3 +46,11 @@ struct MachineSettings {
    // --- Transient flags (not EEPROM-backed) ---
    bool          resetScoresToClearVersion = false;
 };
+
+constexpr uint8_t TILT_WARNINGS_DEFAULT = 2;
+constexpr uint8_t TILT_WARNINGS_MAX = 2;
+
+constexpr uint8_t AWARD_OVERRIDE_DEFAULT = 99;
+constexpr uint8_t AWARD_OVERRIDE_MAX = 99;
+
+constexpr uint8_t BALLS_PER_GAME_DEFAULT = 5;

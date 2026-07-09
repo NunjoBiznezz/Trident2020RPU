@@ -8,11 +8,9 @@
 #include "Trident2020.h"
 #include <EEPROM.h>
 
-constexpr uint8_t kNumCPCPairs = 9;
-
-// Callout index 0 = setting 1 (score level 1) … index 14 = setting 15 (CPC chute 3).
-static const uint8_t kStoredAdjCalloutMap[15] = {
-   140, 141, 142, 139, 143, 144, 145, 146, 147, 148, 149, 138, 150, 151, 152
+// Callout index 0 = setting 1 (score level 1) … index 11 = setting 12 (boot).
+static const uint8_t kStoredAdjCalloutMap[12] = {
+   140, 141, 142, 139, 143, 144, 145, 146, 147, 148, 149, 138
 };
 
 static unsigned long readUL(int addr) {
@@ -95,20 +93,8 @@ TopState StoredAdjustmentsMode::update(unsigned long currentTime) {
       machine_->playCallout(kStoredAdjCalloutMap[curState - 1]);
    }
 
-   // CPC change detection.
-   uint8_t chuteNum     = 0xFF;
-   uint8_t cpcSelBefore = 0xFF;
-   if (curState == kSaCpcChute1) {
-      chuteNum = 0; cpcSelBefore = machine_->getCPCSelection(0);
-   } else if (curState == kSaCpcChute2) {
-      chuteNum = 1; cpcSelBefore = machine_->getCPCSelection(1);
-   } else if (curState == kSaCpcChute3) {
-      chuteNum = 2; cpcSelBefore = machine_->getCPCSelection(2);
-   }
-
    int           savedScoreAddr = 0;
    int           auditAddr      = 0;
-   unsigned short cpcSelectorStartByte = 0;
 
    if (curState == kSaScoreLevel1) {
       savedScoreAddr = kEeScoreLevel1;
@@ -162,12 +148,6 @@ TopState StoredAdjustmentsMode::update(unsigned long currentTime) {
          machine_->setDisplayBlank(count, ((currentTime / 500) % 2) ? 0x3C : 0x00);
 #endif
       }
-   } else if (curState == kSaCpcChute1) {
-      cpcSelectorStartByte = RPU_CPC_CHUTE_1_SELECTION_BYTE;
-   } else if (curState == kSaCpcChute2) {
-      cpcSelectorStartByte = RPU_CPC_CHUTE_2_SELECTION_BYTE;
-   } else if (curState == kSaCpcChute3) {
-      cpcSelectorStartByte = RPU_CPC_CHUTE_3_SELECTION_BYTE;
    }
 
    if (savedScoreAddr) {
@@ -225,47 +205,12 @@ TopState StoredAdjustmentsMode::update(unsigned long currentTime) {
       }
    }
 
-   if (cpcSelectorStartByte) {
-      if (curStateChanged) {
-         savedValue_ = machine_->readByteFromEEProm(cpcSelectorStartByte);
-         if (savedValue_ >= kNumCPCPairs) savedValue_ = 4;
-         machine_->setDisplay(0, machine_->getCPCPairCoins((uint8_t)savedValue_), true);
-         machine_->setDisplay(1, machine_->getCPCPairCredits((uint8_t)savedValue_), true);
-      }
-      if (curSwitch == SW_CREDIT_RESET) {
-         uint8_t lastValue = (uint8_t)savedValue_;
-         if (machine_->getUpDownSwitchState()) {
-            savedValue_ += 1;
-            if (savedValue_ >= kNumCPCPairs) savedValue_ = 0;
-         } else {
-            if (savedValue_ > 0) savedValue_ -= 1;
-         }
-         machine_->setDisplay(0, machine_->getCPCPairCoins((uint8_t)savedValue_), true);
-         machine_->setDisplay(1, machine_->getCPCPairCredits((uint8_t)savedValue_), true);
-         if (lastValue != (uint8_t)savedValue_) {
-            if (cpcSelectorStartByte == RPU_CPC_CHUTE_1_SELECTION_BYTE) {
-               machine_->setCPCSelection(0, (uint8_t)savedValue_);
-            } else if (cpcSelectorStartByte == RPU_CPC_CHUTE_2_SELECTION_BYTE) {
-               machine_->setCPCSelection(1, (uint8_t)savedValue_);
-            } else if (cpcSelectorStartByte == RPU_CPC_CHUTE_3_SELECTION_BYTE) {
-               machine_->setCPCSelection(2, (uint8_t)savedValue_);
-            }
-         }
-      }
-   }
-
-   // Notify if CPC selection changed this tick.
-   if (chuteNum != 0xFF && cpcSelBefore != machine_->getCPCSelection(chuteNum)) {
-      machine_->stopAllAudio();
-      machine_->playCallout(SOUND_EFFECT_SELF_TEST_CPC_START + machine_->getCPCSelection(chuteNum));
-   }
-
    if (returnState != internalState_) {
       internalState_ = returnState;
       stateChanged_  = true;
    }
 
    if (internalState_ == 0) return TopState::Attract;
-   if (internalState_ > kSaCpcChute3) return TopState::Adjustments;
+   if (internalState_ > kSaBoot) return TopState::Adjustments;
    return TopState::StoredAdjustments;
 }
