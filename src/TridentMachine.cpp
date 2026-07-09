@@ -128,16 +128,16 @@ void TridentMachine::readStoredParameters() {
 
    settings_.freePlayMode = (readSetting(EEPROM_FREE_PLAY_BYTE, 0)) != 0;
 
-   settings_.ballSaveNumSeconds = readSetting(EEPROM_BALL_SAVE_BYTE, 15);
-   if (settings_.ballSaveNumSeconds > 20) {
-      settings_.ballSaveNumSeconds = 20;
+   settings_.ballSaveNumSeconds = readSetting(EEPROM_BALL_SAVE_BYTE, BALL_SAVE_TIME_S_DEFAULT);
+   if (settings_.ballSaveNumSeconds > BALL_SAVE_TIME_S_MAX) {
+      settings_.ballSaveNumSeconds = BALL_SAVE_TIME_S_MAX;
    }
 
    settings_.tournamentScoring = (readSetting(EEPROM_TOURNAMENT_SCORING_BYTE, 0)) != 0;
 
-   settings_.maxTiltWarnings = readSetting(EEPROM_TILT_WARNING_BYTE, 2);
-   if (settings_.maxTiltWarnings > 2) {
-      settings_.maxTiltWarnings = 2;
+   settings_.maxTiltWarnings = readSetting(EEPROM_TILT_WARNING_BYTE, TILT_WARNINGS_DEFAULT);
+   if (settings_.maxTiltWarnings > TILT_WARNINGS_MAX) {
+      settings_.maxTiltWarnings = TILT_WARNINGS_MAX;
    }
 
    uint8_t awardOverride = readSetting(EEPROM_AWARD_OVERRIDE_BYTE, 99);
