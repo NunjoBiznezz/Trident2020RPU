@@ -46,10 +46,6 @@ public:
    // Start a looping background song on the WAV Trigger music channel.
    virtual void playBackgroundSong(unsigned short songNum)             = 0;
 
-   // Select a background song automatically based on ball number (1–n).
-   // Cycles through the BACKGROUND_* tracks defined in SoundEffects.h.
-   virtual void playBackgroundSongBasedOnBall(uint8_t ballNum)         = 0;
-
    // Stop all active audio on all WAV Trigger channels.
    virtual void stopAllAudio()                                         {}
 

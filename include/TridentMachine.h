@@ -31,7 +31,6 @@ public:
    // PinballMachine interface — see PinballMachine.h for semantics.
    void playSoundEffect(uint8_t soundEffectNum) override;
    void playBackgroundSong(unsigned short songNum) override;
-   void playBackgroundSongBasedOnBall(uint8_t ballNum) override;
    void stopAllAudio() override;
    void playCallout(uint8_t track) override;
 

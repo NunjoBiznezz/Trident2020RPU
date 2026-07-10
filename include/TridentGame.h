@@ -65,4 +65,5 @@ private:
    int  initGamePlay();
    int  initNewBall(bool curStateChanged, uint8_t playerNum, int ballNum);
    int  showMatchSequence(bool curStateChanged);
+   void startBallBackgroundSong(uint8_t ballNum);
 };

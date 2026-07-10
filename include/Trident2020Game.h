@@ -161,4 +161,5 @@ private:
    int  countdownBonus(bool curStateChanged);
    void checkHighScores();
    int  showMatchSequence(bool curStateChanged);
+   void startBallBackgroundSong(uint8_t ballNum);
 };

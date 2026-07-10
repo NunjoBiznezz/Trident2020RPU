@@ -416,15 +416,6 @@ void TridentMachine::playBackgroundSong(unsigned short songNum) {
    }
 }
 
-void TridentMachine::playBackgroundSongBasedOnBall(uint8_t ballNum) {
-   if (ballNum == 1) {
-      playBackgroundSong(SOUND_EFFECT_BACKGROUND_1);
-   } else if (ballNum == settings_.ballsPerGame) {
-      playBackgroundSong(SOUND_EFFECT_BACKGROUND_6);
-   } else {
-      playBackgroundSong(SOUND_EFFECT_BACKGROUND_2 + currentTime_ % 4);
-   }
-}
 
 void TridentMachine::playSoundEffect(uint8_t soundEffectNum) {
    switch (settings_.soundSelector) {

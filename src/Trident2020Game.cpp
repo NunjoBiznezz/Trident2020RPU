@@ -1100,7 +1100,7 @@ int Trident2020Game::initNewBall(bool curStateChanged, uint8_t playerNum, int ba
       if (CurrentNumPlayers > 1 && (ballNum != 1 || playerNum != 0)) {
          machine_->playSoundEffect(SOUND_EFFECT_PLAYER_1_UP + playerNum);
       }
-      machine_->playBackgroundSongBasedOnBall(ballNum);
+      startBallBackgroundSong(ballNum);
 
       machine_->setDisplayBallInPlay(ballNum);
       machine_->setLampState(LAMP_BALL_IN_PLAY, true);
@@ -1364,7 +1364,7 @@ int Trident2020Game::manageGameMode() {
                GameMode = GAME_MODE_WIZARD;
             } else {
                GameMode = GAME_MODE_UNSTRUCTURED_PLAY;
-               machine_->playBackgroundSongBasedOnBall(CurrentBallInPlay);
+               startBallBackgroundSong(CurrentBallInPlay);
                machine_->playSoundEffect(SOUND_EFFECT_MODE_FINISHED);
             }
          }
@@ -1402,7 +1402,7 @@ int Trident2020Game::manageGameMode() {
          GameModeStartTime = 0;
          LastMiniGameBonusTime = 0;
          showPlayerScores(0xFF, false, false);
-         machine_->playBackgroundSongBasedOnBall(CurrentBallInPlay);
+         startBallBackgroundSong(CurrentBallInPlay);
          machine_->playSoundEffect(SOUND_EFFECT_MODE_FINISHED);
          GameMode = GAME_MODE_UNSTRUCTURED_PLAY;
       }
@@ -1601,4 +1601,15 @@ int Trident2020Game::showMatchSequence(bool curStateChanged) {
    }
 
    return MACHINE_STATE_MATCH_MODE;
+}
+
+void Trident2020Game::startBallBackgroundSong(uint8_t ballNum) {
+   // Ball 1 always gets the opening theme; the last ball gets the finale track.
+   // Middle balls pick randomly from tracks 2–5 so the same song doesn't repeat
+   // every ball. CurrentTime % 4 is cheap entropy on the ATmega2560.
+   uint8_t song;
+   if (ballNum == 1)                       song = SOUND_EFFECT_BACKGROUND_1;
+   else if (ballNum == ctx_->ballsPerGame) song = SOUND_EFFECT_BACKGROUND_6;
+   else                                    song = SOUND_EFFECT_BACKGROUND_2 + (uint8_t)(CurrentTime % 4);
+   machine_->playBackgroundSong(song);
 }
