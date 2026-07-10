@@ -7,7 +7,6 @@
  **************************************************************************/
 
 #include "TridentGame.h"
-#include "MachineState.h"
 #include "SoundEffects.h"
 #include "Trident.h"
 #include "Trident2020.h"
@@ -21,7 +20,7 @@ TridentGame::TridentGame() {}
 void TridentGame::enter(unsigned long currentTime) {
    CurrentTime = currentTime;
    addPlayer(true);
-   internalState_ = MACHINE_STATE_INIT_GAMEPLAY;
+   internalState_ = kInitGameplay;
    internalStateChanged_ = true;
 }
 
@@ -33,18 +32,18 @@ TopState TridentGame::update(unsigned long currentTime) {
    int curState = internalState_;
    int returnState = curState;
 
-   if (curState == MACHINE_STATE_INIT_GAMEPLAY) {
+   if (curState == kInitGameplay) {
       returnState = initGamePlay();
-   } else if (curState == MACHINE_STATE_INIT_NEW_BALL) {
+   } else if (curState == kInitNewBall) {
       returnState = initNewBall(curStateChanged, CurrentPlayer, CurrentBallInPlay);
-   } else if (curState == MACHINE_STATE_NORMAL_GAMEPLAY) {
+   } else if (curState == kNormalGameplay) {
       showPlayerScores(CurrentPlayer, BallFirstSwitchHitTime == 0,
                        BallFirstSwitchHitTime > 0 && (CurrentTime - BallFirstSwitchHitTime) > 2000);
       // TODO: add Original Trident scoring and rule logic here
-   } else if (curState == MACHINE_STATE_BALL_OVER) {
+   } else if (curState == kBallOver) {
       CurrentScores[CurrentPlayer] = CurrentPlayerCurrentScore;
       if (SamePlayerShootsAgain) {
-         returnState = MACHINE_STATE_INIT_NEW_BALL;
+         returnState = kInitNewBall;
       } else {
          CurrentPlayer += 1;
          if (CurrentPlayer >= CurrentNumPlayers) {
@@ -59,9 +58,9 @@ TopState TridentGame::update(unsigned long currentTime) {
             for (int count = 0; count < CurrentNumPlayers; count++) {
                machine_->setDisplay(count, CurrentScores[count], true, 2);
             }
-            returnState = MACHINE_STATE_MATCH_MODE;
+            returnState = kMatchMode;
          } else {
-            returnState = MACHINE_STATE_INIT_NEW_BALL;
+            returnState = kInitNewBall;
          }
       }
    }
@@ -94,25 +93,25 @@ TopState TridentGame::update(unsigned long currentTime) {
             break;
 
          case SW_CREDIT_RESET:
-            if (curState == MACHINE_STATE_NORMAL_GAMEPLAY) {
+            if (curState == kNormalGameplay) {
                addPlayer(false);
             }
             break;
 
          case SW_OUTHOLE:
-            if (curState == MACHINE_STATE_NORMAL_GAMEPLAY) {
+            if (curState == kNormalGameplay) {
                if (!BallSaveUsed && settings_->ballSaveNumSeconds > 0 && BallFirstSwitchHitTime != 0 &&
                    (CurrentTime - BallFirstSwitchHitTime) < ((unsigned long)settings_->ballSaveNumSeconds * 1000)) {
                   machine_->pushToTimedSolenoidStack(SOL_OUTHOLE, 4, CurrentTime + 100);
                   BallSaveUsed = true;
                } else {
-                  returnState = MACHINE_STATE_BALL_OVER;
+                  returnState = kBallOver;
                }
             }
             break;
 
          default:
-            if (curState == MACHINE_STATE_NORMAL_GAMEPLAY && BallFirstSwitchHitTime == 0) {
+            if (curState == kNormalGameplay && BallFirstSwitchHitTime == 0) {
                BallFirstSwitchHitTime = CurrentTime;
             }
             break;
@@ -123,11 +122,8 @@ TopState TridentGame::update(unsigned long currentTime) {
    if (returnState < 0) {
       return TopState::HardwareTest;
    }
-   if (returnState == MACHINE_STATE_MATCH_MODE) {
+   if (returnState == kMatchMode) {
       return TopState::Match;
-   }
-   if (returnState == MACHINE_STATE_ATTRACT) {
-      return TopState::Attract;
    }
    if (returnState != curState) {
       internalState_ = returnState;
@@ -219,7 +215,7 @@ int TridentGame::initGamePlay() {
       machine_->pushToSolenoidStack(SOL_SAUCER, 5);
    }
 
-   return MACHINE_STATE_INIT_NEW_BALL;
+   return kInitNewBall;
 }
 
 int TridentGame::initNewBall(bool curStateChanged, uint8_t playerNum, int ballNum) {
@@ -256,9 +252,9 @@ int TridentGame::initNewBall(bool curStateChanged, uint8_t playerNum, int ballNu
    }
 
    if (machine_->readSingleSwitchState(SW_OUTHOLE)) {
-      return MACHINE_STATE_INIT_NEW_BALL;
+      return kInitNewBall;
    }
-   return MACHINE_STATE_NORMAL_GAMEPLAY;
+   return kNormalGameplay;
 }
 
 void TridentGame::startBallBackgroundSong(uint8_t ballNum) {

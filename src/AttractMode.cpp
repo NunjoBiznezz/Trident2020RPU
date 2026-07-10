@@ -31,7 +31,6 @@
 #include "AttractMode.h"
 #include "BuildVersion.h"
 #include "LampAnimation.h"
-#include "MachineState.h"
 #include "RPU.h"
 #include "Trident.h"
 
@@ -70,7 +69,6 @@ void AttractMode::enter(unsigned long currentTime) {
 }
 
 TopState AttractMode::update(unsigned long currentTime) {
-   int returnState = MACHINE_STATE_ATTRACT;
 
    // -----------------------------------------------------------------------
    // Head display — score displays + ball-in-play
@@ -157,7 +155,7 @@ TopState AttractMode::update(unsigned long currentTime) {
    while ((switchHit = machine_->pullFirstFromSwitchStack()) != PinballMachine::SWITCH_STACK_EMPTY) {
       if (switchHit == SW_CREDIT_RESET) {
          if (machine_->getCredits() >= 1 || machine_->getFreePlayMode()) {
-            returnState = MACHINE_STATE_INIT_GAMEPLAY;
+            return TopState::Game;
          }
       }
       if (switchHit == SW_COIN_1 || switchHit == SW_COIN_2 || switchHit == SW_COIN_3) {
@@ -171,6 +169,5 @@ TopState AttractMode::update(unsigned long currentTime) {
       }
    }
 
-   if (returnState == MACHINE_STATE_INIT_GAMEPLAY) return TopState::Game;
    return TopState::Attract;
 }

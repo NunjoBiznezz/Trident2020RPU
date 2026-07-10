@@ -7,7 +7,6 @@
  **************************************************************************/
 
 #include "Trident2020Game.h"
-#include "MachineState.h"
 #include "RPU.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
@@ -30,7 +29,7 @@ Trident2020Game::Trident2020Game() {}
 void Trident2020Game::enter(unsigned long currentTime) {
    CurrentTime = currentTime;
    addPlayer(true);
-   internalState_ = MACHINE_STATE_INIT_GAMEPLAY;
+   internalState_ = kInitGameplay;
    internalStateChanged_ = true;
 }
 
@@ -50,21 +49,21 @@ TopState Trident2020Game::update(unsigned long currentTime) {
       scoreMultiplier = (unsigned long)countBits(GameMode & 0x70);
    }
 
-   if (curState == MACHINE_STATE_INIT_GAMEPLAY) {
+   if (curState == kInitGameplay) {
       returnState = initGamePlay();
-   } else if (curState == MACHINE_STATE_INIT_NEW_BALL) {
+   } else if (curState == kInitNewBall) {
       returnState = initNewBall(curStateChanged, CurrentPlayer, CurrentBallInPlay);
-   } else if (curState == MACHINE_STATE_NORMAL_GAMEPLAY) {
+   } else if (curState == kNormalGameplay) {
       returnState = manageGameMode();
-   } else if (curState == MACHINE_STATE_COUNTDOWN_BONUS) {
+   } else if (curState == kCountdownBonus) {
       returnState = countdownBonus(curStateChanged);
       showPlayerScores(CurrentPlayer, BallFirstSwitchHitTime == 0,
                        BallFirstSwitchHitTime > 0 && (CurrentTime - LastTimeScoreChanged) > 2000);
-   } else if (curState == MACHINE_STATE_BALL_OVER) {
+   } else if (curState == kBallOver) {
       CurrentScores[CurrentPlayer] = CurrentPlayerCurrentScore;
       StandupsHit[CurrentPlayer] = CurrentStandupsHit;
       if (SamePlayerShootsAgain) {
-         returnState = MACHINE_STATE_INIT_NEW_BALL;
+         returnState = kInitNewBall;
       } else {
          CurrentPlayer += 1;
          if (CurrentPlayer >= CurrentNumPlayers) {
@@ -83,9 +82,9 @@ TopState Trident2020Game::update(unsigned long currentTime) {
             for (int count = 0; count < CurrentNumPlayers; count++) {
                machine_->setDisplay(count, CurrentScores[count], true, 2);
             }
-            returnState = MACHINE_STATE_MATCH_MODE;
+            returnState = kMatchMode;
          } else {
-            returnState = MACHINE_STATE_INIT_NEW_BALL;
+            returnState = kInitNewBall;
          }
       }
    }
@@ -391,7 +390,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
                      machine_->decrementCredits();
                      machine_->setDisplayCredits(machine_->getCredits());
                   }
-                  returnState = MACHINE_STATE_INIT_GAMEPLAY;
+                  returnState = kInitGameplay;
                }
             }
             DEBUG_MESSAGE("Start game button pressed\n\r");
@@ -417,7 +416,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
             break;
          case SW_OUTHOLE:
             if (NumTiltWarnings > settings_->maxTiltWarnings) {
-               returnState = MACHINE_STATE_COUNTDOWN_BONUS;
+               returnState = kCountdownBonus;
             }
             break;
          }
@@ -456,11 +455,8 @@ TopState Trident2020Game::update(unsigned long currentTime) {
    if (returnState < 0) {
       return TopState::HardwareTest;
    }
-   if (returnState == MACHINE_STATE_MATCH_MODE) {
+   if (returnState == kMatchMode) {
       return TopState::Match;
-   }
-   if (returnState == MACHINE_STATE_ATTRACT) {
-      return TopState::Attract;
    }
    if (returnState != internalState_) {
       internalState_ = returnState;
@@ -1143,7 +1139,7 @@ int Trident2020Game::initGamePlay() {
       machine_->pushToSolenoidStack(SOL_SAUCER, 5);
    }
 
-   return MACHINE_STATE_INIT_NEW_BALL;
+   return kInitNewBall;
 }
 
 int Trident2020Game::initNewBall(bool curStateChanged, uint8_t playerNum, int ballNum) {
@@ -1212,9 +1208,9 @@ int Trident2020Game::initNewBall(bool curStateChanged, uint8_t playerNum, int ba
    }
 
    if (machine_->readSingleSwitchState(SW_OUTHOLE)) {
-      return MACHINE_STATE_INIT_NEW_BALL;
+      return kInitNewBall;
    } else {
-      return MACHINE_STATE_NORMAL_GAMEPLAY;
+      return kNormalGameplay;
    }
 }
 
@@ -1245,7 +1241,7 @@ void Trident2020Game::checkForFeedingFrenzyQualify() {
 }
 
 int Trident2020Game::manageGameMode() {
-   int returnState = MACHINE_STATE_NORMAL_GAMEPLAY;
+   int returnState = kNormalGameplay;
 
    if (BallFirstSwitchHitTime == 0) {
       if (!PlayerUpLightBlinking) {
@@ -1498,7 +1494,7 @@ int Trident2020Game::manageGameMode() {
             if (BallFirstSwitchHitTime == 0 && NumTiltWarnings <= settings_->maxTiltWarnings) {
                machine_->pushToTimedSolenoidStack(SOL_OUTHOLE, 4, CurrentTime);
                BallTimeInTrough = 0;
-               returnState = MACHINE_STATE_NORMAL_GAMEPLAY;
+               returnState = kNormalGameplay;
             } else {
                if (!BallSaveUsed && ((CurrentTime - BallFirstSwitchHitTime) / 1000) < ((unsigned long)settings_->ballSaveNumSeconds)) {
                   machine_->pushToTimedSolenoidStack(SOL_OUTHOLE, 4, CurrentTime + 100);
@@ -1506,20 +1502,20 @@ int Trident2020Game::manageGameMode() {
                   machine_->playSoundEffect(SOUND_EFFECT_SWIM_AGAIN);
                   machine_->setLampState(LAMP_SHOOT_AGAIN, false);
                   BallTimeInTrough = CurrentTime;
-                  returnState = MACHINE_STATE_NORMAL_GAMEPLAY;
+                  returnState = kNormalGameplay;
                } else if (RescueFromTheDeepEndTime != 0 && CurrentTime < RescueFromTheDeepEndTime) {
                   machine_->pushToTimedSolenoidStack(SOL_OUTHOLE, 4, CurrentTime + 100);
                   machine_->playSoundEffect(SOUND_EFFECT_RESCUE_FROM_THE_DEEP);
                   RescueFromTheDeepAvailable = false;
                   BallTimeInTrough = CurrentTime;
-                  returnState = MACHINE_STATE_NORMAL_GAMEPLAY;
+                  returnState = kNormalGameplay;
                } else {
                   showPlayerScores(0xFF, false, false);
                   FeedingFrenzySpins[CurrentPlayer] += CurrentFeedingFrenzy;
                   ExploreTheDepthsHits[CurrentPlayer] += CurrentExploreTheDepths;
                   SharpShooterHits[CurrentPlayer] += CurrentSharpShooter;
                   machine_->playBackgroundSong(SOUND_EFFECT_NONE);
-                  returnState = MACHINE_STATE_COUNTDOWN_BONUS;
+                  returnState = kCountdownBonus;
                }
             }
          }
@@ -1558,10 +1554,10 @@ int Trident2020Game::countdownBonus(bool curStateChanged) {
 
    if (CurrentTime > BonusCountDownEndTime) {
       BonusCountDownEndTime = 0xFFFFFFFF;
-      return MACHINE_STATE_BALL_OVER;
+      return kBallOver;
    }
 
-   return MACHINE_STATE_COUNTDOWN_BONUS;
+   return kCountdownBonus;
 }
 
 void Trident2020Game::checkHighScores() {

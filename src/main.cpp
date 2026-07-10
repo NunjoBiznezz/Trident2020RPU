@@ -27,7 +27,6 @@
 #include "MatchMode.h"
 #include "MachineMode.h"
 #include "MachineSettings.h"
-#include "MachineState.h"
 #include "RPU.h"
 #include "RPU_config.h"
 #include "RPU_Internal.h"

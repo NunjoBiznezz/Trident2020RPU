@@ -57,12 +57,20 @@ public:
    void showLeftLaneLamps();
 
 private:
-   // Set once via setSettings() / setMachine(); valid for the lifetime of the program.
-   const MachineSettings*  settings_     = nullptr;
-   PinballMachine* machine_ = nullptr;
+   // Internal substates — private to this class; not shared with other modes.
+   static constexpr int kInitGameplay   =   1;
+   static constexpr int kInitNewBall    =   2;
+   static constexpr int kNormalGameplay =   4;
+   static constexpr int kCountdownBonus =  99;
+   static constexpr int kBallOver       = 100;
+   static constexpr int kMatchMode      = 110;
 
-   // Top-level state machine: internal game state and change flag.
-   int  internalState_    = 0;
+   // Set once via setMachine(); valid for the lifetime of the program.
+   const MachineSettings*  settings_ = nullptr;
+   PinballMachine*         machine_  = nullptr;
+
+   // Internal game substate and change flag.
+   int  internalState_        = kInitGameplay;
    bool internalStateChanged_ = false;
 
    unsigned long CurrentTime = 0;

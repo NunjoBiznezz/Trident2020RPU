@@ -31,10 +31,17 @@ public:
    uint8_t       getNumPlayers() const                 { return CurrentNumPlayers; }
 
 private:
-   const MachineSettings* settings_ = nullptr;
-   PinballMachine*  machine_ = nullptr;
+   // Internal substates — private to this class; not shared with other modes.
+   static constexpr int kInitGameplay   =   1;
+   static constexpr int kInitNewBall    =   2;
+   static constexpr int kNormalGameplay =   4;
+   static constexpr int kBallOver       = 100;
+   static constexpr int kMatchMode      = 110;
 
-   int  internalState_        = 0;
+   const MachineSettings* settings_ = nullptr;
+   PinballMachine*        machine_  = nullptr;
+
+   int  internalState_        = kInitGameplay;
    bool internalStateChanged_ = false;
 
    unsigned long CurrentTime              = 0;
