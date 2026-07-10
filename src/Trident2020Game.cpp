@@ -146,10 +146,10 @@ TopState Trident2020Game::update(unsigned long currentTime) {
          case SW_RIGHT_OUTLANE:
             CurrentPlayerCurrentScore += 500;
             machine_->playSoundEffect(SOUND_EFFECT_RIGHT_OUTLANE);
-            if (NumberOfStandupClears == ctx_->standupSpecialLevel && !SpecialCollected) {
+            if (NumberOfStandupClears == ctx_->trident2020Balance.standupSpecialLevel && !SpecialCollected) {
                SpecialCollected = true;
                if (ctx_->tournamentScoring) {
-                  CurrentPlayerCurrentScore += (unsigned long)ctx_->specialValue;
+                  CurrentPlayerCurrentScore += (unsigned long)ctx_->trident2020Awards.specialValue;
                }
             }
             if (BallFirstSwitchHitTime == 0) {
@@ -413,9 +413,9 @@ TopState Trident2020Game::update(unsigned long currentTime) {
       LastTimeScoreChanged = CurrentTime;
       if (!ctx_->tournamentScoring) {
          for (int awardCount = 0; awardCount < 3; awardCount++) {
-            if (ctx_->awardScores[awardCount] != 0 && scoreAtTop < ctx_->awardScores[awardCount] &&
-                CurrentPlayerCurrentScore >= ctx_->awardScores[awardCount]) {
-               if (((ctx_->scoreAwardReplay) >> awardCount) & 0x01) {
+            if (ctx_->trident2020Awards.awardScores[awardCount] != 0 && scoreAtTop < ctx_->trident2020Awards.awardScores[awardCount] &&
+                CurrentPlayerCurrentScore >= ctx_->trident2020Awards.awardScores[awardCount]) {
+               if (((ctx_->trident2020Awards.scoreAwardReplay) >> awardCount) & 0x01) {
                   machine_->addSpecialCredit();
                } else if (!ExtraBallCollected) {
                   ExtraBallCollected = true;
@@ -871,10 +871,10 @@ void Trident2020Game::showAwardLamps() {
    machine_->setLampState(LAMP_EXTRA_BALL, ((NumberOfStandupClears == 1 && !ExtraBallCollected) || RescueFromTheDeepEndTime != 0), 0,
                     (RescueFromTheDeepEndTime != 0) ? 100 : 0);
    machine_->setLampState(LAMP_DROP_TARGET_SPECIAL,
-                    (BonusX == (ctx_->targetSpecialBonus - 1)) && (GameMode & GAME_MODE_SHARP_SHOOTER_FLAG) == 0);
+                    (BonusX == (ctx_->trident2020Balance.targetSpecialBonus - 1)) && (GameMode & GAME_MODE_SHARP_SHOOTER_FLAG) == 0);
    machine_->setLampState(LAMP_STAND_UP_SPECIAL,
-                    (NumberOfStandupClears == (ctx_->standupSpecialLevel - 1)) && (GameMode & GAME_MODE_EXPLORE_THE_DEPTHS_FLAG) == 0);
-   machine_->setLampState(LAMP_RIGHT_OUTLANE_SPECIAL, (NumberOfStandupClears == ctx_->standupSpecialLevel && !SpecialCollected));
+                    (NumberOfStandupClears == (ctx_->trident2020Balance.standupSpecialLevel - 1)) && (GameMode & GAME_MODE_EXPLORE_THE_DEPTHS_FLAG) == 0);
+   machine_->setLampState(LAMP_RIGHT_OUTLANE_SPECIAL, (NumberOfStandupClears == ctx_->trident2020Balance.standupSpecialLevel && !SpecialCollected));
 }
 
 void Trident2020Game::showShootAgainLamp() {
@@ -946,15 +946,15 @@ void Trident2020Game::handleDropTargetHit(uint8_t switchHit, unsigned long score
             if ((GameMode & GAME_MODE_SHARP_SHOOTER_FLAG) == 0) {
                BonusX += 1;
                machine_->playSoundEffect(SOUND_EFFECT_DROP_TARGET_CLEAR_1 + (BonusX - 1));
-               if (BonusX == ctx_->targetSpecialBonus) {
+               if (BonusX == ctx_->trident2020Balance.targetSpecialBonus) {
                   if (ctx_->tournamentScoring) {
-                     CurrentPlayerCurrentScore += ctx_->specialValue;
+                     CurrentPlayerCurrentScore += ctx_->trident2020Awards.specialValue;
                   } else {
                      machine_->addSpecialCredit();
                   }
                }
 
-               if (BonusX == ctx_->sharpShooterStartBonus && !(GameModeFlagsQualified & GAME_MODE_SHARP_SHOOTER_FLAG)) {
+               if (BonusX == ctx_->trident2020Balance.sharpShooterStartBonus && !(GameModeFlagsQualified & GAME_MODE_SHARP_SHOOTER_FLAG)) {
                   GameModeFlagsQualified |= GAME_MODE_SHARP_SHOOTER_FLAG;
                   machine_->playSoundEffect(SOUND_EFFECT_SHARP_SHOOTER_QUALIFIED);
                   SharpShooterTarget = 1;
@@ -1028,9 +1028,9 @@ void Trident2020Game::handleStandupHit(uint8_t switchHit, unsigned long scoreMul
       CurrentStandupsHit = 0;
       LastStandupTargetHit = 0;
       NumberOfStandupClears += 1;
-      if (NumberOfStandupClears == ctx_->standupSpecialLevel) {
+      if (NumberOfStandupClears == ctx_->trident2020Balance.standupSpecialLevel) {
          if (ctx_->tournamentScoring) {
-            CurrentPlayerCurrentScore += (unsigned long)ctx_->specialValue;
+            CurrentPlayerCurrentScore += (unsigned long)ctx_->trident2020Awards.specialValue;
          } else {
             machine_->addSpecialCredit();
          }

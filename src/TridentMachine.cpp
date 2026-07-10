@@ -142,7 +142,7 @@ void TridentMachine::readStoredParameters() {
 
    uint8_t awardOverride = readSetting(EEPROM_AWARD_OVERRIDE_BYTE, 99);
    if (awardOverride != 99) {
-      settings_.scoreAwardReplay = awardOverride;
+      settings_.trident2020Awards.scoreAwardReplay = awardOverride;
    }
 
    uint8_t ballsOverride = readSetting(EEPROM_BALLS_OVERRIDE_BYTE, 99);
@@ -154,14 +154,14 @@ void TridentMachine::readStoredParameters() {
 
    settings_.scrollingScores = (readSetting(EEPROM_SCROLLING_SCORES_BYTE, 1)) != 0;
 
-   settings_.extraBallValue = RPU_ReadULFromEEProm(EEPROM_EXTRA_BALL_SCORE_BYTE);
-   if ((settings_.extraBallValue % 1000) != 0 || settings_.extraBallValue > 100000) {
-      settings_.extraBallValue = 20000;
+   settings_.trident2020Awards.extraBallValue = RPU_ReadULFromEEProm(EEPROM_EXTRA_BALL_SCORE_BYTE);
+   if ((settings_.trident2020Awards.extraBallValue % 1000) != 0 || settings_.trident2020Awards.extraBallValue > 100000) {
+      settings_.trident2020Awards.extraBallValue = 20000;
    }
 
-   settings_.specialValue = RPU_ReadULFromEEProm(EEPROM_SPECIAL_SCORE_BYTE);
-   if ((settings_.specialValue % 1000) != 0 || settings_.specialValue > 100000) {
-      settings_.specialValue = 40000;
+   settings_.trident2020Awards.specialValue = RPU_ReadULFromEEProm(EEPROM_SPECIAL_SCORE_BYTE);
+   if ((settings_.trident2020Awards.specialValue % 1000) != 0 || settings_.trident2020Awards.specialValue > 100000) {
+      settings_.trident2020Awards.specialValue = 40000;
    }
 
    settings_.dimLevel = readSetting(EEPROM_DIM_LEVEL_BYTE, 2);
@@ -171,9 +171,9 @@ void TridentMachine::readStoredParameters() {
    RPU_SetDimDivisor(1, settings_.dimLevel);
 
    settings_.highScore = RPU_ReadULFromEEProm(RPU_HIGHSCORE_EEPROM_START_BYTE, 10000);
-   settings_.awardScores[0] = RPU_ReadULFromEEProm(RPU_AWARD_SCORE_1_EEPROM_START_BYTE);
-   settings_.awardScores[1] = RPU_ReadULFromEEProm(RPU_AWARD_SCORE_2_EEPROM_START_BYTE);
-   settings_.awardScores[2] = RPU_ReadULFromEEProm(RPU_AWARD_SCORE_3_EEPROM_START_BYTE);
+   settings_.trident2020Awards.awardScores[0] = RPU_ReadULFromEEProm(RPU_AWARD_SCORE_1_EEPROM_START_BYTE);
+   settings_.trident2020Awards.awardScores[1] = RPU_ReadULFromEEProm(RPU_AWARD_SCORE_2_EEPROM_START_BYTE);
+   settings_.trident2020Awards.awardScores[2] = RPU_ReadULFromEEProm(RPU_AWARD_SCORE_3_EEPROM_START_BYTE);
 
    // --- Audio settings ---
    settings_.soundSelector = readSetting(EEPROM_SOUND_SELECTOR_BYTE, 3);

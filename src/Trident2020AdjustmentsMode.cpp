@@ -132,7 +132,7 @@ TopState Trident2020AdjustmentsMode::update(unsigned long currentTime) {
       case kAdjAwardOverride:
          adjustmentType_      = ADJ_TYPE_MIN_MAX_DEFAULT;
          adjustmentValues_[1] = 7;
-         currentAdjustmentByte_        = &settings_->scoreAwardReplay;
+         currentAdjustmentByte_        = &settings_->trident2020Awards.scoreAwardReplay;
          currentAdjustmentStorageByte_ = EEPROM_AWARD_OVERRIDE_BYTE;
          break;
 
@@ -153,13 +153,13 @@ TopState Trident2020AdjustmentsMode::update(unsigned long currentTime) {
 
       case kAdjExtraBallAward:
          adjustmentType_               = ADJ_TYPE_SCORE_WITH_DEFAULT;
-         currentAdjustmentUL_          = &settings_->extraBallValue;
+         currentAdjustmentUL_          = &settings_->trident2020Awards.extraBallValue;
          currentAdjustmentStorageByte_ = EEPROM_EXTRA_BALL_SCORE_BYTE;
          break;
 
       case kAdjSpecialAward:
          adjustmentType_               = ADJ_TYPE_SCORE_WITH_DEFAULT;
-         currentAdjustmentUL_          = &settings_->specialValue;
+         currentAdjustmentUL_          = &settings_->trident2020Awards.specialValue;
          currentAdjustmentStorageByte_ = EEPROM_SPECIAL_SCORE_BYTE;
          break;
 

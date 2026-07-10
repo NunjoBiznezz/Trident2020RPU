@@ -9,6 +9,26 @@
 #pragma once
 #include <stdint.h>
 
+enum class RuleSet : uint8_t {
+   Original   = 0,
+   Trident2020 = 1,
+};
+
+// Score thresholds and award values — differ between rule sets.
+struct ScoreAndAwardSettings {
+   unsigned long awardScores[3]  = {};  // Score thresholds for the three replay/extra-ball awards
+   unsigned long extraBallValue  = 0;   // Points awarded for an extra ball in tournament mode
+   unsigned long specialValue    = 0;   // Points awarded for a special in tournament mode
+   uint8_t       scoreAwardReplay = 0;  // Bitmask: bit N set → awardScores[N] gives a replay; clear → extra ball
+};
+
+// Trident 2020 rule-specific game balance tuning.
+struct Trident2020BalanceSettings {
+   uint8_t sharpShooterStartBonus = 3;  // Bonus multiplier at which Sharp Shooter mini-game qualifies
+   uint8_t targetSpecialBonus     = 4;  // Bonus multiplier that lights the drop-target special
+   uint8_t standupSpecialLevel    = 2;  // Standup-bank clear count that lights the right-outlane special
+};
+
 struct MachineSettings {
    // --- Credits / play options ---
    uint8_t       credits                  = 0;     // Current stored credits (loaded from RPU EEPROM at boot)
@@ -18,21 +38,22 @@ struct MachineSettings {
    bool          freePlayMode             = true;  // When true, START never requires credits
    bool          tournamentScoring        = false; // When true, score-based awards (EB, special) are suppressed
    bool          scrollingScores          = true;  // When true, scores above 999 999 scroll across the display
-   uint8_t       scoreAwardReplay         = 0;     // Bitmask: bit N set → awardScores[N] gives a replay; clear → extra ball
    uint8_t       maxTiltWarnings          = 2;     // Tilt warnings before ball loss (0–2)
    bool          matchFeature             = true;  // When true, a match on the last two score digits gives a free credit
    bool          highScoreReplay          = true;  // When true, beating the high score awards a replay
 
-   // --- Scores / awards ---
+   // --- High score (machine-wide, shared across rule sets) ---
    unsigned long highScore                = 0;     // All-time high score (RPU EEPROM)
-   unsigned long awardScores[3]           = {};    // Three score thresholds for replay / extra-ball awards
-   unsigned long extraBallValue           = 0;     // Points awarded for an extra ball in tournament mode
-   unsigned long specialValue             = 0;     // Points awarded for a special in tournament mode
 
-   // --- Game balance ---
-   uint8_t       sharpShooterStartBonus   = 3;    // Bonus multiplier at which Sharp Shooter mini-game qualifies
-   uint8_t       targetSpecialBonus       = 4;    // Bonus multiplier that lights the drop-target special
-   uint8_t       standupSpecialLevel      = 2;    // Standup-bank clear count that lights the right-outlane special
+   // --- Rule set selection ---
+   RuleSet       activeRuleSet            = RuleSet::Trident2020;
+
+   // --- Per-ruleset: scores and awards ---
+   ScoreAndAwardSettings originalAwards;            // Score/award settings for Original Trident rules
+   ScoreAndAwardSettings trident2020Awards;         // Score/award settings for Trident 2020 rules
+
+   // --- Trident 2020 specific game balance ---
+   Trident2020BalanceSettings trident2020Balance;
 
    // --- Display ---
    uint8_t       dimLevel                 = 2;    // RPU lamp dim divisor (2 or 3); higher = dimmer
