@@ -378,6 +378,13 @@ void PinballMachine::playSoundCardEffect(uint8_t sound) {
    RPU_PlayNativeSound(sound);
 }
 
+void PinballMachine::decrementCredits() {
+   if (settings_.credits > 0) {
+      settings_.credits -= 1;
+   }
+   RPU_WriteByteToEEProm(RPU_CREDITS_EEPROM_BYTE, settings_.credits);
+}
+
 void PinballMachine::saveCredits() {
    RPU_WriteByteToEEProm(RPU_CREDITS_EEPROM_BYTE, settings_.credits);
 }
@@ -393,9 +400,14 @@ void PinballMachine::addReplayAudit(uint8_t count) {
 }
 
 void PinballMachine::saveHighScore(unsigned long score) {
+   settings_.trident2020Awards.highScore = score;
    RPU_WriteULToEEProm(RPU_HIGHSCORE_EEPROM_START_BYTE, score);
    RPU_WriteULToEEProm(RPU_TOTAL_HISCORE_BEATEN_START_BYTE,
                        RPU_ReadULFromEEProm(RPU_TOTAL_HISCORE_BEATEN_START_BYTE) + 1);
+}
+
+void PinballMachine::acknowledgeResetScores() {
+   settings_.resetScoresToClearVersion = false;
 }
 
 void PinballMachine::setDimDivisor(uint8_t level1, uint8_t level2) {

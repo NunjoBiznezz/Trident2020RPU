@@ -364,9 +364,8 @@ TopState Trident2020Game::update(unsigned long currentTime) {
             } else {
                if (settings_->credits >= 1 || settings_->freePlayMode) {
                   if (!settings_->freePlayMode) {
-                     settings_->credits -= 1;
-                     machine_->saveCredits();
-                     machine_->setDisplayCredits(settings_->credits);
+                     machine_->decrementCredits();
+                     machine_->setDisplayCredits(machine_->getCredits());
                   }
                   returnState = MACHINE_STATE_INIT_GAMEPLAY;
                }
@@ -458,9 +457,8 @@ bool Trident2020Game::addPlayer(bool resetNumPlayers) {
    machine_->setDisplayBlank(CurrentNumPlayers - 1, 0x30);
 
    if (!settings_->freePlayMode) {
-      settings_->credits -= 1;
-      machine_->saveCredits();
-      machine_->setDisplayCredits(settings_->credits);
+      machine_->decrementCredits();
+      machine_->setDisplayCredits(machine_->getCredits());
       machine_->setCoinLockout(false);
    }
    machine_->playSoundEffect(SOUND_EFFECT_ADD_PLAYER_1 + (CurrentNumPlayers - 1));
@@ -1059,7 +1057,7 @@ int Trident2020Game::initGamePlay() {
    machine_->turnOffAllLamps();
    setPlayerLamps(1);
 
-   settings_->resetScoresToClearVersion = false;
+   machine_->acknowledgeResetScores();
 
    for (int count = 0; count < 4; count++) {
       machine_->setDisplay(count, 0);
@@ -1510,7 +1508,6 @@ void Trident2020Game::checkHighScores() {
    }
 
    if (highestScore > settings_->trident2020Awards.highScore) {
-      settings_->trident2020Awards.highScore = highestScore;
       if (settings_->highScoreReplay) {
          machine_->addCredit(false, 3);
          machine_->addReplayAudit(3);

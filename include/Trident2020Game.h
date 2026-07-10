@@ -58,7 +58,7 @@ public:
 
 private:
    // Set once via setSettings() / setMachine(); valid for the lifetime of the program.
-   MachineSettings*  settings_     = nullptr;
+   const MachineSettings*  settings_     = nullptr;
    PinballMachine* machine_ = nullptr;
 
    // Top-level state machine: internal game state and change flag.

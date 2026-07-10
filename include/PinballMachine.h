@@ -175,8 +175,17 @@ public:
    // leak into game code. All RPU EEPROM addresses stay inside PinballMachine.
    // -----------------------------------------------------------------------
 
-   // Persist settings_.credits to EEPROM after game code decrements it directly.
-   // (addCredit() handles the increment side internally.)
+   // Determine if a player may be added to a game.
+   bool canAddPlayer(uint8_t coinsRequired = 1) const {
+      return settings_.credits >= coinsRequired || settings_.freePlayMode;
+   }
+
+   // Decrement settings_.credits by one, save to EEPROM.
+   // Symmetric to addCredit(). Use getCredits() for the updated value.
+   void decrementCredits();
+
+   // Persist settings_.credits to EEPROM (use when the credit count was
+   // loaded from EEPROM and only a flush is needed, not an adjustment).
    void saveCredits();
 
    // Increment the total-games-played audit counter.
@@ -186,10 +195,12 @@ public:
    // multiple replays at once (e.g. 3 for beating the high score).
    void addReplayAudit(uint8_t count);
 
-   // Persist a new Trident 2020 high score and increment the beaten counter.
-   // Does NOT update settings_.trident2020Awards.highScore — the caller
-   // (checkHighScores) owns that field and has already updated it.
+   // Record a new Trident 2020 high score: updates the in-memory field,
+   // persists to EEPROM, and increments the beaten counter.
    void saveHighScore(unsigned long score);
+
+   // Clear the resetScoresToClearVersion flag once the game has acted on it.
+   void acknowledgeResetScores();
 
    // -----------------------------------------------------------------------
    // Self-test interlock

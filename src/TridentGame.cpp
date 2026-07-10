@@ -52,7 +52,7 @@ TopState TridentGame::update(unsigned long currentTime) {
             CurrentBallInPlay += 1;
          }
          CurrentPlayerCurrentScore = CurrentScores[CurrentPlayer];
-         if (CurrentBallInPlay > ctx_->ballsPerGame) {
+         if (CurrentBallInPlay > settings_->ballsPerGame) {
             machine_->playSoundEffect(SOUND_EFFECT_GAME_OVER);
             setPlayerLamps(0);
             for (int count = 0; count < CurrentNumPlayers; count++) {
@@ -68,7 +68,7 @@ TopState TridentGame::update(unsigned long currentTime) {
    }
 
    // Switch stack — drain every tick regardless of state
-   if (NumTiltWarnings <= ctx_->maxTiltWarnings) {
+   if (NumTiltWarnings <= settings_->maxTiltWarnings) {
       uint8_t switchHit;
       while ((switchHit = machine_->pullFirstFromSwitchStack()) != PinballMachine::SWITCH_STACK_EMPTY) {
          switch (switchHit) {
@@ -79,7 +79,7 @@ TopState TridentGame::update(unsigned long currentTime) {
             if ((CurrentTime - LastTiltWarningTime) > TILT_WARNING_DEBOUNCE_TIME) {
                LastTiltWarningTime = CurrentTime;
                NumTiltWarnings += 1;
-               if (NumTiltWarnings > ctx_->maxTiltWarnings) {
+               if (NumTiltWarnings > settings_->maxTiltWarnings) {
                   machine_->disableSolenoidStack();
                   machine_->setDisableFlippers(true);
                   machine_->turnOffAllLamps();
@@ -102,9 +102,9 @@ TopState TridentGame::update(unsigned long currentTime) {
 
          case SW_OUTHOLE:
             if (curState == MACHINE_STATE_NORMAL_GAMEPLAY) {
-               if (!BallSaveUsed && ctx_->ballSaveNumSeconds > 0 &&
+               if (!BallSaveUsed && settings_->ballSaveNumSeconds > 0 &&
                    BallFirstSwitchHitTime != 0 &&
-                   (CurrentTime - BallFirstSwitchHitTime) < ((unsigned long)ctx_->ballSaveNumSeconds * 1000)) {
+                   (CurrentTime - BallFirstSwitchHitTime) < ((unsigned long)settings_->ballSaveNumSeconds * 1000)) {
                   machine_->pushToTimedSolenoidStack(SOL_OUTHOLE, 4, CurrentTime + 100);
                   BallSaveUsed = true;
                } else {
@@ -137,9 +137,10 @@ TopState TridentGame::update(unsigned long currentTime) {
 // ===========================================================================
 
 bool TridentGame::addPlayer(bool resetNumPlayers) {
-   if (ctx_->credits < 1 && !ctx_->freePlayMode) {
+   if (!machine_->canAddPlayer()) {
       return false;
    }
+
    if (resetNumPlayers) {
       CurrentNumPlayers = 0;
    }
@@ -151,12 +152,12 @@ bool TridentGame::addPlayer(bool resetNumPlayers) {
    machine_->setDisplay(CurrentNumPlayers - 1, 0);
    machine_->setDisplayBlank(CurrentNumPlayers - 1, 0x30);
 
-   if (!ctx_->freePlayMode) {
-      ctx_->credits -= 1;
-      machine_->saveCredits();
-      machine_->setDisplayCredits(ctx_->credits);
+   if (!settings_->freePlayMode) {
+      machine_->decrementCredits();
+      machine_->setDisplayCredits(machine_->getCredits());
       machine_->setCoinLockout(false);
    }
+
    machine_->playSoundEffect(SOUND_EFFECT_ADD_PLAYER_1 + (CurrentNumPlayers - 1));
    setPlayerLamps(CurrentNumPlayers);
    machine_->recordGamePlayed();
@@ -194,7 +195,7 @@ void TridentGame::showPlayerScores(uint8_t displayToUpdate, bool flashCurrent, b
 
 int TridentGame::initGamePlay() {
    machine_->enableSolenoidStack();
-   machine_->setCoinLockout(ctx_->credits >= ctx_->maximumCredits);
+   machine_->setCoinLockout(settings_->credits >= settings_->maximumCredits);
    machine_->turnOffAllLamps();
    setPlayerLamps(1);
 
@@ -227,7 +228,7 @@ int TridentGame::initNewBall(bool curStateChanged, uint8_t playerNum, int ballNu
 
       machine_->setDisableFlippers(false);
       machine_->enableSolenoidStack();
-      machine_->setDisplayCredits(ctx_->credits, true);
+      machine_->setDisplayCredits(settings_->credits, true);
       setPlayerLamps(playerNum + 1, 4);
 
       if (CurrentNumPlayers > 1 && (ballNum != 1 || playerNum != 0)) {
@@ -239,7 +240,7 @@ int TridentGame::initNewBall(bool curStateChanged, uint8_t playerNum, int ballNu
       machine_->setLampState(LAMP_BALL_IN_PLAY, true);
       machine_->setLampState(LAMP_TILT, false);
 
-      if (ctx_->ballSaveNumSeconds > 0) {
+      if (settings_->ballSaveNumSeconds > 0) {
          machine_->setLampState(LAMP_SHOOT_AGAIN, true, 0, 500);
       }
 
@@ -259,13 +260,13 @@ int TridentGame::initNewBall(bool curStateChanged, uint8_t playerNum, int ballNu
 void TridentGame::startBallBackgroundSong(uint8_t ballNum) {
    uint8_t song;
    if (ballNum == 1)                       song = SOUND_EFFECT_BACKGROUND_1;
-   else if (ballNum == ctx_->ballsPerGame) song = SOUND_EFFECT_BACKGROUND_6;
+   else if (ballNum == settings_->ballsPerGame) song = SOUND_EFFECT_BACKGROUND_6;
    else                                    song = SOUND_EFFECT_BACKGROUND_2 + (uint8_t)(CurrentTime % 4);
    machine_->playBackgroundSong(song);
 }
 
 int TridentGame::showMatchSequence(bool curStateChanged) {
-   if (!ctx_->matchFeature) {
+   if (!settings_->matchFeature) {
       return MACHINE_STATE_ATTRACT;
    }
 

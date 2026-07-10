@@ -16,8 +16,8 @@ class TridentGame : public MachineMode {
 public:
    TridentGame();
 
-   void setSettings(MachineSettings& s) { ctx_     = &s; }
-   void setMachine(PinballMachine& m)   { machine_ = &m; }
+   void setSettings(const MachineSettings& s) { settings_ = &s; }
+   void setMachine(PinballMachine& m)         { machine_ = &m; }
 
    void     enter(unsigned long currentTime) override;
    void     exit() override {}
@@ -31,7 +31,7 @@ public:
    uint8_t       getNumPlayers() const                 { return CurrentNumPlayers; }
 
 private:
-   MachineSettings* ctx_     = nullptr;
+   const MachineSettings* settings_ = nullptr;
    PinballMachine*  machine_ = nullptr;
 
    int  internalState_        = 0;
