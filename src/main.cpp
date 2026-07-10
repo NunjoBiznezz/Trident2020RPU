@@ -22,6 +22,7 @@
 // unstructured play jackpots
 // increase mode start time with new qualifier
 #include "AttractMode.h"
+#include "BuildVersion.h"
 #include "HardwareTestMode.h"
 #include "MachineMode.h"
 #include "MachineSettings.h"
@@ -38,8 +39,6 @@
 #include <Arduino.h>
 #include <stdint.h>
 
-constexpr unsigned long TRIDENT2020_MAJOR_VERSION = 2020;
-constexpr unsigned long TRIDENT2020_MINOR_VERSION = 3;
 
 // Queryable build record embedded in flash. Extract with:
 //   pio run -t version -e <env>
@@ -114,8 +113,6 @@ void setup() {
    storedAdjustmentsMode.setDependencies(pinballMachine);
    adjustmentsMode.setDependencies(game, pinballMachine);
    attractMode.setDependencies(pinballMachine);
-   attractMode.setVersionInfo(TRIDENT2020_MAJOR_VERSION, TRIDENT2020_MINOR_VERSION,
-                               RPU_OS_MAJOR_VERSION, RPU_OS_MINOR_VERSION);
 
    attractMode.enter(CurrentTime);
 }

@@ -5,9 +5,9 @@
  * on the head (score displays + ball-in-play):
  *
  *   Phase 1 — First 5 seconds:
- *     If firmware version info was injected via setVersionInfo(), display
- *     it (set once in enter()). Otherwise show last-game scores. Either
- *     way this is the only time the version splash appears.
+ *     Firmware version splash written in enter() using compile-time constants
+ *     from BuildVersion.h (game) and RPU.h (OS). Nothing updates during this
+ *     window — the displays simply hold the values set at entry.
  *
  *   Phase 2 — Rotating 8-second slots (after the first 5 s):
  *     Slot 0: Trident 2020 all-time high score. Ball-in-play shows "20"
@@ -18,7 +18,7 @@
  *
  * lastHeadMode_ tracks which phase is active so display writes happen only
  * on transitions (except the player-lamp chase, which updates every tick).
- *   1 = version / last-game scores (first 5 s)
+ *   1 = version splash (first 5 s)
  *   2 = Trident 2020 high score
  *   3 = Original Trident high score
  *   4 = Game Over / last-game scores
@@ -29,8 +29,10 @@
  **************************************************************************/
 
 #include "AttractMode.h"
+#include "BuildVersion.h"
 #include "LampAnimation.h"
 #include "MachineState.h"
+#include "RPU.h"
 #include "Trident.h"
 
 #if defined(DEBUG_MESSAGES) && defined(DEBUG_PORT)
@@ -56,19 +58,15 @@ void AttractMode::enter(unsigned long currentTime) {
    savedNumPlayers_ = machine_->getLastGameNumPlayers();
    for (uint8_t i = 0; i < 4; i++) savedScores_[i] = machine_->getLastGameScore(i);
 
-   // If version info was provided, show it immediately on entry so it is
-   // visible from the moment attract starts (before update() runs).
-   if (versionMajor_ != 0) {
-      machine_->setDisplay(0, versionMajor_);
-      machine_->setDisplay(1, versionMinor_);
-      machine_->setDisplay(2, rpuMajor_);
-      machine_->setDisplay(3, rpuMinor_);
-      machine_->setDisplayCredits(machine_->getCredits(), true);
-      machine_->setDisplayBallInPlay(0, true);
-      lastHeadMode_ = 1;
-   } else {
-      lastHeadMode_ = 0; // update() will transition to mode 1 on first tick
-   }
+   // Show firmware version immediately so it is visible before update() runs.
+   // Displays 0/1 = game major/minor; displays 2/3 = RPU OS major/minor.
+   machine_->setDisplay(0, TRIDENT2020_MAJOR_VERSION);
+   machine_->setDisplay(1, TRIDENT2020_MINOR_VERSION);
+   machine_->setDisplay(2, RPU_OS_MAJOR_VERSION);
+   machine_->setDisplay(3, RPU_OS_MINOR_VERSION);
+   machine_->setDisplayCredits(machine_->getCredits(), true);
+   machine_->setDisplayBallInPlay(0, true);
+   lastHeadMode_ = 1;
 }
 
 TopState AttractMode::update(unsigned long currentTime) {
@@ -79,18 +77,7 @@ TopState AttractMode::update(unsigned long currentTime) {
    // -----------------------------------------------------------------------
 
    if ((currentTime - enterTime_) < 5000) {
-      // First 5 seconds: show last-game scores (or hold the version splash
-      // that was set in enter()). Only write to hardware on the transition.
-      if (lastHeadMode_ != 1) {
-         for (uint8_t i = 0; i < 4; i++) {
-            if (savedNumPlayers_ > 0 && i >= savedNumPlayers_) machine_->setDisplayBlank(i, 0x00);
-            else                                                machine_->setDisplay(i, savedScores_[i], true, 2);
-         }
-         for (uint8_t i = 0; i < 4; i++) machine_->setLampState(LAMP_PLAYER_1 + i, false);
-         machine_->setDisplayCredits(machine_->getCredits(), true);
-         machine_->setDisplayBallInPlay(0, true);
-         lastHeadMode_ = 1;
-      }
+      // Hold the version splash written in enter() — nothing to do each tick.
    } else {
       // After the splash: rotate through three 8-second slots.
       // Ball-in-play shows the rule-set number on high-score slots so the
