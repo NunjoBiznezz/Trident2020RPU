@@ -35,7 +35,7 @@
 #include "Trident2020.h"
 #include "Trident2020AdjustmentsMode.h"
 #include "Trident2020Game.h"
-#include "TridentMachine.h"
+#include "PinballMachine.h"
 #include <Arduino.h>
 #include <stdint.h>
 
@@ -70,7 +70,7 @@ static const BuildInfoRecord FIRMWARE_BUILD_INFO PROGMEM = {
 *********************************************************************/
 static unsigned long CurrentTime = 0;
 
-static TridentMachine         pinballMachine;
+static PinballMachine         pinballMachine;
 static Trident2020Game        game;
 static HardwareTestMode       hardwareTestMode;
 static StoredAdjustmentsMode  storedAdjustmentsMode;

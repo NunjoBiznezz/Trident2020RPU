@@ -144,7 +144,7 @@ void SolenoidManager::disable() {
 /**
  * Solenoid processing called during zero crossing
  */
-void SolenoidManager::service() {
+void SolenoidManager::zeroCrossingISR() {
    if (numCyclesBeforeRevert_ != 0) {
       numCyclesBeforeRevert_ -= 1;
       if (numCyclesBeforeRevert_ == 0) {

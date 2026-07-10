@@ -167,7 +167,7 @@ public:
    // (tilt, end of ball); pass false to restore normal flipper operation.
    virtual void setDisableFlippers(bool disable)                       { (void)disable; }
 
-   // Fire a solenoid immediately (next stack service).
+   // Fire a solenoid immediately (next stack zeroCrossingISR).
    //   sol             — solenoid number (SOL_* constants in Trident.h)
    //   duration        — hold time in 1/120 s units
    //   disableOverride — if true, fire even when the solenoid stack is disabled
@@ -197,7 +197,7 @@ public:
    // consuming it from the stack. Useful for checking outhole, saucer, etc.
    virtual bool readSingleSwitchState(uint8_t sw)                      { (void)sw; return false; }
 
-   // Read the up/down switch state (coin-door service buttons on some machines).
+   // Read the up/down switch state (coin-door zeroCrossingISR buttons on some machines).
    virtual bool getUpDownSwitchState()                                 { return false; }
 
    // -----------------------------------------------------------------------
@@ -231,7 +231,7 @@ public:
    // Set the rollover lane value displayed and scored (used by some modes).
    virtual void setRolloverValue(uint8_t v)                           { (void)v; }
 
-   // Called every loop() tick to service audio handlers, timed solenoids,
+   // Called every loop() tick to zeroCrossingISR audio handlers, timed solenoids,
    // and other machine bookkeeping. Must be called before game-mode update().
    virtual void update(unsigned long currentTime)                     { (void)currentTime; }
 

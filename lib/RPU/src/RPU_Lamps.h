@@ -9,7 +9,7 @@ namespace RPU {
 class LampManager {
 public:
    void reset();
-   void strobe();
+   void zeroCrossingISR();
 
    void setDimDivisor(uint8_t level, uint8_t divisor);
    void setState(int lampNum, bool lampState, uint8_t lampDim = 0, int lampFlashPeriod = 0);

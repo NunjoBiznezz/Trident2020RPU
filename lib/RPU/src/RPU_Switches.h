@@ -16,7 +16,7 @@ namespace RPU {
 class SwitchManager {
 public:
    void reset();
-   void service();
+   void zeroCrossingISR();
 
    void pushToStack(uint8_t switchNumber);
    void pushSelfTest();

@@ -2,7 +2,7 @@
  * MachineSettings.h
  *
  * All operator-adjustable and EEPROM-backed machine state in one place.
- * TridentMachine owns the single instance; other objects hold a pointer
+ * PinballMachine owns the single instance; other objects hold a pointer
  * or reference to it.
  **************************************************************************/
 

@@ -150,7 +150,7 @@ void LampManager::turnOffAll() {
 /**
  * Lamp processing called during zero crossing
  */
-void LampManager::strobe() {
+void LampManager::zeroCrossingISR() {
    for (int bank = 0; bank < 8; bank++) {
       for (uint8_t nibble = 0; nibble < 2; nibble++) {
          // Skip the last position — used to park the lamp board

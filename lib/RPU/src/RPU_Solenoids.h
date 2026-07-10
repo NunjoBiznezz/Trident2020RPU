@@ -15,7 +15,7 @@ class SolenoidManager {
 public:
    void reset();
    void initDefault();
-   void service();
+   void zeroCrossingISR();
 
    void push(uint8_t solenoidNumber, uint8_t numPushes, bool disableOverride = false);
    void pushToFront(uint8_t solenoidNumber, uint8_t numPushes);

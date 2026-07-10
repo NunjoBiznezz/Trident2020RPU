@@ -1,12 +1,12 @@
 /**************************************************************************
- * TridentMachine.cpp
+ * PinballMachine.cpp
  *
- * Concrete PinballMachine for the Trident hardware. Owns the audio
- * subsystem and MachineSettings; implements all credit / coin-mech
- * operations that were previously free functions in main.cpp.
+ * Concrete machine implementation for the Trident hardware. Owns the
+ * audio subsystem and MachineSettings; implements all credit / coin-mech
+ * operations and RPU hardware wrappers.
  **************************************************************************/
 
-#include "TridentMachine.h"
+#include "PinballMachine.h"
 #include "MachineSettings.h"
 #include "RPU.h"
 #include "SoundEffects.h"
@@ -18,7 +18,7 @@
 // Static data
 // ---------------------------------------------------------------------------
 
-const unsigned short TridentMachine::kChuteAuditByte[3] = {
+const unsigned short PinballMachine::kChuteAuditByte[3] = {
     RPU_CHUTE_1_COINS_START_BYTE,
     RPU_CHUTE_2_COINS_START_BYTE,
     RPU_CHUTE_3_COINS_START_BYTE,
@@ -28,7 +28,7 @@ const unsigned short TridentMachine::kChuteAuditByte[3] = {
 // Private helpers
 // ---------------------------------------------------------------------------
 
-uint8_t TridentMachine::readSetting(int addr, uint8_t defaultValue) {
+uint8_t PinballMachine::readSetting(int addr, uint8_t defaultValue) {
    uint8_t value = EEPROM.read(addr);
    if (value == 0xFF) {
       EEPROM.write(addr, defaultValue);
@@ -37,7 +37,7 @@ uint8_t TridentMachine::readSetting(int addr, uint8_t defaultValue) {
    return value;
 }
 
-uint8_t TridentMachine::switchToChuteNum(uint8_t switchHit) {
+uint8_t PinballMachine::switchToChuteNum(uint8_t switchHit) {
    if (switchHit == SW_COIN_2) {
       return 1;
    }
@@ -51,7 +51,7 @@ uint8_t TridentMachine::switchToChuteNum(uint8_t switchHit) {
 // Init / lifecycle
 // ---------------------------------------------------------------------------
 
-void TridentMachine::init(unsigned long currentTime) {
+void PinballMachine::init(unsigned long currentTime) {
    currentTime_ = currentTime;
    audioHandler_.initDevices();
 #if defined(RPU_OS_USE_WAV_TRIGGER)
@@ -91,7 +91,7 @@ void TridentMachine::init(unsigned long currentTime) {
    setDisableFlippers(true);
 }
 
-void TridentMachine::queueDiagNotification(unsigned short notificationNum, unsigned long currentTime) {
+void PinballMachine::queueDiagNotification(unsigned short notificationNum, unsigned long currentTime) {
 #if defined(RPU_OS_USE_WAV_TRIGGER)
    wavHandler_.queuePrioritizedNotification(notificationNum, 0, 10, currentTime);
 #else
@@ -104,7 +104,7 @@ void TridentMachine::queueDiagNotification(unsigned short notificationNum, unsig
 // PinballMachine interface
 // ---------------------------------------------------------------------------
 
-void TridentMachine::update(unsigned long currentTime) {
+void PinballMachine::update(unsigned long currentTime) {
    currentTime_ = currentTime;
    audioHandler_.update(currentTime);
 #if defined(RPU_OS_USE_WAV_TRIGGER)
@@ -112,14 +112,14 @@ void TridentMachine::update(unsigned long currentTime) {
 #endif
 }
 
-void TridentMachine::stopAllAudio() {
+void PinballMachine::stopAllAudio() {
 #if defined(RPU_OS_USE_WAV_TRIGGER)
    wavHandler_.stopAllAudio();
 #endif
    audioHandler_.stopAllSoundFX();
 }
 
-void TridentMachine::readStoredParameters() {
+void PinballMachine::readStoredParameters() {
    // --- Gameplay / operator settings ---
    settings_.credits = RPU_ReadByteFromEEProm(RPU_CREDITS_EEPROM_BYTE);
    if (settings_.credits > settings_.maximumCredits) {
@@ -229,7 +229,7 @@ void TridentMachine::readStoredParameters() {
    this->haveSettings_ = true;
 }
 
-void TridentMachine::setDisplay(uint8_t display, unsigned long value, bool blankLeadingZeros, uint8_t minimumDigits) {
+void PinballMachine::setDisplay(uint8_t display, unsigned long value, bool blankLeadingZeros, uint8_t minimumDigits) {
    if (display <= 3 && value > RPU_OS_MAX_DISPLAY_SCORE) {
       if (value != displayValue_[display]) {
          displayValue_[display] = value;
@@ -280,77 +280,77 @@ void TridentMachine::setDisplay(uint8_t display, unsigned long value, bool blank
    RPU_SetDisplay(display, value, blankLeadingZeros, minimumDigits);
 }
 
-void TridentMachine::setDisplayFlash(uint8_t display, unsigned long value, uint16_t period) {
+void PinballMachine::setDisplayFlash(uint8_t display, unsigned long value, uint16_t period) {
    RPU_SetDisplayFlash(display, value, currentTime_, period, 2);
 }
 
-void TridentMachine::setDisplayCredits(uint8_t credits, bool showCredits) {
+void PinballMachine::setDisplayCredits(uint8_t credits, bool showCredits) {
    RPU_SetDisplayCredits(credits, showCredits);
 }
 
-void TridentMachine::setDisplayBallInPlay(uint8_t ball, bool showBall) {
+void PinballMachine::setDisplayBallInPlay(uint8_t ball, bool showBall) {
    RPU_SetDisplayBallInPlay(ball, showBall);
 }
 
-void TridentMachine::turnOffAllLamps() {
+void PinballMachine::turnOffAllLamps() {
    RPU_TurnOffAllLamps();
 }
 
-void TridentMachine::setLampState(uint8_t lamp, bool on, uint8_t dimmer, uint16_t flashRate) {
+void PinballMachine::setLampState(uint8_t lamp, bool on, uint8_t dimmer, uint16_t flashRate) {
    RPU_SetLampState(lamp, on, dimmer, flashRate);
 }
 
-void TridentMachine::setLampAnimationBytes(const uint8_t* bytes, uint8_t count) {
+void PinballMachine::setLampAnimationBytes(const uint8_t* bytes, uint8_t count) {
    if (bytes) {
       RPU_SetLampAnimation(bytes, count);
    }
 }
 
-void TridentMachine::disableSolenoidStack() {
+void PinballMachine::disableSolenoidStack() {
    RPU_DisableSolenoidStack();
 }
 
-void TridentMachine::enableSolenoidStack() {
+void PinballMachine::enableSolenoidStack() {
    RPU_EnableSolenoidStack();
 }
 
-void TridentMachine::setDisableFlippers(bool disable) {
+void PinballMachine::setDisableFlippers(bool disable) {
    RPU_SetDisableFlippers(disable);
 }
 
-void TridentMachine::pushToSolenoidStack(uint8_t sol, uint8_t duration, bool disableOverride) {
+void PinballMachine::pushToSolenoidStack(uint8_t sol, uint8_t duration, bool disableOverride) {
    RPU_PushToSolenoidStack(sol, duration, disableOverride);
 }
 
-void TridentMachine::pushToTimedSolenoidStack(uint8_t sol, uint8_t numPushes, unsigned long whenToFire, bool disableOverride) {
+void PinballMachine::pushToTimedSolenoidStack(uint8_t sol, uint8_t numPushes, unsigned long whenToFire, bool disableOverride) {
    RPU_PushToTimedSolenoidStack(sol, numPushes, whenToFire, disableOverride);
 }
 
-uint8_t TridentMachine::pullFirstFromSwitchStack() {
+uint8_t PinballMachine::pullFirstFromSwitchStack() {
    return RPU_PullFirstFromSwitchStack();
 }
 
-bool TridentMachine::readSingleSwitchState(uint8_t sw) {
+bool PinballMachine::readSingleSwitchState(uint8_t sw) {
    return RPU_ReadSingleSwitchState(sw);
 }
 
-bool TridentMachine::getUpDownSwitchState() {
+bool PinballMachine::getUpDownSwitchState() {
    return RPU_GetUpDownSwitchState();
 }
 
-void TridentMachine::setDisplayBlank(uint8_t display, uint8_t mask) {
+void PinballMachine::setDisplayBlank(uint8_t display, uint8_t mask) {
    RPU_SetDisplayBlank(display, mask);
 }
 
-uint8_t TridentMachine::getDisplayBlank(uint8_t display) {
+uint8_t PinballMachine::getDisplayBlank(uint8_t display) {
    return RPU_GetDisplayBlank(display);
 }
 
-void TridentMachine::cycleAllDisplays(unsigned long t, uint8_t curValue) {
+void PinballMachine::cycleAllDisplays(unsigned long t, uint8_t curValue) {
    RPU_CycleAllDisplays(t, curValue);
 }
 
-uint8_t TridentMachine::magnitudeOfScore(unsigned long score) {
+uint8_t PinballMachine::magnitudeOfScore(unsigned long score) {
    if (score == 0) {
       return 0;
    }
@@ -362,7 +362,7 @@ uint8_t TridentMachine::magnitudeOfScore(unsigned long score) {
    return retval;
 }
 
-uint8_t TridentMachine::getDisplayMask(uint8_t numDigits) {
+uint8_t PinballMachine::getDisplayMask(uint8_t numDigits) {
    uint8_t mask = 0;
    for (uint8_t i = 0; i < numDigits; i++) {
       mask |= (0x20 >> i);
@@ -370,35 +370,35 @@ uint8_t TridentMachine::getDisplayMask(uint8_t numDigits) {
    return mask;
 }
 
-void TridentMachine::setCoinLockout(bool lock) {
+void PinballMachine::setCoinLockout(bool lock) {
    RPU_SetCoinLockout(lock);
 }
 
-void TridentMachine::playSoundCardEffect(uint8_t sound) {
+void PinballMachine::playSoundCardEffect(uint8_t sound) {
    RPU_PlayNativeSound(sound);
 }
 
-uint8_t TridentMachine::readByteFromEEProm(uint16_t addr) {
+uint8_t PinballMachine::readByteFromEEProm(uint16_t addr) {
    return RPU_ReadByteFromEEProm(addr);
 }
 
-void TridentMachine::writeByteToEEProm(uint16_t addr, uint8_t val) {
+void PinballMachine::writeByteToEEProm(uint16_t addr, uint8_t val) {
    RPU_WriteByteToEEProm(addr, val);
 }
 
-unsigned long TridentMachine::readULFromEEProm(uint16_t addr) {
+unsigned long PinballMachine::readULFromEEProm(uint16_t addr) {
    return RPU_ReadULFromEEProm(addr);
 }
 
-void TridentMachine::writeULToEEProm(uint16_t addr, unsigned long val) {
+void PinballMachine::writeULToEEProm(uint16_t addr, unsigned long val) {
    RPU_WriteULToEEProm(addr, val);
 }
 
-void TridentMachine::setDimDivisor(uint8_t level1, uint8_t level2) {
+void PinballMachine::setDimDivisor(uint8_t level1, uint8_t level2) {
    RPU_SetDimDivisor(level1, level2);
 }
 
-void TridentMachine::playCallout(uint8_t track) {
+void PinballMachine::playCallout(uint8_t track) {
 #if defined(RPU_OS_USE_WAV_TRIGGER)
    wavHandler_.playSound(track, 10);
 #else
@@ -406,7 +406,7 @@ void TridentMachine::playCallout(uint8_t track) {
 #endif
 }
 
-void TridentMachine::playBackgroundSong(unsigned short songNum) {
+void PinballMachine::playBackgroundSong(unsigned short songNum) {
    if (settings_.musicVolume != 0 && settings_.soundSelector == SOUND_SELECTOR_TRIDENT2020) {
 #if defined(RPU_OS_USE_WAV_TRIGGER)
       wavHandler_.playBackgroundSong(songNum, true);
@@ -417,7 +417,7 @@ void TridentMachine::playBackgroundSong(unsigned short songNum) {
 }
 
 
-void TridentMachine::playSoundEffect(uint8_t soundEffectNum) {
+void PinballMachine::playSoundEffect(uint8_t soundEffectNum) {
    switch (settings_.soundSelector) {
    case SOUND_SELECTOR_NONE:
       return;
@@ -571,7 +571,7 @@ void TridentMachine::playSoundEffect(uint8_t soundEffectNum) {
 // Credit and coin operations
 // ---------------------------------------------------------------------------
 
-void TridentMachine::addCredit(bool playSound, uint8_t numToAdd) {
+void PinballMachine::addCredit(bool playSound, uint8_t numToAdd) {
    if (settings_.credits < settings_.maximumCredits) {
       settings_.credits += numToAdd;
       if (settings_.credits > settings_.maximumCredits) {
@@ -589,13 +589,13 @@ void TridentMachine::addCredit(bool playSound, uint8_t numToAdd) {
    }
 }
 
-void TridentMachine::addSpecialCredit() {
+void PinballMachine::addSpecialCredit() {
    addCredit(false, 1);
    RPU_PushToTimedSolenoidStack(SOL_KNOCKER, 3, currentTime_, true);
    RPU_WriteULToEEProm(RPU_TOTAL_REPLAYS_EEPROM_START_BYTE, RPU_ReadULFromEEProm(RPU_TOTAL_REPLAYS_EEPROM_START_BYTE) + 1);
 }
 
-void TridentMachine::addCoinToAudit(uint8_t chuteNum) {
+void PinballMachine::addCoinToAudit(uint8_t chuteNum) {
    if (chuteNum > 2) {
       return;
    }
@@ -603,7 +603,7 @@ void TridentMachine::addCoinToAudit(uint8_t chuteNum) {
    RPU_WriteULToEEProm(coinAuditStartByte, RPU_ReadULFromEEProm(coinAuditStartByte) + 1);
 }
 
-bool TridentMachine::addCoin(uint8_t chuteNum) {
+bool PinballMachine::addCoin(uint8_t chuteNum) {
    if (chuteNum > 2) {
       return false;
    }
@@ -612,14 +612,14 @@ bool TridentMachine::addCoin(uint8_t chuteNum) {
    return true;
 }
 
-MachineSettings& TridentMachine::getSettings() {
+MachineSettings& PinballMachine::getSettings() {
    if (!haveSettings_) {
       readStoredParameters();
    }
    return settings_;
 }
 
-void TridentMachine::setLastGameResult(uint8_t numPlayers, const unsigned long* scores) {
+void PinballMachine::setLastGameResult(uint8_t numPlayers, const unsigned long* scores) {
    lastGameNumPlayers_ = numPlayers;
    for (uint8_t i = 0; i < 4; i++) {
       lastGameScores_[i] = scores[i];

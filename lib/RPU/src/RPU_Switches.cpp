@@ -79,7 +79,7 @@ bool SwitchManager::getUpDown() const {
 /**
  * Switch processing called from ISR during zero crossing
  */
-void SwitchManager::service() {
+void SwitchManager::zeroCrossingISR() {
 
    // Latch 0xFF separately without interrupt clear
    RPU_DataWrite(ADDRESS_U10_A, 0xFF);
