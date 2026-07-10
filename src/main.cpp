@@ -105,8 +105,6 @@ void setup() {
    pinballMachine.init(CurrentTime);    // hardware setup, RPU init, diag notifications
    pinballMachine.readStoredParameters();
 
-   MachineSettings& s = pinballMachine.settings();
-   game.setSettings(s);
    game.setMachine(pinballMachine);
 
    hardwareTestMode.setDependencies(pinballMachine);

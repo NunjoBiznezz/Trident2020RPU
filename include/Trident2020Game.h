@@ -18,8 +18,10 @@ public:
 
    // Set once from main.cpp after construction; both remain valid for the
    // lifetime of the program.
-   void setSettings(MachineSettings& s)  { ctx_     = &s;   }
-   void setMachine(PinballMachine& m)    { machine_ = &m;   }
+   void setMachine(PinballMachine& m) {
+      machine_ = &m;
+      ctx_ = &m.getSettings();
+   }
 
    // MachineMode interface
    void     enter(unsigned long currentTime) override;
