@@ -232,8 +232,9 @@ public:
    // Accessors
    // -----------------------------------------------------------------------
 
-   uint8_t          getCredits() const      { return settings_.credits; }
+   uint8_t          getCredits() const       { return settings_.credits; }
    bool             getFreePlayMode() const  { return settings_.freePlayMode; }
+   bool             getMatchFeature() const  { return settings_.matchFeature; }
    MachineSettings& getSettings();
 
    // All-time high score for the Trident 2020 rule set (RPU EEPROM slot 1).

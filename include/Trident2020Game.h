@@ -134,12 +134,6 @@ private:
    unsigned long LastCountdownReportTime = 0;
    unsigned long BonusCountDownEndTime = 0;
 
-   // Match sequence state
-   unsigned long MatchSequenceStartTime = 0;
-   unsigned long MatchDelay = 150;
-   uint8_t       MatchDigit = 0;
-   uint8_t       NumMatchSpins = 0;
-   uint8_t       ScoreMatches = 0;
 
    // --- Private helpers ---
    void    overrideScoreDisplay(uint8_t displayNum, unsigned long value, bool animate);
@@ -162,6 +156,5 @@ private:
    int  manageGameMode();
    int  countdownBonus(bool curStateChanged);
    void checkHighScores();
-   int  showMatchSequence(bool curStateChanged);
    void startBallBackgroundSong(uint8_t ballNum);
 };

@@ -51,19 +51,11 @@ private:
    uint8_t       NumTiltWarnings          = 0;
    unsigned long LastTiltWarningTime      = 0;
 
-   // Match sequence state
-   unsigned long MatchSequenceStartTime   = 0;
-   unsigned long MatchDelay               = 150;
-   uint8_t       MatchDigit               = 0;
-   uint8_t       NumMatchSpins            = 0;
-   uint8_t       ScoreMatches             = 0;
-
    void setPlayerLamps(uint8_t numPlayers, uint8_t playerOffset = 0, int flashPeriod = 0);
    void showPlayerScores(uint8_t displayToUpdate, bool flashCurrent, bool dashCurrent,
                          unsigned long allScoresShowValue = 0);
 
    int  initGamePlay();
    int  initNewBall(bool curStateChanged, uint8_t playerNum, int ballNum);
-   int  showMatchSequence(bool curStateChanged);
    void startBallBackgroundSong(uint8_t ballNum);
 };

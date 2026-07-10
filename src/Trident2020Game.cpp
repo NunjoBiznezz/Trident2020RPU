@@ -86,6 +86,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
             checkHighScores();
             machine_->playSoundEffect(SOUND_EFFECT_GAME_OVER);
             setPlayerLamps(0);
+            machine_->setLastGameResult(CurrentNumPlayers, CurrentScores);
             for (int count = 0; count < CurrentNumPlayers; count++) {
                machine_->setDisplay(count, CurrentScores[count], true, 2);
             }
@@ -94,8 +95,6 @@ TopState Trident2020Game::update(unsigned long currentTime) {
             returnState = MACHINE_STATE_INIT_NEW_BALL;
          }
       }
-   } else if (curState == MACHINE_STATE_MATCH_MODE) {
-      returnState = showMatchSequence(curStateChanged);
    }
 
    uint8_t switchHit;
@@ -462,10 +461,13 @@ TopState Trident2020Game::update(unsigned long currentTime) {
 
    // Propagate internal state changes and map to the top-level state.
    if (returnState < 0) {
-      return TopState::HardwareTest; // self-test button hit during play
+      return TopState::HardwareTest;
+   }
+   if (returnState == MACHINE_STATE_MATCH_MODE) {
+      return TopState::Match;
    }
    if (returnState == MACHINE_STATE_ATTRACT) {
-      return TopState::Attract; // game over
+      return TopState::Attract;
    }
    if (returnState != internalState_) {
       internalState_ = returnState;
@@ -1600,76 +1602,6 @@ void Trident2020Game::checkHighScores() {
    }
 }
 
-int Trident2020Game::showMatchSequence(bool curStateChanged) {
-   if (!settings_->matchFeature) {
-      return MACHINE_STATE_ATTRACT;
-   }
-
-   if (curStateChanged) {
-      MatchSequenceStartTime = CurrentTime;
-      MatchDelay = 1500;
-      MatchDigit = CurrentTime % 10;
-      NumMatchSpins = 0;
-      machine_->setLampState(LAMP_MATCH, true, 0);
-      machine_->setDisableFlippers(true);
-      ScoreMatches = 0;
-      machine_->setLampState(LAMP_BALL_IN_PLAY, false);
-   }
-
-   if (NumMatchSpins < 40) {
-      if (CurrentTime > (MatchSequenceStartTime + MatchDelay)) {
-         MatchDigit += 1;
-         if (MatchDigit > 9) {
-            MatchDigit = 0;
-         }
-         machine_->playSoundEffect(SOUND_EFFECT_MATCH_SPIN);
-         machine_->setDisplayBallInPlay((int)MatchDigit * 10);
-         MatchDelay += 50 + 4 * NumMatchSpins;
-         NumMatchSpins += 1;
-         machine_->setLampState(LAMP_MATCH, (NumMatchSpins % 2) != 0, 0);
-
-         if (NumMatchSpins == 40) {
-            machine_->setLampState(LAMP_MATCH, false);
-            MatchDelay = CurrentTime - MatchSequenceStartTime;
-         }
-      }
-   }
-
-   if (NumMatchSpins >= 40 && NumMatchSpins <= 43) {
-      if (CurrentTime > (MatchSequenceStartTime + MatchDelay)) {
-         if ((CurrentNumPlayers > (NumMatchSpins - 40)) && ((CurrentScores[NumMatchSpins - 40] / 10) % 10) == MatchDigit) {
-            ScoreMatches |= (1 << (NumMatchSpins - 40));
-            machine_->addSpecialCredit();
-            MatchDelay += 1000;
-            NumMatchSpins += 1;
-            machine_->setLampState(LAMP_MATCH, true);
-         } else {
-            NumMatchSpins += 1;
-         }
-         if (NumMatchSpins == 44) {
-            MatchDelay += 5000;
-         }
-      }
-   }
-
-   if (NumMatchSpins > 43) {
-      if (CurrentTime > (MatchSequenceStartTime + MatchDelay)) {
-         return MACHINE_STATE_ATTRACT;
-      }
-   }
-
-   for (int count = 0; count < 4; count++) {
-      if ((ScoreMatches >> count) & 0x01) {
-         if ((CurrentTime / 200) % 2 != 0) {
-            machine_->setDisplayBlank(count, machine_->getDisplayBlank(count) & 0x0F);
-         } else {
-            machine_->setDisplayBlank(count, machine_->getDisplayBlank(count) | 0x30);
-         }
-      }
-   }
-
-   return MACHINE_STATE_MATCH_MODE;
-}
 
 void Trident2020Game::startBallBackgroundSong(uint8_t ballNum) {
    // Ball 1 always gets the opening theme; the last ball gets the finale track.

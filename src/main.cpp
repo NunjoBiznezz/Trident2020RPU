@@ -24,6 +24,7 @@
 #include "AttractMode.h"
 #include "BuildVersion.h"
 #include "HardwareTestMode.h"
+#include "MatchMode.h"
 #include "MachineMode.h"
 #include "MachineSettings.h"
 #include "MachineState.h"
@@ -75,6 +76,7 @@ static Trident2020Game        game;
 static HardwareTestMode       hardwareTestMode;
 static StoredAdjustmentsMode  storedAdjustmentsMode;
 static Trident2020AdjustmentsMode        adjustmentsMode;
+static MatchMode              matchMode;
 static AttractMode            attractMode;
 
 static TopState     topState   = TopState::Attract;
@@ -110,6 +112,7 @@ void setup() {
    hardwareTestMode.setDependencies(pinballMachine);
    storedAdjustmentsMode.setDependencies(pinballMachine);
    adjustmentsMode.setDependencies(game, pinballMachine);
+   matchMode.setDependencies(pinballMachine);
    attractMode.setDependencies(pinballMachine);
 
    attractMode.enter(CurrentTime);
@@ -131,7 +134,8 @@ void loop() {
       case TopState::MachineEeprom:     activeMode = &storedAdjustmentsMode;  break;
       case TopState::StoredAdjustments: activeMode = &storedAdjustmentsMode;  break;
       case TopState::Adjustments:       activeMode = &adjustmentsMode;        break;
-      case TopState::Attract:      activeMode = &attractMode;            break;
+      case TopState::Attract:           activeMode = &attractMode;            break;
+      case TopState::Match:             activeMode = &matchMode;              break;
       case TopState::Game:              activeMode = &game;                   break;
       }
       activeMode->enter(CurrentTime);
