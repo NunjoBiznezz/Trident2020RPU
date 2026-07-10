@@ -8,9 +8,9 @@
 #include "Trident2020AdjustmentsMode.h"
 #include <EEPROM.h>
 
-// Callout index 0 = adjustment 1 (free play) … index 14 = adjustment 15 (done).
-static const uint8_t kAdjustmentCalloutMap[15] = {
-   153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 171, 0
+// Callout index 0 = adjustment 1 (free play) … index 17 = adjustment 18 (done).
+static const uint8_t kAdjustmentCalloutMap[18] = {
+   153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 171, 166, 167, 168, 0
 };
 
 static const uint8_t kSoundSelectorToCalloutsMap[] = {190, 191, 199, 197, 198, 196};
@@ -173,6 +173,30 @@ TopState Trident2020AdjustmentsMode::update(unsigned long currentTime) {
          for (int count = 0; count < 10; count++) {
             machine_->setLampState(LAMP_BONUS_1 + count, true, 1);
          }
+         break;
+
+      case kAdjSharpShooterBonus:
+         adjustmentType_               = ADJ_TYPE_MIN_MAX;
+         adjustmentValues_[0]          = 1;
+         adjustmentValues_[1]          = 5;
+         currentAdjustmentByte_        = &settings_->trident2020Balance.sharpShooterStartBonus;
+         currentAdjustmentStorageByte_ = EEPROM_SHARP_SHOOTER_START_BONUS_BYTE;
+         break;
+
+      case kAdjTargetSpecialBonus:
+         adjustmentType_               = ADJ_TYPE_MIN_MAX;
+         adjustmentValues_[0]          = 1;
+         adjustmentValues_[1]          = 5;
+         currentAdjustmentByte_        = &settings_->trident2020Balance.targetSpecialBonus;
+         currentAdjustmentStorageByte_ = EEPROM_TARGET_SPECIAL_BONUS_BYTE;
+         break;
+
+      case kAdjStandupSpecialLevel:
+         adjustmentType_               = ADJ_TYPE_MIN_MAX;
+         adjustmentValues_[0]          = 1;
+         adjustmentValues_[1]          = 4;
+         currentAdjustmentByte_        = &settings_->trident2020Balance.standupSpecialLevel;
+         currentAdjustmentStorageByte_ = EEPROM_STANDUP_SPECIAL_LEVEL_BYTE;
          break;
 
       case kAdjDone:

@@ -1509,8 +1509,8 @@ void Trident2020Game::checkHighScores() {
       highScorePlayerNum = count;
    }
 
-   if (highestScore > ctx_->highScore) {
-      ctx_->highScore = highestScore;
+   if (highestScore > ctx_->trident2020Awards.highScore) {
+      ctx_->trident2020Awards.highScore = highestScore;
       if (ctx_->highScoreReplay) {
          machine_->addCredit(false, 3);
          machine_->writeULToEEProm(RPU_TOTAL_REPLAYS_EEPROM_START_BYTE, machine_->readULFromEEProm(RPU_TOTAL_REPLAYS_EEPROM_START_BYTE) + 3);

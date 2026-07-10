@@ -39,8 +39,11 @@ class Trident2020AdjustmentsMode : public MachineMode {
    static constexpr uint8_t kAdjScrollingScores   = 11;
    static constexpr uint8_t kAdjExtraBallAward    = 12;
    static constexpr uint8_t kAdjSpecialAward      = 13;
-   static constexpr uint8_t kAdjDimLevel          = 14;
-   static constexpr uint8_t kAdjDone              = 15;
+   static constexpr uint8_t kAdjDimLevel              = 14;
+   static constexpr uint8_t kAdjSharpShooterBonus     = 15;
+   static constexpr uint8_t kAdjTargetSpecialBonus    = 16;
+   static constexpr uint8_t kAdjStandupSpecialLevel   = 17;
+   static constexpr uint8_t kAdjDone                  = 18;
 
    uint8_t internalState_ = 0;
    bool    stateChanged_  = false;

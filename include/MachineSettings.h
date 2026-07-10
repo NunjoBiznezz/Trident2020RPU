@@ -16,6 +16,7 @@ enum class RuleSet : uint8_t {
 
 // Score thresholds and award values — differ between rule sets.
 struct ScoreAndAwardSettings {
+   unsigned long highScore        = 0;  // Per-ruleset all-time high score
    unsigned long awardScores[3]  = {};  // Score thresholds for the three replay/extra-ball awards
    unsigned long extraBallValue  = 0;   // Points awarded for an extra ball in tournament mode
    unsigned long specialValue    = 0;   // Points awarded for a special in tournament mode
@@ -41,9 +42,6 @@ struct MachineSettings {
    uint8_t       maxTiltWarnings          = 2;     // Tilt warnings before ball loss (0–2)
    bool          matchFeature             = true;  // When true, a match on the last two score digits gives a free credit
    bool          highScoreReplay          = true;  // When true, beating the high score awards a replay
-
-   // --- High score (machine-wide, shared across rule sets) ---
-   unsigned long highScore                = 0;     // All-time high score (RPU EEPROM)
 
    // --- Rule set selection ---
    RuleSet       activeRuleSet            = RuleSet::Trident2020;

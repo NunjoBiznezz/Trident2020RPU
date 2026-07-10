@@ -95,6 +95,7 @@ public:
 
    virtual uint8_t getCredits() const = 0;
    virtual unsigned long getHighScore() const = 0;
+   virtual unsigned long getOriginalHighScore() const { return 0; }
    virtual bool getFreePlayMode() const = 0;
    virtual MachineSettings& getSettings() = 0;
 

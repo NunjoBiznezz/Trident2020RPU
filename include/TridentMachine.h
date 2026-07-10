@@ -88,7 +88,11 @@ public:
    }
 
    unsigned long getHighScore() const override {
-      return settings_.highScore;
+      return settings_.trident2020Awards.highScore;
+   }
+
+   unsigned long getOriginalHighScore() const override {
+      return settings_.originalAwards.highScore;
    }
 
    bool getFreePlayMode() const override {

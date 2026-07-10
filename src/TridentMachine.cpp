@@ -170,7 +170,23 @@ void TridentMachine::readStoredParameters() {
    }
    RPU_SetDimDivisor(1, settings_.dimLevel);
 
-   settings_.highScore = RPU_ReadULFromEEProm(RPU_HIGHSCORE_EEPROM_START_BYTE, 10000);
+   settings_.trident2020Balance.sharpShooterStartBonus = readSetting(EEPROM_SHARP_SHOOTER_START_BONUS_BYTE, 3);
+   if (settings_.trident2020Balance.sharpShooterStartBonus < 1 || settings_.trident2020Balance.sharpShooterStartBonus > 5) {
+      settings_.trident2020Balance.sharpShooterStartBonus = 3;
+   }
+
+   settings_.trident2020Balance.targetSpecialBonus = readSetting(EEPROM_TARGET_SPECIAL_BONUS_BYTE, 4);
+   if (settings_.trident2020Balance.targetSpecialBonus < 1 || settings_.trident2020Balance.targetSpecialBonus > 5) {
+      settings_.trident2020Balance.targetSpecialBonus = 4;
+   }
+
+   settings_.trident2020Balance.standupSpecialLevel = readSetting(EEPROM_STANDUP_SPECIAL_LEVEL_BYTE, 2);
+   if (settings_.trident2020Balance.standupSpecialLevel < 1 || settings_.trident2020Balance.standupSpecialLevel > 4) {
+      settings_.trident2020Balance.standupSpecialLevel = 2;
+   }
+
+   settings_.trident2020Awards.highScore = RPU_ReadULFromEEProm(RPU_HIGHSCORE_EEPROM_START_BYTE, 10000);
+   settings_.originalAwards.highScore   = RPU_ReadULFromEEProm(EEPROM_ORIGINAL_HIGHSCORE_BYTE, 10000);
    settings_.trident2020Awards.awardScores[0] = RPU_ReadULFromEEProm(RPU_AWARD_SCORE_1_EEPROM_START_BYTE);
    settings_.trident2020Awards.awardScores[1] = RPU_ReadULFromEEProm(RPU_AWARD_SCORE_2_EEPROM_START_BYTE);
    settings_.trident2020Awards.awardScores[2] = RPU_ReadULFromEEProm(RPU_AWARD_SCORE_3_EEPROM_START_BYTE);

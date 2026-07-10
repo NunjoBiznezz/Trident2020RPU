@@ -55,28 +55,41 @@ TopState AttractMode::update(unsigned long currentTime) {
          machine_->setDisplayBallInPlay(0, true);
          lastHeadMode_ = 1;
       }
-   } else if ((currentTime / 8000) % 2 == 0) {
-      if (lastHeadMode_ != 2) {
-         machine_->setLampState(LAMP_HIGH_SCORE_TO_DATE, true, 0, 250);
-         machine_->setLampState(LAMP_GAME_OVER, false);
-         for (uint8_t i = 0; i < 4; i++) machine_->setLampState(LAMP_PLAYER_1 + i, false);
-         for (uint8_t i = 0; i < 4; i++) machine_->setDisplay(i, machine_->getHighScore(), true, 2);
-      }
-      lastHeadMode_ = 2;
    } else {
-      if (lastHeadMode_ != 3) {
-         machine_->setLampState(LAMP_HIGH_SCORE_TO_DATE, false);
-         machine_->setLampState(LAMP_GAME_OVER, true);
-         machine_->setDisplayCredits(machine_->getCredits(), true);
-         machine_->setDisplayBallInPlay(0, true);
-         for (uint8_t i = 0; i < 4; i++) {
-            if (savedNumPlayers_ > 0 && i >= savedNumPlayers_) machine_->setDisplayBlank(i, 0x00);
-            else                                                machine_->setDisplay(i, savedScores_[i], true, 2);
+      uint8_t headSlot = (uint8_t)((currentTime / 8000) % 3);
+      if (headSlot == 0) {
+         if (lastHeadMode_ != 2) {
+            machine_->setLampState(LAMP_HIGH_SCORE_TO_DATE, true, 0, 250);
+            machine_->setLampState(LAMP_GAME_OVER, false);
+            for (uint8_t i = 0; i < 4; i++) machine_->setLampState(LAMP_PLAYER_1 + i, false);
+            for (uint8_t i = 0; i < 4; i++) machine_->setDisplay(i, machine_->getHighScore(), true, 2);
+            machine_->setDisplayBallInPlay(20, true);
          }
+         lastHeadMode_ = 2;
+      } else if (headSlot == 1) {
+         if (lastHeadMode_ != 3) {
+            machine_->setLampState(LAMP_HIGH_SCORE_TO_DATE, true, 0, 250);
+            machine_->setLampState(LAMP_GAME_OVER, false);
+            for (uint8_t i = 0; i < 4; i++) machine_->setLampState(LAMP_PLAYER_1 + i, false);
+            for (uint8_t i = 0; i < 4; i++) machine_->setDisplay(i, machine_->getOriginalHighScore(), true, 2);
+            machine_->setDisplayBallInPlay(1, true);
+         }
+         lastHeadMode_ = 3;
+      } else {
+         if (lastHeadMode_ != 4) {
+            machine_->setLampState(LAMP_HIGH_SCORE_TO_DATE, false);
+            machine_->setLampState(LAMP_GAME_OVER, true);
+            machine_->setDisplayCredits(machine_->getCredits(), true);
+            machine_->setDisplayBallInPlay(0, true);
+            for (uint8_t i = 0; i < 4; i++) {
+               if (savedNumPlayers_ > 0 && i >= savedNumPlayers_) machine_->setDisplayBlank(i, 0x00);
+               else                                                machine_->setDisplay(i, savedScores_[i], true, 2);
+            }
+         }
+         uint8_t activePlayer = (uint8_t)((currentTime / 250) % 4);
+         for (uint8_t i = 0; i < 4; i++) machine_->setLampState(LAMP_PLAYER_1 + i, i == activePlayer);
+         lastHeadMode_ = 4;
       }
-      uint8_t activePlayer = (uint8_t)((currentTime / 250) % 4);
-      for (uint8_t i = 0; i < 4; i++) machine_->setLampState(LAMP_PLAYER_1 + i, i == activePlayer);
-      lastHeadMode_ = 3;
    }
 
    if (lastPlayfieldMode_ != 1) {
