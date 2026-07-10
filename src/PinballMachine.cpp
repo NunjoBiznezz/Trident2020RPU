@@ -378,20 +378,24 @@ void PinballMachine::playSoundCardEffect(uint8_t sound) {
    RPU_PlayNativeSound(sound);
 }
 
-uint8_t PinballMachine::readByteFromEEProm(uint16_t addr) {
-   return RPU_ReadByteFromEEProm(addr);
+void PinballMachine::saveCredits() {
+   RPU_WriteByteToEEProm(RPU_CREDITS_EEPROM_BYTE, settings_.credits);
 }
 
-void PinballMachine::writeByteToEEProm(uint16_t addr, uint8_t val) {
-   RPU_WriteByteToEEProm(addr, val);
+void PinballMachine::recordGamePlayed() {
+   RPU_WriteULToEEProm(RPU_TOTAL_PLAYS_EEPROM_START_BYTE,
+                       RPU_ReadULFromEEProm(RPU_TOTAL_PLAYS_EEPROM_START_BYTE) + 1);
 }
 
-unsigned long PinballMachine::readULFromEEProm(uint16_t addr) {
-   return RPU_ReadULFromEEProm(addr);
+void PinballMachine::addReplayAudit(uint8_t count) {
+   RPU_WriteULToEEProm(RPU_TOTAL_REPLAYS_EEPROM_START_BYTE,
+                       RPU_ReadULFromEEProm(RPU_TOTAL_REPLAYS_EEPROM_START_BYTE) + count);
 }
 
-void PinballMachine::writeULToEEProm(uint16_t addr, unsigned long val) {
-   RPU_WriteULToEEProm(addr, val);
+void PinballMachine::saveHighScore(unsigned long score) {
+   RPU_WriteULToEEProm(RPU_HIGHSCORE_EEPROM_START_BYTE, score);
+   RPU_WriteULToEEProm(RPU_TOTAL_HISCORE_BEATEN_START_BYTE,
+                       RPU_ReadULFromEEProm(RPU_TOTAL_HISCORE_BEATEN_START_BYTE) + 1);
 }
 
 void PinballMachine::setDimDivisor(uint8_t level1, uint8_t level2) {

@@ -171,18 +171,25 @@ public:
    bool getUpDownSwitchState();
 
    // -----------------------------------------------------------------------
-   // EEPROM — thin wrappers so game code never calls RPU_* or EEPROM directly
+   // Audit and persistence — semantic operations; no raw EEPROM addresses
+   // leak into game code. All RPU EEPROM addresses stay inside PinballMachine.
    // -----------------------------------------------------------------------
 
-   // // Direct access to operator-adjustable settings. Lazily reads EEPROM on
-   // // first call if readStoredParameters() has not already been called.
-   // MachineSettings& settings();
-   //
+   // Persist settings_.credits to EEPROM after game code decrements it directly.
+   // (addCredit() handles the increment side internally.)
+   void saveCredits();
 
-   uint8_t       readByteFromEEProm(uint16_t addr);
-   void          writeByteToEEProm(uint16_t addr, uint8_t val);
-   unsigned long readULFromEEProm(uint16_t addr);
-   void          writeULToEEProm(uint16_t addr, unsigned long val);
+   // Increment the total-games-played audit counter.
+   void recordGamePlayed();
+
+   // Add count to the replay audit counter. Used when a player earns
+   // multiple replays at once (e.g. 3 for beating the high score).
+   void addReplayAudit(uint8_t count);
+
+   // Persist a new Trident 2020 high score and increment the beaten counter.
+   // Does NOT update settings_.trident2020Awards.highScore — the caller
+   // (checkHighScores) owns that field and has already updated it.
+   void saveHighScore(unsigned long score);
 
    // -----------------------------------------------------------------------
    // Self-test interlock

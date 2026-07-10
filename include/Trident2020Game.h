@@ -20,7 +20,7 @@ public:
    // lifetime of the program.
    void setMachine(PinballMachine& m) {
       machine_ = &m;
-      ctx_ = &m.getSettings();
+      settings_ = &m.getSettings();
    }
 
    // MachineMode interface
@@ -58,7 +58,7 @@ public:
 
 private:
    // Set once via setSettings() / setMachine(); valid for the lifetime of the program.
-   MachineSettings*  ctx_     = nullptr;
+   MachineSettings*  settings_     = nullptr;
    PinballMachine* machine_ = nullptr;
 
    // Top-level state machine: internal game state and change flag.

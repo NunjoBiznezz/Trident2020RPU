@@ -153,14 +153,13 @@ bool TridentGame::addPlayer(bool resetNumPlayers) {
 
    if (!ctx_->freePlayMode) {
       ctx_->credits -= 1;
-      machine_->writeByteToEEProm(RPU_CREDITS_EEPROM_BYTE, ctx_->credits);
+      machine_->saveCredits();
       machine_->setDisplayCredits(ctx_->credits);
       machine_->setCoinLockout(false);
    }
    machine_->playSoundEffect(SOUND_EFFECT_ADD_PLAYER_1 + (CurrentNumPlayers - 1));
    setPlayerLamps(CurrentNumPlayers);
-   machine_->writeULToEEProm(RPU_TOTAL_PLAYS_EEPROM_START_BYTE,
-                              machine_->readULFromEEProm(RPU_TOTAL_PLAYS_EEPROM_START_BYTE) + 1);
+   machine_->recordGamePlayed();
    return true;
 }
 
