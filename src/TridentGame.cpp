@@ -21,17 +21,17 @@ TridentGame::TridentGame() {}
 void TridentGame::enter(unsigned long currentTime) {
    CurrentTime = currentTime;
    addPlayer(true);
-   internalState_        = MACHINE_STATE_INIT_GAMEPLAY;
+   internalState_ = MACHINE_STATE_INIT_GAMEPLAY;
    internalStateChanged_ = true;
 }
 
 TopState TridentGame::update(unsigned long currentTime) {
    CurrentTime = currentTime;
 
-   bool curStateChanged  = internalStateChanged_;
+   bool curStateChanged = internalStateChanged_;
    internalStateChanged_ = false;
-   int  curState         = internalState_;
-   int  returnState      = curState;
+   int curState = internalState_;
+   int returnState = curState;
 
    if (curState == MACHINE_STATE_INIT_GAMEPLAY) {
       returnState = initGamePlay();
@@ -102,8 +102,7 @@ TopState TridentGame::update(unsigned long currentTime) {
 
          case SW_OUTHOLE:
             if (curState == MACHINE_STATE_NORMAL_GAMEPLAY) {
-               if (!BallSaveUsed && settings_->ballSaveNumSeconds > 0 &&
-                   BallFirstSwitchHitTime != 0 &&
+               if (!BallSaveUsed && settings_->ballSaveNumSeconds > 0 && BallFirstSwitchHitTime != 0 &&
                    (CurrentTime - BallFirstSwitchHitTime) < ((unsigned long)settings_->ballSaveNumSeconds * 1000)) {
                   machine_->pushToTimedSolenoidStack(SOL_OUTHOLE, 4, CurrentTime + 100);
                   BallSaveUsed = true;
@@ -123,12 +122,16 @@ TopState TridentGame::update(unsigned long currentTime) {
    }
 
    if (returnState != curState) {
-      internalState_        = returnState;
+      internalState_ = returnState;
       internalStateChanged_ = true;
    }
 
-   if (returnState < 0) return TopState::HardwareTest;
-   if (returnState == MACHINE_STATE_ATTRACT) return TopState::Attract;
+   if (returnState < 0) {
+      return TopState::HardwareTest;
+   }
+   if (returnState == MACHINE_STATE_ATTRACT) {
+      return TopState::Attract;
+   }
    return TopState::Game;
 }
 
@@ -170,16 +173,16 @@ bool TridentGame::addPlayer(bool resetNumPlayers) {
 
 void TridentGame::setPlayerLamps(uint8_t numPlayers, uint8_t playerOffset, int flashPeriod) {
    for (uint8_t i = 0; i < 4; i++) {
-      machine_->setLampState(LAMP_PLAYER_1 + playerOffset + i,
-                             (numPlayers == (i + 1)) ? 1 : 0, 0, (uint16_t)flashPeriod);
+      machine_->setLampState(LAMP_PLAYER_1 + playerOffset + i, (numPlayers == (i + 1)) ? 1 : 0, 0, (uint16_t)flashPeriod);
    }
 }
 
-void TridentGame::showPlayerScores(uint8_t displayToUpdate, bool flashCurrent, bool dashCurrent,
-                                    unsigned long allScoresShowValue) {
+void TridentGame::showPlayerScores(uint8_t displayToUpdate, bool flashCurrent, bool dashCurrent, unsigned long allScoresShowValue) {
    (void)allScoresShowValue;
    for (uint8_t n = 0; n < 4; n++) {
-      if (displayToUpdate != 0xFF && displayToUpdate != n) continue;
+      if (displayToUpdate != 0xFF && displayToUpdate != n) {
+         continue;
+      }
       if (displayToUpdate == 0xFF && n >= CurrentNumPlayers) {
          machine_->setDisplayBlank(n, 0x00);
          continue;
@@ -202,13 +205,13 @@ int TridentGame::initGamePlay() {
    for (int count = 0; count < 4; count++) {
       machine_->setDisplay(count, 0);
       machine_->setDisplayBlank(count, (count == 0) ? 0x30 : 0x00);
-      CurrentScores[count]  = 0;
+      CurrentScores[count] = 0;
       SamePlayerShootsAgain = false;
    }
 
    CurrentBallInPlay = 1;
    CurrentNumPlayers = 1;
-   CurrentPlayer     = 0;
+   CurrentPlayer = 0;
    showPlayerScores(0xFF, false, false);
 
    if (machine_->readSingleSwitchState(SW_SAUCER)) {
@@ -220,11 +223,11 @@ int TridentGame::initGamePlay() {
 
 int TridentGame::initNewBall(bool curStateChanged, uint8_t playerNum, int ballNum) {
    if (curStateChanged) {
-      SamePlayerShootsAgain  = false;
+      SamePlayerShootsAgain = false;
       BallFirstSwitchHitTime = 0;
-      BallSaveUsed           = false;
-      NumTiltWarnings        = 0;
-      LastTiltWarningTime    = 0;
+      BallSaveUsed = false;
+      NumTiltWarnings = 0;
+      LastTiltWarningTime = 0;
 
       machine_->setDisableFlippers(false);
       machine_->enableSolenoidStack();
@@ -259,9 +262,13 @@ int TridentGame::initNewBall(bool curStateChanged, uint8_t playerNum, int ballNu
 
 void TridentGame::startBallBackgroundSong(uint8_t ballNum) {
    uint8_t song;
-   if (ballNum == 1)                       song = SOUND_EFFECT_BACKGROUND_1;
-   else if (ballNum == settings_->ballsPerGame) song = SOUND_EFFECT_BACKGROUND_6;
-   else                                    song = SOUND_EFFECT_BACKGROUND_2 + (uint8_t)(CurrentTime % 4);
+   if (ballNum == 1) {
+      song = SOUND_EFFECT_BACKGROUND_1;
+   } else if (ballNum == settings_->ballsPerGame) {
+      song = SOUND_EFFECT_BACKGROUND_6;
+   } else {
+      song = SOUND_EFFECT_BACKGROUND_2 + (uint8_t)(CurrentTime % 4);
+   }
    machine_->playBackgroundSong(song);
 }
 
@@ -272,10 +279,10 @@ int TridentGame::showMatchSequence(bool curStateChanged) {
 
    if (curStateChanged) {
       MatchSequenceStartTime = CurrentTime;
-      MatchDelay             = 1500;
-      MatchDigit             = (uint8_t)(CurrentTime % 10);
-      NumMatchSpins          = 0;
-      ScoreMatches           = 0;
+      MatchDelay = 1500;
+      MatchDigit = (uint8_t)(CurrentTime % 10);
+      NumMatchSpins = 0;
+      ScoreMatches = 0;
       machine_->setLampState(LAMP_MATCH, true, 0);
       machine_->setDisableFlippers(true);
       machine_->setLampState(LAMP_BALL_IN_PLAY, false);
@@ -284,7 +291,9 @@ int TridentGame::showMatchSequence(bool curStateChanged) {
    if (NumMatchSpins < 40) {
       if (CurrentTime > (MatchSequenceStartTime + MatchDelay)) {
          MatchDigit += 1;
-         if (MatchDigit > 9) MatchDigit = 0;
+         if (MatchDigit > 9) {
+            MatchDigit = 0;
+         }
          machine_->playSoundEffect(SOUND_EFFECT_MATCH_SPIN);
          machine_->setDisplayBallInPlay((int)MatchDigit * 10);
          MatchDelay += 50 + 4 * NumMatchSpins;
@@ -299,8 +308,7 @@ int TridentGame::showMatchSequence(bool curStateChanged) {
 
    if (NumMatchSpins >= 40 && NumMatchSpins <= 43) {
       if (CurrentTime > (MatchSequenceStartTime + MatchDelay)) {
-         if ((CurrentNumPlayers > (NumMatchSpins - 40)) &&
-             ((CurrentScores[NumMatchSpins - 40] / 10) % 10) == MatchDigit) {
+         if ((CurrentNumPlayers > (NumMatchSpins - 40)) && ((CurrentScores[NumMatchSpins - 40] / 10) % 10) == MatchDigit) {
             ScoreMatches |= (1 << (NumMatchSpins - 40));
             machine_->addSpecialCredit();
             MatchDelay += 1000;
