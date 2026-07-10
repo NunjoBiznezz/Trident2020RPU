@@ -19,13 +19,6 @@
 #endif
 
 // ---------------------------------------------------------------------------
-// File-local arrays used by lamp display methods (moved from main.cpp)
-// ---------------------------------------------------------------------------
-static const uint8_t DropTargetLampArray[] = {LAMP_DROP_TARGET_1, LAMP_DROP_TARGET_2, LAMP_DROP_TARGET_3, LAMP_DROP_TARGET_4,
-                                              LAMP_DROP_TARGET_5};
-static const uint8_t DropTargetSwitchArray[] = {SW_DROP_TARGET_1, SW_DROP_TARGET_2, SW_DROP_TARGET_3, SW_DROP_TARGET_4, SW_DROP_TARGET_5};
-
-// ---------------------------------------------------------------------------
 // Constructor
 // ---------------------------------------------------------------------------
 Trident2020Game::Trident2020Game() {}

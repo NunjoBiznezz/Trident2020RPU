@@ -69,6 +69,9 @@ constexpr uint8_t LAMP_PLAYER_2_UP = 57;
 constexpr uint8_t LAMP_PLAYER_3_UP = 58;
 constexpr uint8_t LAMP_PLAYER_4_UP = 59;
 
+constexpr uint8_t DropTargetLampArray[] = {LAMP_DROP_TARGET_1, LAMP_DROP_TARGET_2, LAMP_DROP_TARGET_3, LAMP_DROP_TARGET_4,
+                                              LAMP_DROP_TARGET_5};
+
 // Defines for switches
 constexpr uint8_t SW_CREDIT_RESET = 5;
 constexpr uint8_t SW_TILT = 6;
@@ -107,6 +110,8 @@ constexpr uint8_t SW_LL_SLING = 13;
 constexpr uint8_t SW_LR_SLING = 12;
 
 constexpr uint8_t SW_ROLLOVER = 9;
+
+constexpr uint8_t DropTargetSwitchArray[] = {SW_DROP_TARGET_1, SW_DROP_TARGET_2, SW_DROP_TARGET_3, SW_DROP_TARGET_4, SW_DROP_TARGET_5};
 
 // Defines for solenoids
 constexpr uint8_t SOL_TOP_BUMPER = 0;
