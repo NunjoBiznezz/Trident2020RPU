@@ -52,11 +52,7 @@ TopState HardwareTestMode::update(unsigned long currentTime) {
 
    if (curSwitch == SW_SELF_TEST_SWITCH &&
        (currentTime - selfTestLastPressedTime_) > 250) {
-      if (machine_->getUpDownSwitchState()) {
-         returnState += 1;
-      } else {
-         returnState -= 1;
-      }
+      returnState += 1;
       selfTestLastPressedTime_ = currentTime;
    }
 
@@ -84,20 +80,11 @@ TopState HardwareTestMode::update(unsigned long currentTime) {
          machine_->setDisplay(0, curValue_, true);
       }
       if (curSwitch == SW_CREDIT_RESET || resetDoubleClick) {
-         if (machine_->getUpDownSwitchState()) {
-            curValue_ += 1;
-            if (curValue_ == RPU_MAX_LAMPS) {
-               curValue_ = 99;
-            } else if (curValue_ > 99) {
-               curValue_ = 0;
-            }
-         } else {
-            if (curValue_ > 0) {
-               curValue_ -= 1;
-            } else {
-               curValue_ = 99;
-            }
-            if (curValue_ == 98) curValue_ = RPU_MAX_LAMPS - 1;
+         curValue_ += 1;
+         if (curValue_ == RPU_MAX_LAMPS) {
+            curValue_ = 99;
+         } else if (curValue_ > 99) {
+            curValue_ = 0;
          }
          if (curValue_ == 99) {
             for (int count = 0; count < RPU_MAX_LAMPS; count++) {
@@ -118,20 +105,12 @@ TopState HardwareTestMode::update(unsigned long currentTime) {
          curValue_ = 0;
       }
       if (curSwitch == SW_CREDIT_RESET || resetDoubleClick) {
-         if (machine_->getUpDownSwitchState()) {
-            curValue_ += 1;
-            if (curValue_ > kTotalDisplayDigits) {
-               for (int count = 0; count < 4; count++) {
-                  machine_->setDisplayBlank(count, RPU_OS_ALL_DIGITS_MASK);
-               }
-               curValue_ = 0;
+         curValue_ += 1;
+         if (curValue_ > kTotalDisplayDigits) {
+            for (int count = 0; count < 4; count++) {
+               machine_->setDisplayBlank(count, RPU_OS_ALL_DIGITS_MASK);
             }
-         } else {
-            if (curValue_ > 0) {
-               curValue_ -= 1;
-            } else {
-               curValue_ = kTotalDisplayDigits;
-            }
+            curValue_ = 0;
          }
       }
       machine_->cycleAllDisplays(currentTime, curValue_);

@@ -106,13 +106,8 @@ TopState StoredAdjustmentsMode::update(unsigned long currentTime) {
          machine_->setDisplay(0, savedValue_, true);
       }
       if (curSwitch == SW_CREDIT_RESET || resetDoubleClick) {
-         if (machine_->getUpDownSwitchState()) {
-            savedValue_ += 1;
-            if (savedValue_ > 99) savedValue_ = 0;
-         } else {
-            if (savedValue_ > 0) savedValue_ -= 1;
-            else savedValue_ = 99;
-         }
+         savedValue_ += 1;
+         if (savedValue_ > 99) savedValue_ = 0;
          machine_->setDisplay(0, savedValue_, true);
          EEPROM.write(kEeCredits, (uint8_t)(savedValue_ & 0xFF));
       }
@@ -152,22 +147,12 @@ TopState StoredAdjustmentsMode::update(unsigned long currentTime) {
          machine_->setDisplay(0, savedValue_, true);
       }
       if (curSwitch == SW_CREDIT_RESET) {
-         if (machine_->getUpDownSwitchState()) {
-            savedValue_ += 1000;
-         } else {
-            if (savedValue_ > 1000) savedValue_ -= 1000;
-            else savedValue_ = 0;
-         }
+         savedValue_ += 1000;
          machine_->setDisplay(0, savedValue_, true);
          writeUL(savedScoreAddr, savedValue_);
       }
       if (resetBeingHeld && (currentTime >= nextSpeedyValueChange_)) {
-         if (machine_->getUpDownSwitchState()) {
-            savedValue_ += 1000;
-         } else {
-            if (savedValue_ > 1000) savedValue_ -= 1000;
-            else savedValue_ = 0;
-         }
+         savedValue_ += 1000;
          machine_->setDisplay(0, savedValue_, true);
          if (numSpeedyChanges_ < 6) {
             nextSpeedyValueChange_ = currentTime + 400;

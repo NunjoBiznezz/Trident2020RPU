@@ -334,9 +334,6 @@ bool PinballMachine::readSingleSwitchState(uint8_t sw) {
    return RPU_ReadSingleSwitchState(sw);
 }
 
-bool PinballMachine::getUpDownSwitchState() {
-   return RPU_GetUpDownSwitchState();
-}
 
 void PinballMachine::setDisplayBlank(uint8_t display, uint8_t mask) {
    RPU_SetDisplayBlank(display, mask);

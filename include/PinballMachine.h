@@ -167,9 +167,6 @@ public:
    // consuming it from the stack. Useful for outhole, saucer checks, etc.
    bool readSingleSwitchState(uint8_t sw);
 
-   // Read the coin-door up/down service button state.
-   bool getUpDownSwitchState();
-
    // -----------------------------------------------------------------------
    // Audit and persistence — semantic operations; no raw EEPROM addresses
    // leak into game code. All RPU EEPROM addresses stay inside PinballMachine.
