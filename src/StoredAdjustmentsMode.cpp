@@ -6,22 +6,70 @@
 #include "RPU.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
-#include <EEPROM.h>
+#include "adjustments/Adjustments.h"
+
+// ---------------------------------------------------------------------------
+// Setting indices and EEPROM addresses
+// ---------------------------------------------------------------------------
+
+static constexpr uint8_t kSaScoreLevel1  =  1;
+static constexpr uint8_t kSaScoreLevel2  =  2;
+static constexpr uint8_t kSaScoreLevel3  =  3;
+static constexpr uint8_t kSaHighScore    =  4;
+static constexpr uint8_t kSaCredits      =  5;
+static constexpr uint8_t kSaTotalPlays   =  6;
+static constexpr uint8_t kSaTotalReplays =  7;
+static constexpr uint8_t kSaHiscrBeat    =  8;
+static constexpr uint8_t kSaChute2Coins  =  9;
+static constexpr uint8_t kSaChute1Coins  = 10;
+static constexpr uint8_t kSaChute3Coins  = 11;
+static constexpr uint8_t kSaBoot         = 12;
+
+static constexpr int kEeScoreLevel1  = 148;   // unsigned long (4 bytes)
+static constexpr int kEeScoreLevel2  = 152;   // unsigned long (4 bytes)
+static constexpr int kEeScoreLevel3  = 156;   // unsigned long (4 bytes)
+static constexpr int kEeHighScore    = 160;   // unsigned long (4 bytes)
+static constexpr int kEeCredits      = 164;   // uint8_t       (1 byte)
+static constexpr int kEeTotalPlays   = 165;   // unsigned long (4 bytes)
+static constexpr int kEeTotalReplays = 169;   // unsigned long (4 bytes)
+static constexpr int kEeHiscrBeat    = 173;   // unsigned long (4 bytes)
+static constexpr int kEeChute2Coins  = 177;   // unsigned long (4 bytes)
+static constexpr int kEeChute1Coins  = 181;   // unsigned long (4 bytes)
+static constexpr int kEeChute3Coins  = 185;   // unsigned long (4 bytes)
 
 // Callout index 0 = setting 1 (score level 1) … index 11 = setting 12 (boot).
-static const uint8_t kStoredAdjCalloutMap[12] = {
+static const uint8_t kStoredAdjCalloutMap[kSaBoot] = {
    140, 141, 142, 139, 143, 144, 145, 146, 147, 148, 149, 138
 };
 
-static unsigned long readUL(int addr) {
-   unsigned long val = 0;
-   EEPROM.get(addr, val);
-   return val;
-}
+// ---------------------------------------------------------------------------
+// Adjustment objects and dispatch table
+// ---------------------------------------------------------------------------
 
-static void writeUL(int addr, unsigned long val) {
-   EEPROM.put(addr, val);
-}
+static ScoreAdjustment   sScoreLevel1  { kEeScoreLevel1  };
+static ScoreAdjustment   sScoreLevel2  { kEeScoreLevel2  };
+static ScoreAdjustment   sScoreLevel3  { kEeScoreLevel3  };
+static ScoreAdjustment   sHighScore    { kEeHighScore     };
+static CreditsAdjustment sCredits      { kEeCredits       };
+static AuditAdjustment   sTotalPlays   { kEeTotalPlays    };
+static AuditAdjustment   sTotalReplays { kEeTotalReplays  };
+static AuditAdjustment   sHiscrBeat   { kEeHiscrBeat     };
+static AuditAdjustment   sChute2Coins { kEeChute2Coins   };
+static AuditAdjustment   sChute1Coins { kEeChute1Coins   };
+static AuditAdjustment   sChute3Coins { kEeChute3Coins   };
+static BootAdjustment    sBoot;
+
+static StoredAdjustment* sAdjustments[kSaBoot] = {
+   &sScoreLevel1, &sScoreLevel2, &sScoreLevel3, &sHighScore,
+   &sCredits,
+   &sTotalPlays, &sTotalReplays, &sHiscrBeat,
+   &sChute2Coins, &sChute1Coins, &sChute3Coins,
+   &sBoot
+};
+
+// ---------------------------------------------------------------------------
+// StoredAdjustmentsMode
+// ---------------------------------------------------------------------------
 
 void StoredAdjustmentsMode::enter(unsigned long /*currentTime*/) {
    internalState_ = kSaScoreLevel1;
@@ -48,19 +96,14 @@ TopState StoredAdjustmentsMode::update(unsigned long currentTime) {
       lastResetPress_ = currentTime;
    }
 
+   StoredAdjustment* adj = sAdjustments[curState - 1];
+
    if (resetHold_ != 0 && !machine_->readSingleSwitchState(SW_CREDIT_RESET)) {
-      resetHold_             = 0;
-      nextSpeedyValueChange_ = 0;
+      resetHold_ = 0;
+      adj->onHeldReleased(*machine_);
    }
 
-   bool resetBeingHeld = false;
-   if (resetHold_ != 0 && (currentTime - resetHold_) > 1300) {
-      resetBeingHeld = true;
-      if (nextSpeedyValueChange_ == 0) {
-         nextSpeedyValueChange_ = currentTime;
-         numSpeedyChanges_      = 0;
-      }
-   }
+   bool resetBeingHeld = (resetHold_ != 0 && (currentTime - resetHold_) > 1300);
 
    if (curSwitch == SW_SLAM) {
       return TopState::Attract;
@@ -72,126 +115,48 @@ TopState StoredAdjustmentsMode::update(unsigned long currentTime) {
       selfTestLastPressedTime_ = currentTime;
    }
 
-   // Clamp backward at start; 0 is reserved for "exit to Attract" (e.g. from BOOT).
+   // 0 is reserved for "exit to Attract" (e.g. from Boot); wrap back to start.
    if (returnState == 0 && curState != 0) {
       returnState = kSaScoreLevel1;
    }
 
    if (curStateChanged) {
       machine_->setCoinLockout(false);
-      for (int count = 0; count < 4; count++) {
-         machine_->setDisplay(count, 0);
-         machine_->setDisplayBlank(count, 0x00);
+      for (int i = 0; i < 4; i++) {
+         machine_->setDisplay(i, 0);
+         machine_->setDisplayBlank(i, 0x00);
       }
       machine_->setDisplayCredits(0, false);
       machine_->setDisplayBallInPlay(curState);
       machine_->stopAllAudio();
       machine_->playCallout(kStoredAdjCalloutMap[curState - 1]);
+      adj->onEnter(*machine_);
    }
 
-   int           savedScoreAddr = 0;
-   int           auditAddr      = 0;
-
-   if (curState == kSaScoreLevel1) {
-      savedScoreAddr = kEeScoreLevel1;
-   } else if (curState == kSaScoreLevel2) {
-      savedScoreAddr = kEeScoreLevel2;
-   } else if (curState == kSaScoreLevel3) {
-      savedScoreAddr = kEeScoreLevel3;
-   } else if (curState == kSaHighScore) {
-      savedScoreAddr = kEeHighScore;
-   } else if (curState == kSaCredits) {
-      if (curStateChanged) {
-         savedValue_ = EEPROM.read(kEeCredits);
-         machine_->setDisplay(0, savedValue_, true);
-      }
-      if (curSwitch == SW_CREDIT_RESET || resetDoubleClick) {
-         savedValue_ += 1;
-         if (savedValue_ > 99) savedValue_ = 0;
-         machine_->setDisplay(0, savedValue_, true);
-         EEPROM.write(kEeCredits, (uint8_t)(savedValue_ & 0xFF));
-      }
-   } else if (curState == kSaTotalPlays) {
-      auditAddr = kEeTotalPlays;
-   } else if (curState == kSaTotalReplays) {
-      auditAddr = kEeTotalReplays;
-   } else if (curState == kSaHiscrBeat) {
-      auditAddr = kEeHiscrBeat;
-   } else if (curState == kSaChute2Coins) {
-      auditAddr = kEeChute2Coins;
-   } else if (curState == kSaChute1Coins) {
-      auditAddr = kEeChute1Coins;
-   } else if (curState == kSaChute3Coins) {
-      auditAddr = kEeChute3Coins;
-   } else if (curState == kSaBoot) {
-      if (curStateChanged) {
-         for (int count = 0; count < 4; count++) {
-            machine_->setDisplay(count, 8007, true);
-         }
-      }
-      if (curSwitch == SW_CREDIT_RESET || resetDoubleClick) {
-         returnState = 0;   // exit to Attract
-      }
-      for (int count = 0; count < 4; count++) {
-#ifdef RPU_OS_USE_7_DIGIT_DISPLAYS
-         machine_->setDisplayBlank(count, ((currentTime / 500) % 2) ? 0x78 : 0x00);
-#else
-         machine_->setDisplayBlank(count, ((currentTime / 500) % 2) ? 0x3C : 0x00);
-#endif
+   if (curSwitch == SW_CREDIT_RESET || resetDoubleClick) {
+      if (adj->exitsOnPress()) {
+         returnState = 0;
+      } else {
+         adj->onPress(*machine_, resetDoubleClick);
       }
    }
 
-   if (savedScoreAddr) {
-      if (curStateChanged) {
-         savedValue_ = readUL(savedScoreAddr);
-         machine_->setDisplay(0, savedValue_, true);
-      }
-      if (curSwitch == SW_CREDIT_RESET) {
-         savedValue_ += 1000;
-         machine_->setDisplay(0, savedValue_, true);
-         writeUL(savedScoreAddr, savedValue_);
-      }
-      if (resetBeingHeld && (currentTime >= nextSpeedyValueChange_)) {
-         savedValue_ += 1000;
-         machine_->setDisplay(0, savedValue_, true);
-         if (numSpeedyChanges_ < 6) {
-            nextSpeedyValueChange_ = currentTime + 400;
-         } else if (numSpeedyChanges_ < 50) {
-            nextSpeedyValueChange_ = currentTime + 50;
-         } else {
-            nextSpeedyValueChange_ = currentTime + 10;
-         }
-         numSpeedyChanges_ += 1;
-      }
-      if (!resetBeingHeld && numSpeedyChanges_ > 0) {
-         writeUL(savedScoreAddr, savedValue_);
-         numSpeedyChanges_ = 0;
-      }
-      if (resetDoubleClick) {
-         savedValue_ = 0;
-         machine_->setDisplay(0, savedValue_, true);
-         writeUL(savedScoreAddr, savedValue_);
-      }
+   if (resetBeingHeld) {
+      adj->onHeld(*machine_, currentTime);
    }
 
-   if (auditAddr) {
-      if (curStateChanged) {
-         savedValue_ = readUL(auditAddr);
-         machine_->setDisplay(0, savedValue_, true);
-      }
-      if (resetDoubleClick) {
-         savedValue_ = 0;
-         machine_->setDisplay(0, savedValue_, true);
-         writeUL(auditAddr, savedValue_);
-      }
-   }
+   adj->onTick(*machine_, currentTime);
 
    if (returnState != internalState_) {
       internalState_ = returnState;
       stateChanged_  = true;
    }
 
-   if (internalState_ == 0) return TopState::Attract;
-   if (internalState_ > kSaBoot) return TopState::Adjustments;
+   if (internalState_ == 0) {
+      return TopState::Attract;
+   }
+   if (internalState_ > kSaBoot) {
+      return TopState::Adjustments;
+   }
    return TopState::StoredAdjustments;
 }
