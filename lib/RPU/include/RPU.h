@@ -112,8 +112,6 @@ void RPU_WriteULToEEProm(uint16_t startByte, uint32_t value);
 uint8_t RPU_PullFirstFromSwitchStack();
 bool RPU_ReadSingleSwitchState(uint8_t switchNum);
 void RPU_PushToSwitchStack(uint8_t switchNumber);
-bool RPU_GetUpDownSwitchState(); // This always returns true for RPU_MPU_ARCHITECTURE==1 (no up/down switch)
-void RPU_ClearUpDownSwitchState();
 
 //   Solenoids
 void RPU_PushToSolenoidStack(uint8_t solenoidNumber, uint8_t numPushes, bool disableOverride = false);

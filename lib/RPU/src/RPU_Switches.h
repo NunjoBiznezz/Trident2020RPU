@@ -24,8 +24,6 @@ public:
    bool readState(uint8_t switchNum) const;
 
    void setup(int numSwitches, int numPrioritySwitches, const PlayfieldAndCabinetSwitch* switchArray);
-   void clearUpDown();
-   bool getUpDown() const;
 
 private:
    int numGameSwitches_ = 0;

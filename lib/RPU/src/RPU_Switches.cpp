@@ -67,15 +67,6 @@ bool SwitchManager::readState(uint8_t switchNum) const {
    return ((now_[switchByte] >> switchBit) & 0x01) != 0;
 }
 
-void SwitchManager::clearUpDown() {
-   // Bally/Stern does not have an up/down switch
-}
-
-bool SwitchManager::getUpDown() const {
-   // Bally/Stern does not have an up/down switch
-   return true;
-}
-
 /**
  * Switch processing called from ISR during zero crossing
  */
@@ -175,10 +166,3 @@ void RPU_SetupGameSwitches(int s_numSwitches, int s_numPrioritySwitches, const P
    RPU::switches.setup(s_numSwitches, s_numPrioritySwitches, s_gameSwitchArray);
 }
 
-void RPU_ClearUpDownSwitchState() {
-   RPU::switches.clearUpDown();
-}
-
-bool RPU_GetUpDownSwitchState() {
-   return RPU::switches.getUpDown();
-}
