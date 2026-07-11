@@ -67,13 +67,9 @@ TopState StoredAdjustmentsMode::update(unsigned long currentTime) {
    }
 
    if (curSwitch == SW_SELF_TEST_SWITCH &&
-       (currentTime - machine_->getSelfTestChangedTime()) > 250) {
-      if (machine_->getUpDownSwitchState()) {
-         returnState += 1;
-      } else {
-         returnState -= 1;
-      }
-      machine_->setSelfTestChangedTime(currentTime);
+       (currentTime - selfTestLastPressedTime_) > 250) {
+      returnState += 1;
+      selfTestLastPressedTime_ = currentTime;
    }
 
    // Clamp backward at start; 0 is reserved for "exit to Attract" (e.g. from BOOT).

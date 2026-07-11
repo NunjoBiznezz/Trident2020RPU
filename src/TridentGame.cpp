@@ -11,6 +11,34 @@
 #include "Trident.h"
 #include "Trident2020.h"
 
+static constexpr unsigned BUMPER_AWARD_3_BALL = 1000;
+static constexpr unsigned BUMPER_AWARD_5_BALL = 100;
+static constexpr unsigned SPINNER_AWARD = 200;
+static constexpr unsigned SPINNER_AWARD_WITH_COLOR = 400;
+static constexpr unsigned PURPLE_SPINNER_AWARD = 1000;
+static constexpr unsigned STANDUP_TARGET_AWARD = 400;
+static constexpr unsigned RIGHT_OUTLANE_SPECIAL_AWARD = 5000;
+static constexpr unsigned MAXIMUM_BONUSES = 19;
+static constexpr unsigned BONUS_AWARD = 1000;
+static constexpr unsigned MAXIMUM_BONUS_AWARD = MAXIMUM_BONUSES * BONUS_AWARD;
+static constexpr unsigned LEFT_INLANE_AWARD = 2000;
+static constexpr unsigned RIGHT_INLANE_AWARD = 3000;
+static constexpr unsigned RIGHT_OUTLANE_AWARD = 5000;
+static constexpr unsigned ROLLOVER_AWARD = 100;
+static constexpr unsigned LOWER_SLINGSHOT_AWARD = 100;
+static constexpr unsigned UPPER_SLINGSHOT_AWARD = 1000;
+
+static constexpr unsigned INITIAL_BONUS_VALUE = 1000;
+static constexpr unsigned INITIAL_SAUCER_VALUE = 5000;
+static constexpr unsigned INITIAL_ROLLOVER_BONUS = 2000;
+
+/// Drop-target starting patterns for each multiplier level.
+/// true = target raised (up), false = knocked down.
+static constexpr uint8_t TWO_TARGETS_UP   = 0x0A;  // 01010 < 2X: targets 2 & 4 up.
+static constexpr uint8_t THREE_TARGETS_UP = 0x15;  // 10101 < 3X: targets 1, 3 & 5 up.
+static constexpr uint8_t FOUR_TARGETS_UP  = 0x1B;  // 11011 < 4X: targets 1, 2, 4 & 5 up.
+static constexpr uint8_t FIVE_TARGETS_UP  = 0x1F;  // 11111 < 5X: all targets up.
+
 TridentGame::TridentGame() {}
 
 // ===========================================================================
@@ -89,7 +117,6 @@ TopState TridentGame::update(unsigned long currentTime) {
 
          case SW_SELF_TEST_SWITCH:
             returnState = -1;
-            machine_->setSelfTestChangedTime(CurrentTime);
             break;
 
          case SW_CREDIT_RESET:

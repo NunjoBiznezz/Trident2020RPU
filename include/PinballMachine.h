@@ -203,16 +203,6 @@ public:
    void acknowledgeResetScores();
 
    // -----------------------------------------------------------------------
-   // Self-test interlock
-   //
-   // Shared timestamp so any mode can enforce the debounce window between
-   // successive self-test switch activations.
-   // -----------------------------------------------------------------------
-
-   unsigned long getSelfTestChangedTime()                { return selfTestChangedTime_; }
-   void          setSelfTestChangedTime(unsigned long t) { selfTestChangedTime_ = t; }
-
-   // -----------------------------------------------------------------------
    // Miscellaneous
    // -----------------------------------------------------------------------
 
@@ -274,7 +264,6 @@ private:
    unsigned long nextSoundEffectTime_    = 0;
    uint8_t       rolloverValue_          = 2;
    unsigned long currentTime_            = 0;
-   unsigned long selfTestChangedTime_    = 0;
 
    // Per-display scroll state for values above RPU_OS_MAX_DISPLAY_SCORE.
    unsigned long displayValue_[4]        = {};

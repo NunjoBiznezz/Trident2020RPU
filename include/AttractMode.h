@@ -20,7 +20,8 @@ class AttractMode : public MachineMode {
    unsigned long    lastAnimFrameTime_ = 0;
    unsigned long    savedScores_[4]    = {};
    uint8_t          savedNumPlayers_   = 0;
-   unsigned long    enterTime_         = 0;
+   unsigned long    enterTime_               = 0;
+   unsigned long    selfTestLastPressedTime_ = 0;
 
    PinballMachine*  machine_  = nullptr;
 

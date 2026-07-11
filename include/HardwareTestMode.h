@@ -23,8 +23,9 @@ class HardwareTestMode : public MachineMode {
 
    PinballMachine* machine_ = nullptr;
 
-   unsigned long lastSolTestTime_ = 0;
-   unsigned long lastResetPress_  = 0;
+   unsigned long lastSolTestTime_       = 0;
+   unsigned long lastResetPress_        = 0;
+   unsigned long selfTestLastPressedTime_ = 0;
    uint8_t       solenoidIndex_   = 0;
    uint8_t       curValue_        = 0;
    uint8_t       soundPlaying_    = 0;

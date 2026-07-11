@@ -163,8 +163,8 @@ TopState AttractMode::update(unsigned long currentTime) {
          machine_->addCredit(true, 1);
       }
       if (switchHit == SW_SELF_TEST_SWITCH &&
-          (currentTime - machine_->getSelfTestChangedTime()) > 250) {
-         machine_->setSelfTestChangedTime(currentTime);
+          (currentTime - selfTestLastPressedTime_) > 250) {
+         selfTestLastPressedTime_ = currentTime;
          return TopState::HardwareTest;
       }
    }

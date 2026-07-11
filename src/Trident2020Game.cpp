@@ -113,7 +113,6 @@ TopState Trident2020Game::update(unsigned long currentTime) {
 
          case SW_SELF_TEST_SWITCH:
             returnState = -1; // any negative; detected as hardware-test exit
-            machine_->setSelfTestChangedTime(CurrentTime);
             break;
 
          case SW_LEFT_INLANE:
@@ -403,7 +402,6 @@ TopState Trident2020Game::update(unsigned long currentTime) {
          switch (switchHit) {
          case SW_SELF_TEST_SWITCH:
             returnState = -1; // any negative; detected as hardware-test exit
-            machine_->setSelfTestChangedTime(CurrentTime);
             break;
          case SW_SAUCER:
             machine_->pushToSolenoidStack(SOL_SAUCER, 5, true);

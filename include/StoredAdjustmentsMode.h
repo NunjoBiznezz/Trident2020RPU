@@ -53,6 +53,7 @@ class StoredAdjustmentsMode : public MachineMode {
    unsigned long nextSpeedyValueChange_ = 0;
    unsigned long numSpeedyChanges_      = 0;
    unsigned long lastResetPress_        = 0;
+   unsigned long selfTestLastPressedTime_ = 0;
 
 public:
    void setDependencies(PinballMachine& machine) {

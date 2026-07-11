@@ -61,6 +61,7 @@ class Trident2020AdjustmentsMode : public MachineMode {
    uint8_t        currentAdjustmentStorageByte_ = 0;
    uint8_t        tempValue_                   = 0;
    unsigned long  soundSettingTimeout_         = 0;
+   unsigned long  selfTestLastPressedTime_     = 0;
 
 public:
    void setDependencies(Trident2020Game& game, PinballMachine& machine) {

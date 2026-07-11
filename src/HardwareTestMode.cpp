@@ -20,10 +20,11 @@ constexpr uint8_t kTotalDisplayDigits = 30;
 // Callout index 0 = test 1 (LAMPS) … index 4 = test 5 (SOUNDS).
 static const uint8_t kHardwareTestCalloutMap[5] = { 136, 137, 135, 134, 133 };
 
-void HardwareTestMode::enter(unsigned long /*currentTime*/) {
-   internalState_ = kTestLamps;
-   stateChanged_  = true;
-   soundPlaying_  = 0;
+void HardwareTestMode::enter(unsigned long currentTime) {
+   internalState_           = kTestLamps;
+   stateChanged_            = true;
+   soundPlaying_            = 0;
+   selfTestLastPressedTime_ = currentTime;
 }
 
 void HardwareTestMode::exit() {}
@@ -50,13 +51,13 @@ TopState HardwareTestMode::update(unsigned long currentTime) {
    }
 
    if (curSwitch == SW_SELF_TEST_SWITCH &&
-       (currentTime - machine_->getSelfTestChangedTime()) > 250) {
+       (currentTime - selfTestLastPressedTime_) > 250) {
       if (machine_->getUpDownSwitchState()) {
          returnState += 1;
       } else {
          returnState -= 1;
       }
-      machine_->setSelfTestChangedTime(currentTime);
+      selfTestLastPressedTime_ = currentTime;
    }
 
    if (curStateChanged) {
@@ -174,7 +175,7 @@ TopState HardwareTestMode::update(unsigned long currentTime) {
       }
    } else if (curState == kTestSounds) {
 #if defined(RPU_OS_USE_SB100)
-      uint8_t soundToPlay = 0x01 << (((currentTime - machine_->getSelfTestChangedTime()) / 750) % 8);
+      uint8_t soundToPlay = 0x01 << (((currentTime - selfTestLastPressedTime_) / 750) % 8);
       if (soundPlaying_ != soundToPlay) {
          machine_->playSoundCardEffect(soundToPlay);
          soundPlaying_    = soundToPlay;
@@ -182,7 +183,7 @@ TopState HardwareTestMode::update(unsigned long currentTime) {
          lastSolTestTime_ = currentTime;
       }
 #elif defined(RPU_OS_USE_S_AND_T)
-      uint8_t soundToPlay = ((currentTime - machine_->getSelfTestChangedTime()) / 2000) % 256;
+      uint8_t soundToPlay = ((currentTime - selfTestLastPressedTime_) / 2000) % 256;
       if (soundPlaying_ != soundToPlay) {
          machine_->playSoundCardEffect(soundToPlay);
          soundPlaying_    = soundToPlay;
@@ -190,7 +191,7 @@ TopState HardwareTestMode::update(unsigned long currentTime) {
          lastSolTestTime_ = currentTime;
       }
 #elif defined(RPU_OS_USE_DASH51)
-      uint8_t soundToPlay = ((currentTime - machine_->getSelfTestChangedTime()) / 2000) % 32;
+      uint8_t soundToPlay = ((currentTime - selfTestLastPressedTime_) / 2000) % 32;
       if (soundPlaying_ != soundToPlay) {
          if (soundToPlay == 17) soundToPlay = 0;
          machine_->playSoundCardEffect(soundToPlay);

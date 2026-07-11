@@ -46,10 +46,9 @@ TopState Trident2020AdjustmentsMode::update(unsigned long currentTime) {
 
    uint8_t curSwitch = machine_->pullFirstFromSwitchStack();
 
-   // This isn't working well, needs better de-bounce
    if (curSwitch == SW_SELF_TEST_SWITCH &&
-       (currentTime - machine_->getSelfTestChangedTime()) > 250) {
-      machine_->setSelfTestChangedTime(currentTime);
+       (currentTime - selfTestLastPressedTime_) > 250) {
+      selfTestLastPressedTime_ = currentTime;
       returnState += 1;
    }
 
