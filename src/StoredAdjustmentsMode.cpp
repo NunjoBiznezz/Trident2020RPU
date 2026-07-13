@@ -34,12 +34,12 @@ static ScoreAdjustment   sScoreLevel2  { kEeScoreLevel2  };
 static ScoreAdjustment   sScoreLevel3  { kEeScoreLevel3  };
 static ScoreAdjustment   sHighScore    { kEeHighScore     };
 static IntRangeAdjustment<uint8_t, 1, 0, 99> sCredits { kEeCredits };
-static AuditAdjustment   sTotalPlays   { kEeTotalPlays    };
-static AuditAdjustment   sTotalReplays { kEeTotalReplays  };
-static AuditAdjustment   sHiscrBeat    { kEeHiscrBeat     };
-static AuditAdjustment   sChute2Coins  { kEeChute2Coins   };
-static AuditAdjustment   sChute1Coins  { kEeChute1Coins   };
-static AuditAdjustment   sChute3Coins  { kEeChute3Coins   };
+static AuditAdjustment<uint32_t>   sTotalPlays   { kEeTotalPlays    };
+static AuditAdjustment<uint32_t>   sTotalReplays { kEeTotalReplays  };
+static AuditAdjustment<uint32_t>   sHiscrBeat    { kEeHiscrBeat     };
+static AuditAdjustment<uint32_t>   sChute2Coins  { kEeChute2Coins   };
+static AuditAdjustment<uint32_t>   sChute1Coins  { kEeChute1Coins   };
+static AuditAdjustment<uint32_t>   sChute3Coins  { kEeChute3Coins   };
 static BootAdjustment    sBoot;
 
 struct AdjEntry {

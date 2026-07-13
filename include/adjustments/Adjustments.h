@@ -46,15 +46,15 @@ public:
 // Concrete adjustment types
 // ---------------------------------------------------------------------------
 
-// Unsigned-long score stored in EEPROM.  Press adds 1000; double-click
-// resets to 0; hold auto-increments with acceleration.  EEPROM writes are
-// deferred during hold and flushed on release.
+// 32-bit score stored in EEPROM.  Press adds 1000; double-click resets to 0;
+// hold auto-increments with acceleration.  EEPROM writes are deferred during
+// hold and flushed on release.
 class ScoreAdjustment : public StoredAdjustment {
-   int           addr_;
-   unsigned long value_            = 0;
-   unsigned long nextSpeedyChange_ = 0;
-   unsigned long numSpeedyChanges_ = 0;
-   bool          pendingWrite_     = false;
+   int      addr_;
+   uint32_t value_            = 0;
+   uint32_t nextSpeedyChange_ = 0;
+   uint8_t  numSpeedyChanges_ = 0;
+   bool     pendingWrite_     = false;
 
 public:
    explicit ScoreAdjustment(int addr) : addr_(addr) {}
@@ -81,9 +81,11 @@ public:
 
 // Read-only audit counter stored in EEPROM.  Single press is a no-op;
 // double-click resets the counter to zero.
+// T controls the EEPROM storage width (uint8_t, uint16_t, unsigned long, …).
+template<typename T>
 class AuditAdjustment : public StoredAdjustment {
-   int           addr_;
-   unsigned long value_ = 0;
+   int addr_;
+   T   value_ = 0;
 
 public:
    explicit AuditAdjustment(int addr) : addr_(addr) {}

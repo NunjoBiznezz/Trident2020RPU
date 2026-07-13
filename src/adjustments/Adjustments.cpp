@@ -7,22 +7,12 @@
 #include "Trident2020.h"
 #include <EEPROM.h>
 
-static unsigned long readUL(int addr) {
-   unsigned long val = 0;
-   EEPROM.get(addr, val);
-   return val;
-}
-
-static void writeUL(int addr, unsigned long val) {
-   EEPROM.put(addr, val);
-}
-
 // ---------------------------------------------------------------------------
 // ScoreAdjustment
 // ---------------------------------------------------------------------------
 
 void ScoreAdjustment::onEnter(PinballMachine& machine) {
-   value_            = readUL(addr_);
+   EEPROM.get(addr_, value_);
    nextSpeedyChange_ = 0;
    numSpeedyChanges_ = 0;
    pendingWrite_     = false;
@@ -30,16 +20,12 @@ void ScoreAdjustment::onEnter(PinballMachine& machine) {
 }
 
 void ScoreAdjustment::onPress(PinballMachine& machine, bool doubleClick) {
-   if (doubleClick) {
-      value_ = 0;
-   } else {
-      value_ += 1000;
-   }
-   machine.setDisplay(0, value_, true);
-   writeUL(addr_, value_);
+   value_            = doubleClick ? 0 : value_ + 1000;
    nextSpeedyChange_ = 0;
    numSpeedyChanges_ = 0;
    pendingWrite_     = false;
+   machine.setDisplay(0, value_, true);
+   EEPROM.put(addr_, value_);
 }
 
 void ScoreAdjustment::onHeld(PinballMachine& machine, unsigned long currentTime) {
@@ -64,7 +50,7 @@ void ScoreAdjustment::onHeld(PinballMachine& machine, unsigned long currentTime)
 
 void ScoreAdjustment::onHeldReleased(PinballMachine& /*machine*/) {
    if (pendingWrite_) {
-      writeUL(addr_, value_);
+      EEPROM.put(addr_, value_);
       pendingWrite_ = false;
    }
    nextSpeedyChange_ = 0;
@@ -97,19 +83,23 @@ template class IntRangeAdjustment<uint8_t, 1, 0, 99>;
 // AuditAdjustment
 // ---------------------------------------------------------------------------
 
-void AuditAdjustment::onEnter(PinballMachine& machine) {
-   value_ = readUL(addr_);
-   machine.setDisplay(0, value_, true);
+template<typename T>
+void AuditAdjustment<T>::onEnter(PinballMachine& machine) {
+   EEPROM.get(addr_, value_);
+   machine.setDisplay(0, (unsigned long)value_, true);
 }
 
-void AuditAdjustment::onPress(PinballMachine& machine, bool doubleClick) {
+template<typename T>
+void AuditAdjustment<T>::onPress(PinballMachine& machine, bool doubleClick) {
    if (!doubleClick) {
       return;
    }
    value_ = 0;
-   machine.setDisplay(0, value_, true);
-   writeUL(addr_, value_);
+   machine.setDisplay(0, 0, true);
+   EEPROM.put(addr_, value_);
 }
+
+template class AuditAdjustment<uint32_t>;
 
 // ---------------------------------------------------------------------------
 // BootAdjustment
