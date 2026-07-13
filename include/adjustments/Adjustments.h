@@ -64,14 +64,17 @@ public:
    void onHeldReleased(PinballMachine& machine) override;
 };
 
-// Byte credit count stored in EEPROM.  Press increments 0–99 and wraps.
-// Both single press and double-click increment (no reset-to-zero behaviour).
-class CreditsAdjustment : public StoredAdjustment {
-   int     addr_;
-   uint8_t value_ = 0;
+// Wrapping integer counter stored in EEPROM.  Each press increments value_
+// by STEP; when the result exceeds MAX it wraps back to MIN.  Both single
+// press and double-click increment (no reset-to-zero behaviour).
+// T may be any integer type supported by EEPROM.get()/put().
+template<typename T, T STEP, T MIN, T MAX>
+class IntRangeAdjustment : public StoredAdjustment {
+   int addr_;
+   T   value_ = MIN;
 
 public:
-   explicit CreditsAdjustment(int addr) : addr_(addr) {}
+   explicit IntRangeAdjustment(int addr) : addr_(addr) {}
    void onEnter(PinballMachine& machine) override;
    void onPress(PinballMachine& machine, bool doubleClick) override;
 };

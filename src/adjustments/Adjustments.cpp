@@ -72,22 +72,26 @@ void ScoreAdjustment::onHeldReleased(PinballMachine& /*machine*/) {
 }
 
 // ---------------------------------------------------------------------------
-// CreditsAdjustment
+// IntRangeAdjustment
 // ---------------------------------------------------------------------------
 
-void CreditsAdjustment::onEnter(PinballMachine& machine) {
-   value_ = EEPROM.read(addr_);
+template<typename T, T STEP, T MIN, T MAX>
+void IntRangeAdjustment<T, STEP, MIN, MAX>::onEnter(PinballMachine& machine) {
+   EEPROM.get(addr_, value_);
    machine.setDisplay(0, (unsigned long)value_, true);
 }
 
-void CreditsAdjustment::onPress(PinballMachine& machine, bool /*doubleClick*/) {
-   value_++;
-   if (value_ > 99) {
-      value_ = 0;
+template<typename T, T STEP, T MIN, T MAX>
+void IntRangeAdjustment<T, STEP, MIN, MAX>::onPress(PinballMachine& machine, bool /*doubleClick*/) {
+   value_ += STEP;
+   if (value_ > MAX) {
+      value_ = MIN;
    }
    machine.setDisplay(0, (unsigned long)value_, true);
-   EEPROM.write(addr_, value_);
+   EEPROM.put(addr_, value_);
 }
+
+template class IntRangeAdjustment<uint8_t, 1, 0, 99>;
 
 // ---------------------------------------------------------------------------
 // AuditAdjustment

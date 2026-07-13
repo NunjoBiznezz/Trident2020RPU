@@ -33,7 +33,7 @@ static ScoreAdjustment   sScoreLevel1  { kEeScoreLevel1  };
 static ScoreAdjustment   sScoreLevel2  { kEeScoreLevel2  };
 static ScoreAdjustment   sScoreLevel3  { kEeScoreLevel3  };
 static ScoreAdjustment   sHighScore    { kEeHighScore     };
-static CreditsAdjustment sCredits      { kEeCredits       };
+static IntRangeAdjustment<uint8_t, 1, 0, 99> sCredits { kEeCredits };
 static AuditAdjustment   sTotalPlays   { kEeTotalPlays    };
 static AuditAdjustment   sTotalReplays { kEeTotalReplays  };
 static AuditAdjustment   sHiscrBeat    { kEeHiscrBeat     };
