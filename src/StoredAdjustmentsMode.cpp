@@ -9,21 +9,8 @@
 #include "adjustments/Adjustments.h"
 
 // ---------------------------------------------------------------------------
-// Setting indices and EEPROM addresses
+// EEPROM addresses (148–185, after game-settings block ending at 147)
 // ---------------------------------------------------------------------------
-
-static constexpr uint8_t kSaScoreLevel1  =  1;
-static constexpr uint8_t kSaScoreLevel2  =  2;
-static constexpr uint8_t kSaScoreLevel3  =  3;
-static constexpr uint8_t kSaHighScore    =  4;
-static constexpr uint8_t kSaCredits      =  5;
-static constexpr uint8_t kSaTotalPlays   =  6;
-static constexpr uint8_t kSaTotalReplays =  7;
-static constexpr uint8_t kSaHiscrBeat    =  8;
-static constexpr uint8_t kSaChute2Coins  =  9;
-static constexpr uint8_t kSaChute1Coins  = 10;
-static constexpr uint8_t kSaChute3Coins  = 11;
-static constexpr uint8_t kSaBoot         = 12;
 
 static constexpr int kEeScoreLevel1  = 148;   // unsigned long (4 bytes)
 static constexpr int kEeScoreLevel2  = 152;   // unsigned long (4 bytes)
@@ -37,13 +24,9 @@ static constexpr int kEeChute2Coins  = 177;   // unsigned long (4 bytes)
 static constexpr int kEeChute1Coins  = 181;   // unsigned long (4 bytes)
 static constexpr int kEeChute3Coins  = 185;   // unsigned long (4 bytes)
 
-// Callout index 0 = setting 1 (score level 1) … index 11 = setting 12 (boot).
-static const uint8_t kStoredAdjCalloutMap[kSaBoot] = {
-   140, 141, 142, 139, 143, 144, 145, 146, 147, 148, 149, 138
-};
-
 // ---------------------------------------------------------------------------
-// Adjustment objects and dispatch table
+// Adjustment objects — heterogeneous types require separate named variables;
+// the dispatch table below binds each one to its entry callout index.
 // ---------------------------------------------------------------------------
 
 static ScoreAdjustment   sScoreLevel1  { kEeScoreLevel1  };
@@ -53,26 +36,40 @@ static ScoreAdjustment   sHighScore    { kEeHighScore     };
 static CreditsAdjustment sCredits      { kEeCredits       };
 static AuditAdjustment   sTotalPlays   { kEeTotalPlays    };
 static AuditAdjustment   sTotalReplays { kEeTotalReplays  };
-static AuditAdjustment   sHiscrBeat   { kEeHiscrBeat     };
-static AuditAdjustment   sChute2Coins { kEeChute2Coins   };
-static AuditAdjustment   sChute1Coins { kEeChute1Coins   };
-static AuditAdjustment   sChute3Coins { kEeChute3Coins   };
+static AuditAdjustment   sHiscrBeat    { kEeHiscrBeat     };
+static AuditAdjustment   sChute2Coins  { kEeChute2Coins   };
+static AuditAdjustment   sChute1Coins  { kEeChute1Coins   };
+static AuditAdjustment   sChute3Coins  { kEeChute3Coins   };
 static BootAdjustment    sBoot;
 
-static StoredAdjustment* sAdjustments[kSaBoot] = {
-   &sScoreLevel1, &sScoreLevel2, &sScoreLevel3, &sHighScore,
-   &sCredits,
-   &sTotalPlays, &sTotalReplays, &sHiscrBeat,
-   &sChute2Coins, &sChute1Coins, &sChute3Coins,
-   &sBoot
+struct AdjEntry {
+   StoredAdjustment* adj;
+   uint8_t           callout;
 };
+
+static AdjEntry kAdjustments[] = {
+   { &sScoreLevel1,  140 },
+   { &sScoreLevel2,  141 },
+   { &sScoreLevel3,  142 },
+   { &sHighScore,    139 },
+   { &sCredits,      143 },
+   { &sTotalPlays,   144 },
+   { &sTotalReplays, 145 },
+   { &sHiscrBeat,    146 },
+   { &sChute2Coins,  147 },
+   { &sChute1Coins,  148 },
+   { &sChute3Coins,  149 },
+   { &sBoot,         138 },
+};
+
+static constexpr uint8_t kNumAdjustments = sizeof(kAdjustments) / sizeof(kAdjustments[0]);
 
 // ---------------------------------------------------------------------------
 // StoredAdjustmentsMode
 // ---------------------------------------------------------------------------
 
 void StoredAdjustmentsMode::enter(unsigned long /*currentTime*/) {
-   internalState_ = kSaScoreLevel1;
+   internalState_ = 1;
    stateChanged_  = true;
 }
 
@@ -96,11 +93,11 @@ TopState StoredAdjustmentsMode::update(unsigned long currentTime) {
       lastResetPress_ = currentTime;
    }
 
-   StoredAdjustment* adj = sAdjustments[curState - 1];
+   AdjEntry& entry = kAdjustments[curState - 1];
 
    if (resetHold_ != 0 && !machine_->readSingleSwitchState(SW_CREDIT_RESET)) {
       resetHold_ = 0;
-      adj->onHeldReleased(*machine_);
+      entry.adj->onHeldReleased(*machine_);
    }
 
    bool resetBeingHeld = (resetHold_ != 0 && (currentTime - resetHold_) > 1300);
@@ -117,7 +114,7 @@ TopState StoredAdjustmentsMode::update(unsigned long currentTime) {
 
    // 0 is reserved for "exit to Attract" (e.g. from Boot); wrap back to start.
    if (returnState == 0 && curState != 0) {
-      returnState = kSaScoreLevel1;
+      returnState = 1;
    }
 
    if (curStateChanged) {
@@ -129,23 +126,23 @@ TopState StoredAdjustmentsMode::update(unsigned long currentTime) {
       machine_->setDisplayCredits(0, false);
       machine_->setDisplayBallInPlay(curState);
       machine_->stopAllAudio();
-      machine_->playCallout(kStoredAdjCalloutMap[curState - 1]);
-      adj->onEnter(*machine_);
+      machine_->playCallout(entry.callout);
+      entry.adj->onEnter(*machine_);
    }
 
    if (curSwitch == SW_CREDIT_RESET || resetDoubleClick) {
-      if (adj->exitsOnPress()) {
+      if (entry.adj->exitsOnPress()) {
          returnState = 0;
       } else {
-         adj->onPress(*machine_, resetDoubleClick);
+         entry.adj->onPress(*machine_, resetDoubleClick);
       }
    }
 
    if (resetBeingHeld) {
-      adj->onHeld(*machine_, currentTime);
+      entry.adj->onHeld(*machine_, currentTime);
    }
 
-   adj->onTick(*machine_, currentTime);
+   entry.adj->onTick(*machine_, currentTime);
 
    if (returnState != internalState_) {
       internalState_ = returnState;
@@ -155,7 +152,7 @@ TopState StoredAdjustmentsMode::update(unsigned long currentTime) {
    if (internalState_ == 0) {
       return TopState::Attract;
    }
-   if (internalState_ > kSaBoot) {
+   if (internalState_ > kNumAdjustments) {
       return TopState::Adjustments;
    }
    return TopState::StoredAdjustments;
