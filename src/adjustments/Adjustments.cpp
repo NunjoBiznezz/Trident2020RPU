@@ -120,3 +120,98 @@ void BootAdjustment::onTick(PinballMachine& machine, unsigned long currentTime) 
 #endif
    }
 }
+
+// ---------------------------------------------------------------------------
+// MinMaxByteAdjustment
+// ---------------------------------------------------------------------------
+
+void MinMaxByteAdjustment::init(uint8_t* field, int eeprom, uint8_t min, uint8_t max) {
+   field_ = field;
+   eeprom_ = eeprom;
+   min_ = min;
+   max_ = max;
+}
+
+void MinMaxByteAdjustment::onEnter(PinballMachine& machine) {
+   machine.setDisplay(0, (unsigned long)*field_, true);
+}
+
+void MinMaxByteAdjustment::onPress(PinballMachine& machine, bool /*doubleClick*/) {
+   uint8_t val = *field_ + 1;
+   if (val > max_) val = min_;
+   *field_ = val;
+   EEPROM.write(eeprom_, val);
+   machine.setDisplay(0, (unsigned long)val, true);
+}
+
+// ---------------------------------------------------------------------------
+// MinMaxDefaultByteAdjustment
+// ---------------------------------------------------------------------------
+
+void MinMaxDefaultByteAdjustment::init(uint8_t* field, int eeprom, uint8_t min, uint8_t max) {
+   field_ = field;
+   eeprom_ = eeprom;
+   min_ = min;
+   max_ = max;
+}
+
+void MinMaxDefaultByteAdjustment::onEnter(PinballMachine& machine) {
+   machine.setDisplay(0, (unsigned long)*field_, true);
+}
+
+void MinMaxDefaultByteAdjustment::onPress(PinballMachine& machine, bool /*doubleClick*/) {
+   uint8_t val = *field_ + 1;
+   if (val > max_) {
+      val = (val > 99) ? min_ : 99;
+   }
+   *field_ = val;
+   EEPROM.write(eeprom_, val);
+   machine.setDisplay(0, (unsigned long)val, true);
+}
+
+// ---------------------------------------------------------------------------
+// ListByteAdjustment
+// ---------------------------------------------------------------------------
+
+void ListByteAdjustment::init(uint8_t* field, int eeprom, const uint8_t* values, uint8_t count) {
+   field_ = field;
+   eeprom_ = eeprom;
+   values_ = values;
+   count_ = count;
+}
+
+void ListByteAdjustment::onEnter(PinballMachine& machine) {
+   machine.setDisplay(0, (unsigned long)*field_, true);
+}
+
+void ListByteAdjustment::onPress(PinballMachine& machine, bool /*doubleClick*/) {
+   uint8_t cur      = *field_;
+   uint8_t newIndex = 0;
+   for (uint8_t i = 0; i < count_ - 1; i++) {
+      if (cur == values_[i]) newIndex = i + 1;
+   }
+   *field_ = values_[newIndex];
+   EEPROM.write(eeprom_, values_[newIndex]);
+   machine.setDisplay(0, (unsigned long)values_[newIndex], true);
+}
+
+// ---------------------------------------------------------------------------
+// ScoreULAdjustment
+// ---------------------------------------------------------------------------
+
+void ScoreULAdjustment::init(unsigned long* field, int eeprom) {
+   field_ = field;
+   eeprom_ = eeprom;
+}
+
+void ScoreULAdjustment::onEnter(PinballMachine& machine) {
+   machine.setDisplay(0, *field_, true);
+}
+
+void ScoreULAdjustment::onPress(PinballMachine& machine, bool /*doubleClick*/) {
+   unsigned long val = *field_ + 5000;
+   if (val > 100000) val = 0;
+   *field_ = val;
+   EEPROM.put(eeprom_, val);
+   machine.setDisplay(0, val, true);
+}

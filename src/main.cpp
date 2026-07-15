@@ -70,13 +70,13 @@ static const BuildInfoRecord FIRMWARE_BUILD_INFO PROGMEM = {
 *********************************************************************/
 static unsigned long CurrentTime = 0;
 
-static PinballMachine         pinballMachine;
-static Trident2020Game        game;
-static HardwareTestMode       hardwareTestMode;
-static StoredAdjustmentsMode  storedAdjustmentsMode;
-static Trident2020AdjustmentsMode        adjustmentsMode;
-static MatchMode              matchMode;
-static AttractMode            attractMode;
+static PinballMachine               pinballMachine;
+static Trident2020Game              game;
+static HardwareTestMode             hardwareTestMode;
+static StoredAdjustmentsMode        storedAdjustmentsMode;
+static Trident2020AdjustmentsMode   t2020AdjustmentsMode;
+static MatchMode                    matchMode;
+static AttractMode                  attractMode;
 
 static TopState     topState   = TopState::Attract;
 static MachineMode* activeMode = &attractMode;
@@ -110,7 +110,7 @@ void setup() {
 
    hardwareTestMode.setDependencies(pinballMachine);
    storedAdjustmentsMode.setDependencies(pinballMachine);
-   adjustmentsMode.setDependencies(game, pinballMachine);
+   t2020AdjustmentsMode.setDependencies(game, pinballMachine);
    matchMode.setDependencies(pinballMachine);
    attractMode.setDependencies(pinballMachine);
 
@@ -132,7 +132,7 @@ void loop() {
       case TopState::HardwareTest:      activeMode = &hardwareTestMode;       break;
       case TopState::MachineEeprom:     activeMode = &storedAdjustmentsMode;  break;
       case TopState::StoredAdjustments: activeMode = &storedAdjustmentsMode;  break;
-      case TopState::Adjustments:       activeMode = &adjustmentsMode;        break;
+      case TopState::Adjustments:       activeMode = &t2020AdjustmentsMode;        break;
       case TopState::Attract:           activeMode = &attractMode;            break;
       case TopState::Match:             activeMode = &matchMode;              break;
       case TopState::Game:              activeMode = &game;                   break;

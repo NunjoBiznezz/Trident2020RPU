@@ -101,3 +101,55 @@ public:
    void onTick(PinballMachine& machine, unsigned long currentTime) override;
    bool exitsOnPress() const override { return true; }
 };
+
+// ---------------------------------------------------------------------------
+// Game-adjustment types (runtime parameters, two-phase init)
+// ---------------------------------------------------------------------------
+
+// Byte field that cycles 0 … MAX → MIN.  Call init() once before first use.
+class MinMaxByteAdjustment : public StoredAdjustment {
+   uint8_t* field_  = nullptr;
+   int      eeprom_ = 0;
+   uint8_t  min_    = 0;
+   uint8_t  max_    = 1;
+public:
+   void init(uint8_t* field, int eeprom, uint8_t min, uint8_t max);
+   void onEnter(PinballMachine& machine) override;
+   void onPress(PinballMachine& machine, bool doubleClick) override;
+};
+
+// Like MinMaxByteAdjustment but inserts 99 ("use default") between MAX and MIN.
+class MinMaxDefaultByteAdjustment : public StoredAdjustment {
+   uint8_t* field_  = nullptr;
+   int      eeprom_ = 0;
+   uint8_t  min_    = 0;
+   uint8_t  max_    = 7;
+public:
+   void init(uint8_t* field, int eeprom, uint8_t min, uint8_t max);
+   void onEnter(PinballMachine& machine) override;
+   void onPress(PinballMachine& machine, bool doubleClick) override;
+};
+
+// Byte field that cycles through a fixed list.  field_ and values_ are
+// protected so subclasses can add side effects (e.g. DimLevelAdjustment).
+class ListByteAdjustment : public StoredAdjustment {
+protected:
+   uint8_t*       field_  = nullptr;
+   int            eeprom_ = 0;
+   const uint8_t* values_ = nullptr;
+   uint8_t        count_  = 0;
+public:
+   void init(uint8_t* field, int eeprom, const uint8_t* values, uint8_t count);
+   void onEnter(PinballMachine& machine) override;
+   void onPress(PinballMachine& machine, bool doubleClick) override;
+};
+
+// 32-bit score value in EEPROM; each press adds 5000 and wraps after 100 000.
+class ScoreULAdjustment : public StoredAdjustment {
+   unsigned long* field_  = nullptr;
+   int            eeprom_ = 0;
+public:
+   void init(unsigned long* field, int eeprom);
+   void onEnter(PinballMachine& machine) override;
+   void onPress(PinballMachine& machine, bool doubleClick) override;
+};
