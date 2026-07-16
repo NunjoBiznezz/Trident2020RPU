@@ -84,9 +84,14 @@ template class IntRangeAdjustment<uint8_t, 1, 0, 99>;
 // ---------------------------------------------------------------------------
 
 template<typename T>
+void AuditAdjustment<T>::init(T* field, int eeprom) {
+   field_ = field;
+   eeprom_ = eeprom;
+}
+
+template<typename T>
 void AuditAdjustment<T>::onEnter(PinballMachine& machine) {
-   EEPROM.get(addr_, value_);
-   machine.setDisplay(0, (unsigned long)value_, true);
+   machine.setDisplay(0, (unsigned long)*field_, true);
 }
 
 template<typename T>
@@ -94,9 +99,9 @@ void AuditAdjustment<T>::onPress(PinballMachine& machine, bool doubleClick) {
    if (!doubleClick) {
       return;
    }
-   value_ = 0;
+   *field_ = 0;
    machine.setDisplay(0, 0, true);
-   EEPROM.put(addr_, value_);
+   EEPROM.put(eeprom_, *field_);
 }
 
 template class AuditAdjustment<uint32_t>;

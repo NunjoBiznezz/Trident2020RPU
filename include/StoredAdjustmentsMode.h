@@ -26,7 +26,7 @@ class StoredAdjustmentsMode : public MachineMode {
    unsigned long selfTestLastPressedTime_ = 0;
 
 public:
-   void setDependencies(PinballMachine& machine) { machine_ = &machine; }
+   void setDependencies(PinballMachine& machine);
 
    void     enter(unsigned long currentTime) override;
    void     exit() override;

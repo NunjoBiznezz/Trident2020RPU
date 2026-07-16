@@ -149,15 +149,4 @@ const struct PlayfieldAndCabinetSwitch TriggeredSwitches[NUM_SWITCHES_WITH_TRIGG
     {SW_LR_SLING,      SOL_LR_SLING,      4},
 };
 
-constexpr uint16_t RPU_CREDITS_EEPROM_BYTE = 5;
-constexpr uint16_t RPU_HIGHSCORE_EEPROM_START_BYTE = 1;
-constexpr uint16_t RPU_AWARD_SCORE_1_EEPROM_START_BYTE = 10;
-constexpr uint16_t RPU_AWARD_SCORE_2_EEPROM_START_BYTE = 14;
-constexpr uint16_t RPU_AWARD_SCORE_3_EEPROM_START_BYTE = 18;
-constexpr uint16_t RPU_TOTAL_PLAYS_EEPROM_START_BYTE = 26;
-constexpr uint16_t RPU_TOTAL_REPLAYS_EEPROM_START_BYTE = 30;
-constexpr uint16_t RPU_TOTAL_HISCORE_BEATEN_START_BYTE = 34;
-constexpr uint16_t RPU_CHUTE_2_COINS_START_BYTE = 38;
-constexpr uint16_t RPU_CHUTE_1_COINS_START_BYTE = 42;
-constexpr uint16_t RPU_CHUTE_3_COINS_START_BYTE = 46;
 

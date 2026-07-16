@@ -79,16 +79,16 @@ public:
    void onPress(PinballMachine& machine, bool doubleClick) override;
 };
 
-// Read-only audit counter stored in EEPROM.  Single press is a no-op;
-// double-click resets the counter to zero.
-// T controls the EEPROM storage width (uint8_t, uint16_t, unsigned long, …).
+// Read-only audit counter backed by a live MachineSettings field.
+// Single press is a no-op; double-click resets both the live field and EEPROM.
+// Call init() once (e.g. in setDependencies) before the adjustment is shown.
 template<typename T>
 class AuditAdjustment : public StoredAdjustment {
-   int addr_;
-   T   value_ = 0;
+   T*  field_  = nullptr;
+   int eeprom_ = 0;
 
 public:
-   explicit AuditAdjustment(int addr) : addr_(addr) {}
+   void init(T* field, int eeprom);
    void onEnter(PinballMachine& machine) override;
    void onPress(PinballMachine& machine, bool doubleClick) override;
 };

@@ -273,10 +273,10 @@ private:
    unsigned long lastGameScores_[4]  = {};
    uint8_t       lastGameNumPlayers_ = 0;
 
-   static const unsigned short kChuteAuditByte[3];
-
-   // Read a single byte from game EEPROM; write defaultValue if unset (0xFF).
-   static uint8_t readSetting(int addr, uint8_t defaultValue);
+   // Read a byte from game EEPROM; write defaultValue if unset (0xFF).
+   static uint8_t  readSetting(int addr, uint8_t defaultValue);
+   // Read a uint32_t from game EEPROM; write defaultValue if unset (0xFFFFFFFF).
+   static uint32_t readULSetting(int addr, uint32_t defaultValue = 0);
 
    // Map a coin switch number to a 0-based chute index.
    static uint8_t switchToChuteNum(uint8_t switchHit);

@@ -18,11 +18,6 @@
 // Static data
 // ---------------------------------------------------------------------------
 
-const unsigned short PinballMachine::kChuteAuditByte[3] = {
-    RPU_CHUTE_1_COINS_START_BYTE,
-    RPU_CHUTE_2_COINS_START_BYTE,
-    RPU_CHUTE_3_COINS_START_BYTE,
-};
 
 // ---------------------------------------------------------------------------
 // Private helpers
@@ -33,6 +28,16 @@ uint8_t PinballMachine::readSetting(int addr, uint8_t defaultValue) {
    if (value == 0xFF) {
       EEPROM.write(addr, defaultValue);
       return defaultValue;
+   }
+   return value;
+}
+
+uint32_t PinballMachine::readULSetting(int addr, uint32_t defaultValue) {
+   uint32_t value;
+   EEPROM.get(addr, value);
+   if (value == 0xFFFFFFFF) {
+      value = defaultValue;
+      EEPROM.put(addr, value);
    }
    return value;
 }
@@ -121,7 +126,7 @@ void PinballMachine::stopAllAudio() {
 
 void PinballMachine::readStoredParameters() {
    // --- Gameplay / operator settings ---
-   settings_.credits = RPU_ReadByteFromEEProm(RPU_CREDITS_EEPROM_BYTE);
+   settings_.credits = readSetting(EEPROM_CREDITS_BYTE, 0);
    if (settings_.credits > settings_.maximumCredits) {
       settings_.credits = settings_.maximumCredits;
    }
@@ -154,12 +159,12 @@ void PinballMachine::readStoredParameters() {
 
    settings_.scrollingScores = (readSetting(EEPROM_SCROLLING_SCORES_BYTE, 1)) != 0;
 
-   settings_.trident2020Awards.extraBallValue = RPU_ReadULFromEEProm(EEPROM_EXTRA_BALL_SCORE_BYTE);
+   settings_.trident2020Awards.extraBallValue = readULSetting(EEPROM_EXTRA_BALL_SCORE_BYTE);
    if ((settings_.trident2020Awards.extraBallValue % 1000) != 0 || settings_.trident2020Awards.extraBallValue > 100000) {
       settings_.trident2020Awards.extraBallValue = 20000;
    }
 
-   settings_.trident2020Awards.specialValue = RPU_ReadULFromEEProm(EEPROM_SPECIAL_SCORE_BYTE);
+   settings_.trident2020Awards.specialValue = readULSetting(EEPROM_SPECIAL_SCORE_BYTE);
    if ((settings_.trident2020Awards.specialValue % 1000) != 0 || settings_.trident2020Awards.specialValue > 100000) {
       settings_.trident2020Awards.specialValue = 40000;
    }
@@ -185,11 +190,11 @@ void PinballMachine::readStoredParameters() {
       settings_.trident2020Balance.standupSpecialLevel = 2;
    }
 
-   settings_.trident2020Awards.highScore = RPU_ReadULFromEEProm(RPU_HIGHSCORE_EEPROM_START_BYTE, 10000);
-   settings_.originalAwards.highScore   = RPU_ReadULFromEEProm(EEPROM_ORIGINAL_HIGHSCORE_BYTE, 10000);
-   settings_.trident2020Awards.awardScores[0] = RPU_ReadULFromEEProm(RPU_AWARD_SCORE_1_EEPROM_START_BYTE);
-   settings_.trident2020Awards.awardScores[1] = RPU_ReadULFromEEProm(RPU_AWARD_SCORE_2_EEPROM_START_BYTE);
-   settings_.trident2020Awards.awardScores[2] = RPU_ReadULFromEEProm(RPU_AWARD_SCORE_3_EEPROM_START_BYTE);
+   settings_.trident2020Awards.highScore      = readULSetting(EEPROM_HIGHSCORE_BYTE, 10000);
+   settings_.originalAwards.highScore         = readULSetting(EEPROM_ORIGINAL_HIGHSCORE_BYTE, 10000);
+   settings_.trident2020Awards.awardScores[0] = readULSetting(EEPROM_AWARD_SCORE_1_BYTE);
+   settings_.trident2020Awards.awardScores[1] = readULSetting(EEPROM_AWARD_SCORE_2_BYTE);
+   settings_.trident2020Awards.awardScores[2] = readULSetting(EEPROM_AWARD_SCORE_3_BYTE);
 
    // --- Audio settings ---
    settings_.soundSelector = readSetting(EEPROM_SOUND_SELECTOR_BYTE, 3);
@@ -225,6 +230,14 @@ void PinballMachine::readStoredParameters() {
    wavHandler_.setSoundFXVolume(settings_.sfxVolume);
    wavHandler_.setNotificationsVolume(settings_.calloutsVolume);
 #endif
+
+   // --- Audit counters and coin counts ---
+   settings_.totalPlays   = readULSetting(EEPROM_TOTAL_PLAYS_BYTE);
+   settings_.totalReplays = readULSetting(EEPROM_TOTAL_REPLAYS_BYTE);
+   settings_.hiscoreBeat  = readULSetting(EEPROM_HISCORE_BEAT_BYTE);
+   settings_.chute2Coins  = readULSetting(EEPROM_CHUTE_2_COINS_BYTE);
+   settings_.chute1Coins  = readULSetting(EEPROM_CHUTE_1_COINS_BYTE);
+   settings_.chute3Coins  = readULSetting(EEPROM_CHUTE_3_COINS_BYTE);
 
    this->haveSettings_ = true;
 }
@@ -379,28 +392,28 @@ void PinballMachine::decrementCredits() {
    if (settings_.credits > 0) {
       settings_.credits -= 1;
    }
-   RPU_WriteByteToEEProm(RPU_CREDITS_EEPROM_BYTE, settings_.credits);
+   EEPROM.write(EEPROM_CREDITS_BYTE, settings_.credits);
 }
 
 void PinballMachine::saveCredits() {
-   RPU_WriteByteToEEProm(RPU_CREDITS_EEPROM_BYTE, settings_.credits);
+   EEPROM.write(EEPROM_CREDITS_BYTE, settings_.credits);
 }
 
 void PinballMachine::recordGamePlayed() {
-   RPU_WriteULToEEProm(RPU_TOTAL_PLAYS_EEPROM_START_BYTE,
-                       RPU_ReadULFromEEProm(RPU_TOTAL_PLAYS_EEPROM_START_BYTE) + 1);
+   settings_.totalPlays += 1;
+   EEPROM.put(EEPROM_TOTAL_PLAYS_BYTE, settings_.totalPlays);
 }
 
 void PinballMachine::addReplayAudit(uint8_t count) {
-   RPU_WriteULToEEProm(RPU_TOTAL_REPLAYS_EEPROM_START_BYTE,
-                       RPU_ReadULFromEEProm(RPU_TOTAL_REPLAYS_EEPROM_START_BYTE) + count);
+   settings_.totalReplays += count;
+   EEPROM.put(EEPROM_TOTAL_REPLAYS_BYTE, settings_.totalReplays);
 }
 
 void PinballMachine::saveHighScore(unsigned long score) {
    settings_.trident2020Awards.highScore = score;
-   RPU_WriteULToEEProm(RPU_HIGHSCORE_EEPROM_START_BYTE, score);
-   RPU_WriteULToEEProm(RPU_TOTAL_HISCORE_BEATEN_START_BYTE,
-                       RPU_ReadULFromEEProm(RPU_TOTAL_HISCORE_BEATEN_START_BYTE) + 1);
+   EEPROM.put(EEPROM_HIGHSCORE_BYTE, (uint32_t)score);
+   settings_.hiscoreBeat += 1;
+   EEPROM.put(EEPROM_HISCORE_BEAT_BYTE, settings_.hiscoreBeat);
 }
 
 void PinballMachine::acknowledgeResetScores() {
@@ -590,7 +603,7 @@ void PinballMachine::addCredit(bool playSound, uint8_t numToAdd) {
       if (settings_.credits > settings_.maximumCredits) {
          settings_.credits = settings_.maximumCredits;
       }
-      RPU_WriteByteToEEProm(RPU_CREDITS_EEPROM_BYTE, settings_.credits);
+      EEPROM.write(EEPROM_CREDITS_BYTE, settings_.credits);
       if (playSound) {
          playSoundEffect(SOUND_EFFECT_ADD_CREDIT);
       }
@@ -605,15 +618,19 @@ void PinballMachine::addCredit(bool playSound, uint8_t numToAdd) {
 void PinballMachine::addSpecialCredit() {
    addCredit(false, 1);
    RPU_PushToTimedSolenoidStack(SOL_KNOCKER, 3, currentTime_, true);
-   RPU_WriteULToEEProm(RPU_TOTAL_REPLAYS_EEPROM_START_BYTE, RPU_ReadULFromEEProm(RPU_TOTAL_REPLAYS_EEPROM_START_BYTE) + 1);
+   addReplayAudit(1);
 }
 
 void PinballMachine::addCoinToAudit(uint8_t chuteNum) {
-   if (chuteNum > 2) {
-      return;
-   }
-   unsigned short coinAuditStartByte = kChuteAuditByte[chuteNum];
-   RPU_WriteULToEEProm(coinAuditStartByte, RPU_ReadULFromEEProm(coinAuditStartByte) + 1);
+   static const int kEeprom[3] = {
+      EEPROM_CHUTE_1_COINS_BYTE, EEPROM_CHUTE_2_COINS_BYTE, EEPROM_CHUTE_3_COINS_BYTE
+   };
+   uint32_t* const kField[3] = {
+      &settings_.chute1Coins, &settings_.chute2Coins, &settings_.chute3Coins
+   };
+   if (chuteNum > 2) return;
+   *kField[chuteNum] += 1;
+   EEPROM.put(kEeprom[chuteNum], *kField[chuteNum]);
 }
 
 bool PinballMachine::addCoin(uint8_t chuteNum) {

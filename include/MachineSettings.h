@@ -62,6 +62,16 @@ struct MachineSettings {
    uint8_t       sfxVolume                = 10;   // Sound-effects volume 0–10
    uint8_t       calloutsVolume           = 10;   // Voice callout volume 0–10
 
+   // --- Audit counters (incremented by game events; reset via service menu) ---
+   uint32_t      totalPlays   = 0;
+   uint32_t      totalReplays = 0;
+   uint32_t      hiscoreBeat  = 0;
+
+   // --- Coin chute counts ---
+   uint32_t      chute1Coins  = 0;
+   uint32_t      chute2Coins  = 0;
+   uint32_t      chute3Coins  = 0;
+
    // --- Transient flags (not EEPROM-backed) ---
    bool          resetScoresToClearVersion = false; // Game sets this to request a score-display clear on version change
 };
