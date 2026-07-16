@@ -224,11 +224,8 @@ public:
    bool             getMatchFeature() const  { return settings_.matchFeature; }
    MachineSettings& getSettings();
 
-   // All-time high score for the Trident 2020 rule set (RPU EEPROM slot 1).
-   unsigned long getHighScore() const         { return settings_.trident2020Awards.highScore; }
-
-   // All-time high score for the Original Trident rule set (game EEPROM block).
-   unsigned long getOriginalHighScore() const { return settings_.originalAwards.highScore; }
+   unsigned long getHighScore() const         { return settings_.trident2020Settings.highScore; }
+   unsigned long getOriginalHighScore() const { return settings_.tridentSettings.highScore; }
 
    // -----------------------------------------------------------------------
    // Last-game result — stored between games for attract mode display.

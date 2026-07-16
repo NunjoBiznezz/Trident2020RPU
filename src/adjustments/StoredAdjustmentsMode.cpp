@@ -141,7 +141,7 @@ TopState StoredAdjustmentsMode::update(unsigned long currentTime) {
       return TopState::Attract;
    }
    if (internalState_ > kNumAdjustments) {
-      return TopState::Adjustments;
+      return TopState::TridentAdjustments;
    }
    return TopState::StoredAdjustments;
 }

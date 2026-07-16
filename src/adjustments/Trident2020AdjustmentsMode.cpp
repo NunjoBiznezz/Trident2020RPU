@@ -114,20 +114,20 @@ void Trident2020AdjustmentsMode::setDependencies(Trident2020Game& game, PinballM
    sCalloutsVolume.init     (&s.calloutsVolume,                            EEPROM_CALLOUTS_VOLUME_BYTE,           0, 10);
    sTournamentScoring.init  ((uint8_t*)&s.tournamentScoring,              EEPROM_TOURNAMENT_SCORING_BYTE,        0, 1);
    sTiltWarnings.init       (&s.maxTiltWarnings,                           EEPROM_TILT_WARNING_BYTE,              0, 2);
-   sAwardOverride.init      (&s.trident2020Awards.scoreAwardReplay,        EEPROM_AWARD_OVERRIDE_BYTE,            0, 7);
-   sScoreLevel1.init        (&s.trident2020Awards.awardScores[0],          EEPROM_AWARD_SCORE_1_BYTE);
-   sScoreLevel2.init        (&s.trident2020Awards.awardScores[1],          EEPROM_AWARD_SCORE_2_BYTE);
-   sScoreLevel3.init        (&s.trident2020Awards.awardScores[2],          EEPROM_AWARD_SCORE_3_BYTE);
-   sHighScore.init          (&s.trident2020Awards.highScore,                EEPROM_HIGHSCORE_BYTE);
-   sHiscrBeat.init          (&s.hiscoreBeat,                                EEPROM_HISCORE_BEAT_BYTE);
+   sAwardOverride.init      (&s.trident2020Settings.scoreAwardReplay,        EEPROM_AWARD_OVERRIDE_BYTE,            0, 7);
+   sScoreLevel1.init        (&s.trident2020Settings.awardScores[0],          EEPROM_AWARD_SCORE_1_BYTE);
+   sScoreLevel2.init        (&s.trident2020Settings.awardScores[1],          EEPROM_AWARD_SCORE_2_BYTE);
+   sScoreLevel3.init        (&s.trident2020Settings.awardScores[2],          EEPROM_AWARD_SCORE_3_BYTE);
+   sHighScore.init          (&s.trident2020Settings.highScore,                EEPROM_HIGHSCORE_BYTE);
+   sHiscrBeat.init          (&s.trident2020Settings.hiscoreBeat,            EEPROM_HISCORE_BEAT_BYTE);
    sBallsOverride.init      (&s.ballsPerGame,                              EEPROM_BALLS_OVERRIDE_BYTE,            kBallsValues,      3);
    sScrollingScores.init    ((uint8_t*)&s.scrollingScores,                EEPROM_SCROLLING_SCORES_BYTE,          0, 1);
-   sExtraBallAward.init     (&s.trident2020Awards.extraBallValue,          EEPROM_EXTRA_BALL_SCORE_BYTE);
-   sSpecialAward.init       (&s.trident2020Awards.specialValue,            EEPROM_SPECIAL_SCORE_BYTE);
+   sExtraBallAward.init     (&s.trident2020Settings.extraBallValue,          EEPROM_EXTRA_BALL_SCORE_BYTE);
+   sSpecialAward.init       (&s.trident2020Settings.specialValue,            EEPROM_SPECIAL_SCORE_BYTE);
    sDimLevel.init           (&s.dimLevel,                                   EEPROM_DIM_LEVEL_BYTE,                 kDimLevelValues,   2);
-   sSharpShooterBonus.init  (&s.trident2020Balance.sharpShooterStartBonus, EEPROM_SHARP_SHOOTER_START_BONUS_BYTE, 1, 5);
-   sTargetSpecialBonus.init (&s.trident2020Balance.targetSpecialBonus,     EEPROM_TARGET_SPECIAL_BONUS_BYTE,      1, 5);
-   sStandupSpecialLevel.init(&s.trident2020Balance.standupSpecialLevel,    EEPROM_STANDUP_SPECIAL_LEVEL_BYTE,     1, 4);
+   sSharpShooterBonus.init  (&s.trident2020Settings.sharpShooterStartBonus, EEPROM_SHARP_SHOOTER_START_BONUS_BYTE, 1, 5);
+   sTargetSpecialBonus.init (&s.trident2020Settings.targetSpecialBonus,     EEPROM_TARGET_SPECIAL_BONUS_BYTE,      1, 5);
+   sStandupSpecialLevel.init(&s.trident2020Settings.standupSpecialLevel,    EEPROM_STANDUP_SPECIAL_LEVEL_BYTE,     1, 4);
 }
 
 void Trident2020AdjustmentsMode::enter(unsigned long /*currentTime*/) {

@@ -14,20 +14,27 @@ enum class RuleSet : uint8_t {
    Trident2020 = 1,
 };
 
-// Score thresholds and award values — differ between rule sets.
-struct ScoreAndAwardSettings {
-   unsigned long highScore        = 0;  // Per-ruleset all-time high score
-   unsigned long awardScores[3]  = {};  // Score thresholds for the three replay/extra-ball awards
-   unsigned long extraBallValue  = 0;   // Points awarded for an extra ball in tournament mode
-   unsigned long specialValue    = 0;   // Points awarded for a special in tournament mode
-   uint8_t       scoreAwardReplay = 0;  // Bitmask: bit N set → awardScores[N] gives a replay; clear → extra ball
+// Original Trident rule-specific settings: scores, awards, and audit.
+struct TridentGameSettings {
+   unsigned long highScore        = 0;
+   unsigned long awardScores[3]   = {};
+   unsigned long extraBallValue   = 0;
+   unsigned long specialValue     = 0;
+   uint8_t       scoreAwardReplay = 0;
+   uint32_t      hiscoreBeat      = 0;
 };
 
-// Trident 2020 rule-specific game balance tuning.
-struct Trident2020BalanceSettings {
-   uint8_t sharpShooterStartBonus = 3;  // Bonus multiplier at which Sharp Shooter mini-game qualifies
-   uint8_t targetSpecialBonus     = 4;  // Bonus multiplier that lights the drop-target special
-   uint8_t standupSpecialLevel    = 2;  // Standup-bank clear count that lights the right-outlane special
+// Trident 2020 rule-specific settings: scores, awards, audit, and game balance.
+struct Trident2020GameSettings {
+   unsigned long highScore        = 0;
+   unsigned long awardScores[3]   = {};
+   unsigned long extraBallValue   = 0;
+   unsigned long specialValue     = 0;
+   uint8_t       scoreAwardReplay = 0;
+   uint32_t      hiscoreBeat      = 0;
+   uint8_t sharpShooterStartBonus = 3;
+   uint8_t targetSpecialBonus     = 4;
+   uint8_t standupSpecialLevel    = 2;
 };
 
 struct MachineSettings {
@@ -46,12 +53,9 @@ struct MachineSettings {
    // --- Rule set selection ---
    RuleSet       activeRuleSet            = RuleSet::Trident2020;
 
-   // --- Per-ruleset: scores and awards ---
-   ScoreAndAwardSettings originalAwards;            // Score/award settings for Original Trident rules
-   ScoreAndAwardSettings trident2020Awards;         // Score/award settings for Trident 2020 rules
-
-   // --- Trident 2020 specific game balance ---
-   Trident2020BalanceSettings trident2020Balance;
+   // --- Per-ruleset: scores, awards, audit, and game balance ---
+   TridentGameSettings     tridentSettings;
+   Trident2020GameSettings trident2020Settings;
 
    // --- Display ---
    uint8_t       dimLevel                 = 2;    // RPU lamp dim divisor (2 or 3); higher = dimmer
@@ -65,7 +69,6 @@ struct MachineSettings {
    // --- Audit counters (incremented by game events; reset via service menu) ---
    uint32_t      totalPlays   = 0;
    uint32_t      totalReplays = 0;
-   uint32_t      hiscoreBeat  = 0;
 
    // --- Coin chute counts ---
    uint32_t      chute1Coins  = 0;

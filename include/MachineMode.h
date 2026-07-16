@@ -11,7 +11,7 @@
 #include <stdint.h>
 
 // The top-level states the machine can be in.
-enum class TopState : uint8_t { HardwareTest, MachineEeprom, StoredAdjustments, Adjustments, Attract, Match, Game };
+enum class TopState : uint8_t { HardwareTest, MachineEeprom, StoredAdjustments, TridentAdjustments, Adjustments, Attract, Match, Game };
 
 class MachineMode {
 public:

@@ -91,10 +91,19 @@ constexpr int EEPROM_HIGHSCORE_BYTE        = 160;  // uint32_t (4 bytes, 160-163
 constexpr int EEPROM_CREDITS_BYTE          = 164;  // uint8_t  (1 byte)
 constexpr int EEPROM_TOTAL_PLAYS_BYTE    = 165;  // uint32_t (4 bytes)
 constexpr int EEPROM_TOTAL_REPLAYS_BYTE  = 169;  // uint32_t (4 bytes)
-constexpr int EEPROM_HISCORE_BEAT_BYTE   = 173;  // uint32_t (4 bytes)
+constexpr int EEPROM_HISCORE_BEAT_BYTE   = 173;  // uint32_t (4 bytes) — Trident 2020 ruleset
 constexpr int EEPROM_CHUTE_2_COINS_BYTE  = 177;  // uint32_t (4 bytes)
 constexpr int EEPROM_CHUTE_1_COINS_BYTE  = 181;  // uint32_t (4 bytes)
 constexpr int EEPROM_CHUTE_3_COINS_BYTE  = 185;  // uint32_t (4 bytes)
+
+// Original Trident ruleset settings (189–213)
+constexpr int EEPROM_ORIGINAL_AWARD_OVERRIDE_BYTE   = 189;  // uint8_t  (1 byte)
+constexpr int EEPROM_ORIGINAL_AWARD_SCORE_1_BYTE    = 190;  // uint32_t (4 bytes)
+constexpr int EEPROM_ORIGINAL_AWARD_SCORE_2_BYTE    = 194;  // uint32_t (4 bytes)
+constexpr int EEPROM_ORIGINAL_AWARD_SCORE_3_BYTE    = 198;  // uint32_t (4 bytes)
+constexpr int EEPROM_ORIGINAL_EXTRA_BALL_SCORE_BYTE = 202;  // uint32_t (4 bytes)
+constexpr int EEPROM_ORIGINAL_SPECIAL_SCORE_BYTE    = 206;  // uint32_t (4 bytes)
+constexpr int EEPROM_ORIGINAL_HISCORE_BEAT_BYTE     = 210;  // uint32_t (4 bytes)
 
 constexpr uint8_t SOUND_SELECTOR_NONE = 0;
 constexpr uint8_t SOUND_SELECTOR_ORIGINAL = 1;

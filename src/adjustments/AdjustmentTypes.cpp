@@ -2,7 +2,7 @@
  * adjustments/Adjustments.cpp
  **************************************************************************/
 
-#include "adjustments/Adjustments.h"
+#include "adjustments/AdjustmentTypes.h"
 #include "PinballMachine.h"
 #include "Trident2020.h"
 #include <EEPROM.h>
