@@ -7,9 +7,9 @@
  **************************************************************************/
 
 #pragma once
-#include "MachineMode.h"
-#include "PinballMachine.h"
-#include "Trident2020Game.h"
+#include "../MachineMode.h"
+#include "../PinballMachine.h"
+#include "../Trident2020Game.h"
 #include <stdint.h>
 
 class Trident2020AdjustmentsMode : public MachineMode {

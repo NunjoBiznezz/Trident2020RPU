@@ -11,8 +11,8 @@
  **************************************************************************/
 
 #pragma once
-#include "MachineMode.h"
-#include "PinballMachine.h"
+#include "../MachineMode.h"
+#include "../PinballMachine.h"
 #include <stdint.h>
 
 class StoredAdjustmentsMode : public MachineMode {

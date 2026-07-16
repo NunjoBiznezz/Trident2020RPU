@@ -2,42 +2,25 @@
  * StoredAdjustmentsMode.cpp
  **************************************************************************/
 
-#include "StoredAdjustmentsMode.h"
+#include "../../include/adjustments/StoredAdjustmentsMode.h"
+#include "adjustments/AdjustmentTypes.h"
 #include "RPU.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
-#include "adjustments/Adjustments.h"
-
-// ---------------------------------------------------------------------------
-// EEPROM addresses
-// Score levels, high score, and credits share the RPU library's address space
-// (0–52) so readStoredParameters() picks them up on every reload.
-// Audit counters and coin ratios live at 165–185 (no MachineSettings field).
-// ---------------------------------------------------------------------------
-
-static constexpr int kEeScoreLevel1  = EEPROM_AWARD_SCORE_1_BYTE;
-static constexpr int kEeScoreLevel2  = EEPROM_AWARD_SCORE_2_BYTE;
-static constexpr int kEeScoreLevel3  = EEPROM_AWARD_SCORE_3_BYTE;
-static constexpr int kEeHighScore    = EEPROM_HIGHSCORE_BYTE;
-static constexpr int kEeCredits      = EEPROM_CREDITS_BYTE;
 
 // ---------------------------------------------------------------------------
 // Adjustment objects — heterogeneous types require separate named variables;
 // the dispatch table below binds each one to its entry callout index.
+// All objects use two-phase init via setDependencies().
 // ---------------------------------------------------------------------------
 
-static ScoreAdjustment   sScoreLevel1  { kEeScoreLevel1  };
-static ScoreAdjustment   sScoreLevel2  { kEeScoreLevel2  };
-static ScoreAdjustment   sScoreLevel3  { kEeScoreLevel3  };
-static ScoreAdjustment   sHighScore    { kEeHighScore     };
-static IntRangeAdjustment<uint8_t, 1, 0, 99> sCredits { kEeCredits };
-static AuditAdjustment<uint32_t>   sTotalPlays;
-static AuditAdjustment<uint32_t>   sTotalReplays;
-static AuditAdjustment<uint32_t>   sHiscrBeat;
-static AuditAdjustment<uint32_t>   sChute2Coins;
-static AuditAdjustment<uint32_t>   sChute1Coins;
-static AuditAdjustment<uint32_t>   sChute3Coins;
-static BootAdjustment    sBoot;
+static MinMaxByteAdjustment     sCredits;
+static AuditAdjustment<uint32_t> sTotalPlays;
+static AuditAdjustment<uint32_t> sTotalReplays;
+static AuditAdjustment<uint32_t> sChute2Coins;
+static AuditAdjustment<uint32_t> sChute1Coins;
+static AuditAdjustment<uint32_t> sChute3Coins;
+static BootAdjustment            sBoot;
 
 struct AdjEntry {
    StoredAdjustment* adj;
@@ -45,14 +28,9 @@ struct AdjEntry {
 };
 
 static AdjEntry kAdjustments[] = {
-   { &sScoreLevel1,  140 },
-   { &sScoreLevel2,  141 },
-   { &sScoreLevel3,  142 },
-   { &sHighScore,    139 },
    { &sCredits,      143 },
    { &sTotalPlays,   144 },
    { &sTotalReplays, 145 },
-   { &sHiscrBeat,    146 },
    { &sChute2Coins,  147 },
    { &sChute1Coins,  148 },
    { &sChute3Coins,  149 },
@@ -68,12 +46,12 @@ static constexpr uint8_t kNumAdjustments = sizeof(kAdjustments) / sizeof(kAdjust
 void StoredAdjustmentsMode::setDependencies(PinballMachine& machine) {
    machine_ = &machine;
    MachineSettings& s = machine.getSettings();
-   sTotalPlays.init  (&s.totalPlays,   EEPROM_TOTAL_PLAYS_BYTE);
-   sTotalReplays.init(&s.totalReplays, EEPROM_TOTAL_REPLAYS_BYTE);
-   sHiscrBeat.init   (&s.hiscoreBeat,  EEPROM_HISCORE_BEAT_BYTE);
-   sChute2Coins.init (&s.chute2Coins,  EEPROM_CHUTE_2_COINS_BYTE);
-   sChute1Coins.init (&s.chute1Coins,  EEPROM_CHUTE_1_COINS_BYTE);
-   sChute3Coins.init (&s.chute3Coins,  EEPROM_CHUTE_3_COINS_BYTE);
+   sCredits.init     (&s.credits,       EEPROM_CREDITS_BYTE,      0, 99);
+   sTotalPlays.init  (&s.totalPlays,    EEPROM_TOTAL_PLAYS_BYTE);
+   sTotalReplays.init(&s.totalReplays,  EEPROM_TOTAL_REPLAYS_BYTE);
+   sChute2Coins.init (&s.chute2Coins,   EEPROM_CHUTE_2_COINS_BYTE);
+   sChute1Coins.init (&s.chute1Coins,   EEPROM_CHUTE_1_COINS_BYTE);
+   sChute3Coins.init (&s.chute3Coins,   EEPROM_CHUTE_3_COINS_BYTE);
 }
 
 void StoredAdjustmentsMode::enter(unsigned long /*currentTime*/) {

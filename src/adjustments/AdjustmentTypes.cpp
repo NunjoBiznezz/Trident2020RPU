@@ -11,8 +11,13 @@
 // ScoreAdjustment
 // ---------------------------------------------------------------------------
 
+void ScoreAdjustment::init(unsigned long* field, int addr) {
+   field_ = field;
+   addr_  = addr;
+}
+
 void ScoreAdjustment::onEnter(PinballMachine& machine) {
-   EEPROM.get(addr_, value_);
+   value_            = *field_;
    nextSpeedyChange_ = 0;
    numSpeedyChanges_ = 0;
    pendingWrite_     = false;
@@ -21,6 +26,7 @@ void ScoreAdjustment::onEnter(PinballMachine& machine) {
 
 void ScoreAdjustment::onPress(PinballMachine& machine, bool doubleClick) {
    value_            = doubleClick ? 0 : value_ + 1000;
+   *field_           = value_;
    nextSpeedyChange_ = 0;
    numSpeedyChanges_ = 0;
    pendingWrite_     = false;
@@ -35,6 +41,7 @@ void ScoreAdjustment::onHeld(PinballMachine& machine, unsigned long currentTime)
    }
    if (currentTime >= nextSpeedyChange_) {
       value_ += 1000;
+      *field_ = value_;
       machine.setDisplay(0, value_, true);
       numSpeedyChanges_++;
       if (numSpeedyChanges_ < 6) {

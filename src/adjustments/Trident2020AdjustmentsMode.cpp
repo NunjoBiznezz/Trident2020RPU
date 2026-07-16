@@ -2,11 +2,11 @@
  * Trident2020AdjustmentsMode.cpp
  **************************************************************************/
 
+#include "../../include/adjustments/Trident2020AdjustmentsMode.h"
+#include "adjustments/AdjustmentTypes.h"
 #include "RPU.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
-#include "Trident2020AdjustmentsMode.h"
-#include "adjustments/Adjustments.h"
 #include <EEPROM.h>
 
 // ListByteAdjustment that previews brightness by blinking the bonus lamps.
@@ -50,6 +50,11 @@ static MinMaxByteAdjustment        sCalloutsVolume;
 static MinMaxByteAdjustment        sTournamentScoring;
 static MinMaxByteAdjustment        sTiltWarnings;
 static MinMaxDefaultByteAdjustment sAwardOverride;
+static ScoreAdjustment             sScoreLevel1;
+static ScoreAdjustment             sScoreLevel2;
+static ScoreAdjustment             sScoreLevel3;
+static ScoreAdjustment             sHighScore;
+static AuditAdjustment<uint32_t>   sHiscrBeat;
 static ListByteAdjustment          sBallsOverride;
 static MinMaxByteAdjustment        sScrollingScores;
 static ScoreULAdjustment           sExtraBallAward;
@@ -74,6 +79,11 @@ static AdjEntry kAdjustments[] = {
    { &sTournamentScoring,   159 },
    { &sTiltWarnings,        160 },
    { &sAwardOverride,       161 },
+   { &sScoreLevel1,         140 },
+   { &sScoreLevel2,         141 },
+   { &sScoreLevel3,         142 },
+   { &sHighScore,           139 },
+   { &sHiscrBeat,           146 },
    { &sBallsOverride,       162 },
    { &sScrollingScores,     163 },
    { &sExtraBallAward,      164 },
@@ -105,6 +115,11 @@ void Trident2020AdjustmentsMode::setDependencies(Trident2020Game& game, PinballM
    sTournamentScoring.init  ((uint8_t*)&s.tournamentScoring,              EEPROM_TOURNAMENT_SCORING_BYTE,        0, 1);
    sTiltWarnings.init       (&s.maxTiltWarnings,                           EEPROM_TILT_WARNING_BYTE,              0, 2);
    sAwardOverride.init      (&s.trident2020Awards.scoreAwardReplay,        EEPROM_AWARD_OVERRIDE_BYTE,            0, 7);
+   sScoreLevel1.init        (&s.trident2020Awards.awardScores[0],          EEPROM_AWARD_SCORE_1_BYTE);
+   sScoreLevel2.init        (&s.trident2020Awards.awardScores[1],          EEPROM_AWARD_SCORE_2_BYTE);
+   sScoreLevel3.init        (&s.trident2020Awards.awardScores[2],          EEPROM_AWARD_SCORE_3_BYTE);
+   sHighScore.init          (&s.trident2020Awards.highScore,                EEPROM_HIGHSCORE_BYTE);
+   sHiscrBeat.init          (&s.hiscoreBeat,                                EEPROM_HISCORE_BEAT_BYTE);
    sBallsOverride.init      (&s.ballsPerGame,                              EEPROM_BALLS_OVERRIDE_BYTE,            kBallsValues,      3);
    sScrollingScores.init    ((uint8_t*)&s.scrollingScores,                EEPROM_SCROLLING_SCORES_BYTE,          0, 1);
    sExtraBallAward.init     (&s.trident2020Awards.extraBallValue,          EEPROM_EXTRA_BALL_SCORE_BYTE);

@@ -46,18 +46,20 @@ public:
 // Concrete adjustment types
 // ---------------------------------------------------------------------------
 
-// 32-bit score stored in EEPROM.  Press adds 1000; double-click resets to 0;
-// hold auto-increments with acceleration.  EEPROM writes are deferred during
-// hold and flushed on release.
+// unsigned long score field backed by a live MachineSettings pointer.
+// Press adds 1000; double-click resets to 0; hold auto-increments with
+// acceleration.  EEPROM writes are deferred during hold and flushed on release.
+// Call init() once before the adjustment is shown.
 class ScoreAdjustment : public StoredAdjustment {
-   int      addr_;
-   uint32_t value_            = 0;
-   uint32_t nextSpeedyChange_ = 0;
-   uint8_t  numSpeedyChanges_ = 0;
-   bool     pendingWrite_     = false;
+   unsigned long* field_           = nullptr;
+   int            addr_            = 0;
+   unsigned long  value_           = 0;
+   unsigned long  nextSpeedyChange_ = 0;
+   uint8_t        numSpeedyChanges_ = 0;
+   bool           pendingWrite_    = false;
 
 public:
-   explicit ScoreAdjustment(int addr) : addr_(addr) {}
+   void init(unsigned long* field, int addr);
    void onEnter(PinballMachine& machine) override;
    void onPress(PinballMachine& machine, bool doubleClick) override;
    void onHeld(PinballMachine& machine, unsigned long currentTime) override;
