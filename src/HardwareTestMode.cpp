@@ -4,7 +4,6 @@
 
 #include "HardwareTestMode.h"
 #include "RPU.h"
-#include "SoundEffects.h"
 #include "Trident2020.h"
 
 #ifdef RPU_OS_USE_7_DIGIT_DISPLAYS
@@ -17,8 +16,6 @@ constexpr uint8_t kTotalDisplayDigits = 35;
 constexpr uint8_t kTotalDisplayDigits = 30;
 #endif
 
-// Callout index 0 = test 1 (LAMPS) … index 4 = test 5 (SOUNDS).
-static const uint8_t kHardwareTestCalloutMap[5] = { 136, 137, 135, 134, 133 };
 
 void HardwareTestMode::enter(unsigned long currentTime) {
    internalState_           = kTestLamps;
@@ -65,7 +62,6 @@ TopState HardwareTestMode::update(unsigned long currentTime) {
       machine_->setDisplayCredits(curState, true);
       machine_->setDisplayBallInPlay(0, false);
       machine_->stopAllAudio();
-      machine_->playCallout(kHardwareTestCalloutMap[curState - 1]);
    }
 
    if (curState == kTestLamps) {
