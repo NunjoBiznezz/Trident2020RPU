@@ -6,7 +6,6 @@
 #include "adjustments/AdjustmentTypes.h"
 #include "RPU.h"
 #include "Trident2020.h"
-#include <EEPROM.h>
 
 // ---------------------------------------------------------------------------
 // Value lists for LIST-type adjustments

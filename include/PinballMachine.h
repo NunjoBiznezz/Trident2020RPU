@@ -24,6 +24,10 @@ public:
    // Returned by pullFirstFromSwitchStack() when the queue is empty.
    static constexpr uint8_t SWITCH_STACK_EMPTY = 0xFF;
 
+   // Digit-enable mask for all 6 score-display positions (1 = show, 0 = blank).
+   // Use as the default mask for setDisplayBlank to enable every digit position.
+   static constexpr uint8_t ALL_DIGITS_MASK = 0x3F;
+
    PinballMachine() = default;
 
    // One-time hardware init; call from setup() before the main loop.
@@ -109,9 +113,9 @@ public:
    // During attract mode this is repurposed for rule-set identification.
    void setDisplayBallInPlay(uint8_t ball, bool showBall = true);
 
-   // Set/get the blank mask for a score display. Each bit controls one digit;
-   // used for selective digit suppression during bonus countdown and match.
-   void    setDisplayBlank(uint8_t display, uint8_t mask);
+   // Set the digit-enable mask for a score display. Each bit controls one digit
+   // position (1=show, 0=blank). Default disables all positions.
+   void    setDisplayBlank(uint8_t display, uint8_t mask = 0x00);
    uint8_t getDisplayBlank(uint8_t display);
 
    // Cycle all four score displays through a diagnostic sweep (hardware test).
@@ -207,6 +211,11 @@ public:
    // determine how many tones to play on an inlane hit.
    void setRolloverValue(uint8_t v) { rolloverValue_ = v; }
 
+   // RPU loop housekeeping — call at start and end of each loop() tick in place
+   // of RPU_DataRead / RPU_Update so callers need no RPU headers.
+   void readInputs();
+   void flushOutputs();
+
    // Called every loop() tick to service audio handlers and timed solenoids.
    // Must be called before any game-mode update().
    void update(unsigned long currentTime);
@@ -223,6 +232,13 @@ public:
    bool             getFreePlayMode() const  { return settings_.freePlayMode; }
    bool             getMatchFeature() const  { return settings_.matchFeature; }
    MachineSettings& getSettings();
+
+   // Hardware capability queries — use these instead of RPU_* constants.
+   int           getMaxLamps()              const;
+   uint8_t       getHardwareMajorVersion()  const;
+   uint8_t       getHardwareMinorVersion()  const;
+   unsigned long getMaxDisplayScore()       const;
+   uint8_t       getNumDisplayDigits()      const;
 
    unsigned long getHighScore() const         { return settings_.trident2020Settings.highScore; }
    unsigned long getOriginalHighScore() const { return settings_.tridentSettings.highScore; }

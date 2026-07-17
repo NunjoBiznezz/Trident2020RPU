@@ -31,9 +31,6 @@
 #include "MachineSettings.h"
 #include "MatchMode.h"
 #include "PinballMachine.h"
-#include "RPU.h"
-#include "RPU_config.h"
-#include "RPU_Internal.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
 #include "Trident2020Game.h"
@@ -122,7 +119,7 @@ void setup() {
 }
 
 void loop() {
-   RPU_DataRead(0);
+   pinballMachine.readInputs();
    CurrentTime = millis();
 
    // Tick audio handlers first so currentTime_ is fresh when trident2020Game logic calls playSoundEffect.
@@ -165,5 +162,5 @@ void loop() {
       activeMode->enter(CurrentTime);
    }
 
-   RPU_Update(CurrentTime);
+   pinballMachine.flushOutputs();
 }

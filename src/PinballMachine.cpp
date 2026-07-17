@@ -9,6 +9,7 @@
 #include "PinballMachine.h"
 #include "MachineSettings.h"
 #include "RPU.h"
+#include "RPU_Internal.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
 #include <Arduino.h>
@@ -108,6 +109,9 @@ void PinballMachine::queueDiagNotification(unsigned short notificationNum, unsig
 // ---------------------------------------------------------------------------
 // PinballMachine interface
 // ---------------------------------------------------------------------------
+
+void PinballMachine::readInputs()  { RPU_DataRead(0); }
+void PinballMachine::flushOutputs() { RPU_Update(currentTime_); }
 
 void PinballMachine::update(unsigned long currentTime) {
    currentTime_ = currentTime;
@@ -388,6 +392,12 @@ uint8_t PinballMachine::getDisplayBlank(uint8_t display) {
 void PinballMachine::cycleAllDisplays(unsigned long t, uint8_t curValue) {
    RPU_CycleAllDisplays(t, curValue);
 }
+
+int           PinballMachine::getMaxLamps()             const { return RPU_MAX_LAMPS; }
+uint8_t       PinballMachine::getHardwareMajorVersion() const { return RPU_OS_MAJOR_VERSION; }
+uint8_t       PinballMachine::getHardwareMinorVersion() const { return RPU_OS_MINOR_VERSION; }
+unsigned long PinballMachine::getMaxDisplayScore()      const { return RPU_OS_MAX_DISPLAY_SCORE; }
+uint8_t       PinballMachine::getNumDisplayDigits()     const { return RPU_OS_NUM_DIGITS; }
 
 uint8_t PinballMachine::magnitudeOfScore(unsigned long score) {
    if (score == 0) {

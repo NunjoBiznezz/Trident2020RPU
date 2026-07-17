@@ -31,7 +31,6 @@
 #include "AttractMode.h"
 #include "BuildVersion.h"
 #include "LampAnimation.h"
-#include "RPU.h"
 #include "Trident.h"
 
 #if defined(DEBUG_MESSAGES) && defined(DEBUG_PORT)
@@ -61,8 +60,8 @@ void AttractMode::enter(unsigned long currentTime) {
    // Displays 0/1 = game major/minor; displays 2/3 = RPU OS major/minor.
    machine_->setDisplay(0, TRIDENT2020_MAJOR_VERSION);
    machine_->setDisplay(1, TRIDENT2020_MINOR_VERSION);
-   machine_->setDisplay(2, RPU_OS_MAJOR_VERSION);
-   machine_->setDisplay(3, RPU_OS_MINOR_VERSION);
+   machine_->setDisplay(2, machine_->getHardwareMajorVersion());
+   machine_->setDisplay(3, machine_->getHardwareMinorVersion());
    machine_->setDisplayCredits(machine_->getCredits(), true);
    machine_->setDisplayBallInPlay(0, true);
    lastHeadMode_ = 1;

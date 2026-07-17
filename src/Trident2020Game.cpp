@@ -7,7 +7,6 @@
  **************************************************************************/
 
 #include "Trident2020Game.h"
-#include "RPU.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
 
@@ -425,8 +424,8 @@ TopState Trident2020Game::update(unsigned long currentTime) {
       showBonusOnTree(Bonus);
    }
 
-   if (!settings_->scrollingScores && CurrentPlayerCurrentScore > RPU_OS_MAX_DISPLAY_SCORE) {
-      CurrentPlayerCurrentScore -= RPU_OS_MAX_DISPLAY_SCORE;
+   if (!settings_->scrollingScores && CurrentPlayerCurrentScore > machine_->getMaxDisplayScore()) {
+      CurrentPlayerCurrentScore -= machine_->getMaxDisplayScore();
    }
 
    if (scoreAtTop != CurrentPlayerCurrentScore) {
@@ -789,11 +788,11 @@ void Trident2020Game::showPlayerScores(uint8_t displayToUpdate, bool flashCurren
             if (numDigits == 0) {
                numDigits = 1;
             }
-            if (numDigits < (int)RPU_OS_NUM_DIGITS - 1) {
-               uint8_t range = ((RPU_OS_NUM_DIGITS + 1) - numDigits) + ((RPU_OS_NUM_DIGITS - 1) - numDigits);
+            if (numDigits < (int)machine_->getNumDisplayDigits() - 1) {
+               uint8_t range = ((machine_->getNumDisplayDigits() + 1) - numDigits) + ((machine_->getNumDisplayDigits() - 1) - numDigits);
                uint8_t shift = (uint8_t)(overrideAnimSeed % range);
-               if (shift >= ((RPU_OS_NUM_DIGITS + 1) - numDigits)) {
-                  shift = (uint8_t)((RPU_OS_NUM_DIGITS - numDigits) * 2 - shift);
+               if (shift >= ((machine_->getNumDisplayDigits() + 1) - numDigits)) {
+                  shift = (uint8_t)((machine_->getNumDisplayDigits() - numDigits) * 2 - shift);
                }
                unsigned long shifted = overVal;
                uint8_t mask = scoreDisplayMask(numDigits);
