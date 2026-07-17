@@ -16,13 +16,14 @@ enum class RuleSet : uint8_t {
 
 // Original Trident rule-specific settings: scores, awards, and audit.
 struct TridentGameSettings {
-   unsigned long highScore        = 0;
-   unsigned long awardScores[3]   = {};
-   unsigned long extraBallValue   = 0;
-   unsigned long specialValue     = 0;
-   uint8_t       scoreAwardReplay = 0;
-   uint32_t      hiscoreBeat      = 0;
-   uint8_t       ballsPerGame     = 3;
+   unsigned long highScore             = 0;
+   unsigned long awardScores[3]        = {};
+   unsigned long extraBallValue        = 0;
+   unsigned long specialValue          = 0;
+   uint8_t       scoreAwardReplay      = 0;
+   uint32_t      hiscoreBeat           = 0;
+   uint8_t       ballsPerGame          = 3;
+   uint8_t       dropTargetSpecialAt   = 5;  // BonusMultiplier level that lights the outlane special (4 or 5)
 };
 
 // Trident 2020 rule-specific settings: scores, awards, audit, and game balance.

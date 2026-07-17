@@ -20,8 +20,10 @@ static ScoreAdjustment             sHighScore;
 static AuditAdjustment<uint32_t>   sHiscrBeat;
 static ScoreULAdjustment           sExtraBallAward;
 static ScoreULAdjustment           sSpecialAward;
+static ListByteAdjustment          sDropTargetSpecial;
 
-static const uint8_t kBallsValues[] = { 3, 5, 99 };
+static const uint8_t kBallsValues[]             = { 3, 5, 99 };
+static const uint8_t kDropTargetSpecialValues[] = { 4, 5 };
 
 static StoredAdjustment* kAdjustments[] = {
    &sBallsOverride,
@@ -33,6 +35,7 @@ static StoredAdjustment* kAdjustments[] = {
    &sHiscrBeat,
    &sExtraBallAward,
    &sSpecialAward,
+   &sDropTargetSpecial,
 };
 
 static constexpr uint8_t kNumAdjustments = sizeof(kAdjustments) / sizeof(kAdjustments[0]);
@@ -46,15 +49,16 @@ void TridentAdjustmentsMode::setDependencies(PinballMachine& machine) {
 
    MachineSettings& s = machine.getSettings();
 
-   sBallsOverride.init (&s.tridentSettings.ballsPerGame,       EEPROM_ORIGINAL_BALLS_OVERRIDE_BYTE,   kBallsValues,  3);
-   sAwardOverride.init (&s.tridentSettings.scoreAwardReplay,  EEPROM_ORIGINAL_AWARD_OVERRIDE_BYTE,   0, 7);
-   sScoreLevel1.init   (&s.tridentSettings.awardScores[0],    EEPROM_ORIGINAL_AWARD_SCORE_1_BYTE);
-   sScoreLevel2.init   (&s.tridentSettings.awardScores[1],    EEPROM_ORIGINAL_AWARD_SCORE_2_BYTE);
-   sScoreLevel3.init   (&s.tridentSettings.awardScores[2],    EEPROM_ORIGINAL_AWARD_SCORE_3_BYTE);
-   sHighScore.init     (&s.tridentSettings.highScore,          EEPROM_ORIGINAL_HIGHSCORE_BYTE);
-   sHiscrBeat.init     (&s.tridentSettings.hiscoreBeat,        EEPROM_ORIGINAL_HISCORE_BEAT_BYTE);
-   sExtraBallAward.init(&s.tridentSettings.extraBallValue,     EEPROM_ORIGINAL_EXTRA_BALL_SCORE_BYTE);
-   sSpecialAward.init  (&s.tridentSettings.specialValue,       EEPROM_ORIGINAL_SPECIAL_SCORE_BYTE);
+   sBallsOverride.init    (&s.tridentSettings.ballsPerGame,       EEPROM_ORIGINAL_BALLS_OVERRIDE_BYTE,      kBallsValues,           3);
+   sAwardOverride.init    (&s.tridentSettings.scoreAwardReplay,  EEPROM_ORIGINAL_AWARD_OVERRIDE_BYTE,      0, 7);
+   sScoreLevel1.init      (&s.tridentSettings.awardScores[0],    EEPROM_ORIGINAL_AWARD_SCORE_1_BYTE);
+   sScoreLevel2.init      (&s.tridentSettings.awardScores[1],    EEPROM_ORIGINAL_AWARD_SCORE_2_BYTE);
+   sScoreLevel3.init      (&s.tridentSettings.awardScores[2],    EEPROM_ORIGINAL_AWARD_SCORE_3_BYTE);
+   sHighScore.init        (&s.tridentSettings.highScore,          EEPROM_ORIGINAL_HIGHSCORE_BYTE);
+   sHiscrBeat.init        (&s.tridentSettings.hiscoreBeat,        EEPROM_ORIGINAL_HISCORE_BEAT_BYTE);
+   sExtraBallAward.init   (&s.tridentSettings.extraBallValue,     EEPROM_ORIGINAL_EXTRA_BALL_SCORE_BYTE);
+   sSpecialAward.init     (&s.tridentSettings.specialValue,       EEPROM_ORIGINAL_SPECIAL_SCORE_BYTE);
+   sDropTargetSpecial.init(&s.tridentSettings.dropTargetSpecialAt, EEPROM_ORIGINAL_DROP_TARGET_SPECIAL_BYTE, kDropTargetSpecialValues, 2);
 }
 
 void TridentAdjustmentsMode::enter(unsigned long /*currentTime*/) {

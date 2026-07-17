@@ -61,9 +61,10 @@ private:
    unsigned long BonusCountdownTime       = 0;
 
    // Drop-target multiplier state
-   uint8_t       DropTargetsMask          = 0;  // bit i = drop target (i+1) is UP
-   uint8_t       BonusMultiplier          = 1;  // current multiplier level (1–5)
-   unsigned long CurrentSaucerValue       = 0;  // current top-eject award
+   uint8_t       DropTargetsMask          = 0;    // bit i = drop target (i+1) is UP
+   uint8_t       BonusMultiplier          = 1;    // current multiplier level (1–5)
+   unsigned long CurrentSaucerValue       = 0;    // current top-eject award
+   bool          DropTargetSpecialAvailable = false;  // outlane special can be collected
 
    // kBallOver multi-pass countdown state
    uint8_t       SavedBonusValue          = 1;
@@ -79,4 +80,5 @@ private:
 
    void advanceBonus(uint8_t positions = 1);
    void showBonusLamps();
+   void setupDropTargets(uint8_t mask);
 };

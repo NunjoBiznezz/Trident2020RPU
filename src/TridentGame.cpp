@@ -22,6 +22,10 @@ static constexpr unsigned MAXIMUM_BONUSES = 19;
 static constexpr unsigned BONUS_AWARD = 1000;
 static constexpr unsigned MAXIMUM_BONUS_AWARD = MAXIMUM_BONUSES * BONUS_AWARD;
 static constexpr unsigned long BONUS_COUNTDOWN_DELAY = 100;
+
+static constexpr uint8_t DropTargetSolenoidArray[] = {
+   SOL_DROP_TARGET_1, SOL_DROP_TARGET_2, SOL_DROP_TARGET_3, SOL_DROP_TARGET_4, SOL_DROP_TARGET_5
+};
 static constexpr unsigned LEFT_INLANE_AWARD = 2000;
 static constexpr unsigned RIGHT_INLANE_AWARD = 3000;
 static constexpr unsigned RIGHT_OUTLANE_AWARD = 5000;
@@ -199,6 +203,16 @@ TopState TridentGame::update(unsigned long currentTime) {
             if (curState == kNormalGameplay) {
                if (BallFirstSwitchHitTime == 0) BallFirstSwitchHitTime = CurrentTime;
                advanceBonus(3);
+               if (DropTargetSpecialAvailable) {
+                  DropTargetSpecialAvailable = false;
+                  machine_->setLampState(LAMP_RIGHT_OUTLANE_SPECIAL, false);
+                  machine_->setLampState(LAMP_DROP_TARGET_SPECIAL, false);
+                  if (settings_->tournamentScoring) {
+                     CurrentPlayerCurrentScore += settings_->tridentSettings.specialValue;
+                  } else {
+                     machine_->addSpecialCredit();
+                  }
+               }
             }
             break;
 
@@ -214,12 +228,48 @@ TopState TridentGame::update(unsigned long currentTime) {
                   DropTargetsMask &= ~(1u << targetIdx);
                   machine_->setLampState(DropTargetLampArray[targetIdx], false);
                   if (DropTargetsMask == 0) {
-                     BonusMultiplier = 2;
-                     machine_->setLampState(LAMP_BONUS_2X_FEATURE, false);
-                     machine_->setLampState(LAMP_BONUS_2X, true);
-                     CurrentSaucerValue = 10000;
-                     machine_->setLampState(LAMP_TOP_EJECT_5K, false);
-                     machine_->setLampState(LAMP_TOP_EJECT_10K, true);
+                     if (BonusMultiplier < 5) {
+                        BonusMultiplier += 1;
+                     }
+                     switch (BonusMultiplier) {
+                     case 2:
+                        machine_->setLampState(LAMP_BONUS_2X_FEATURE, false);
+                        machine_->setLampState(LAMP_BONUS_2X, true);
+                        CurrentSaucerValue = 10000;
+                        machine_->setLampState(LAMP_TOP_EJECT_5K, false);
+                        machine_->setLampState(LAMP_TOP_EJECT_10K, true);
+                        setupDropTargets(THREE_TARGETS_UP);
+                        machine_->setLampState(LAMP_BONUS_3X_FEATURE, true);
+                        break;
+                     case 3:
+                        machine_->setLampState(LAMP_BONUS_3X_FEATURE, false);
+                        machine_->setLampState(LAMP_BONUS_3X, true);
+                        CurrentSaucerValue = 20000;
+                        machine_->setLampState(LAMP_TOP_EJECT_10K, false);
+                        machine_->setLampState(LAMP_TOP_EJECT_20K, true);
+                        setupDropTargets(FOUR_TARGETS_UP);
+                        machine_->setLampState(LAMP_BONUS_4X_FEATURE, true);
+                        break;
+                     case 4:
+                        machine_->setLampState(LAMP_BONUS_4X_FEATURE, false);
+                        machine_->setLampState(LAMP_BONUS_4X, true);
+                        CurrentSaucerValue = 30000;
+                        machine_->setLampState(LAMP_TOP_EJECT_20K, false);
+                        machine_->setLampState(LAMP_TOP_EJECT_30K, true);
+                        setupDropTargets(FIVE_TARGETS_UP);
+                        machine_->setLampState(LAMP_BONUS_5X_FEATURE, true);
+                        break;
+                     case 5:
+                        machine_->setLampState(LAMP_BONUS_5X_FEATURE, false);
+                        machine_->setLampState(LAMP_BONUS_5X, true);
+                        setupDropTargets(FIVE_TARGETS_UP);
+                        break;
+                     }
+                     if (BonusMultiplier >= settings_->tridentSettings.dropTargetSpecialAt) {
+                        DropTargetSpecialAvailable = true;
+                        machine_->setLampState(LAMP_RIGHT_OUTLANE_SPECIAL, true);
+                        machine_->setLampState(LAMP_DROP_TARGET_SPECIAL, true);
+                     }
                   }
                }
             }
@@ -375,15 +425,11 @@ int TridentGame::initNewBall(bool curStateChanged, uint8_t playerNum, int ballNu
       machine_->setLampState(LAMP_BONUS_5X_FEATURE, false);
       machine_->setLampState(LAMP_BONUS_5X, false);
 
-      // Drop targets: raise all, then drop 1/3/5 to leave 2 and 4 up
-      DropTargetsMask = TWO_TARGETS_UP;
-      machine_->pushToSolenoidStack(SOL_DROP_TARGET_RESET, 10);
-      machine_->pushToTimedSolenoidStack(SOL_DROP_TARGET_1, 4, CurrentTime + 500);
-      machine_->pushToTimedSolenoidStack(SOL_DROP_TARGET_3, 4, CurrentTime + 500);
-      machine_->pushToTimedSolenoidStack(SOL_DROP_TARGET_5, 4, CurrentTime + 500);
-      for (uint8_t i = 0; i < 5; i++) {
-         machine_->setLampState(DropTargetLampArray[i], (DropTargetsMask >> i) & 1);
-      }
+      // Drop targets start at 2X: targets 2 and 4 up
+      DropTargetSpecialAvailable = false;
+      machine_->setLampState(LAMP_RIGHT_OUTLANE_SPECIAL, false);
+      machine_->setLampState(LAMP_DROP_TARGET_SPECIAL, false);
+      setupDropTargets(TWO_TARGETS_UP);
 
       // Saucer starts at 5K
       CurrentSaucerValue = INITIAL_SAUCER_VALUE;
@@ -420,6 +466,18 @@ void TridentGame::advanceBonus(uint8_t positions) {
    if (newBonus > MAXIMUM_BONUSES) newBonus = MAXIMUM_BONUSES;
    CurrentBonusValue = newBonus;
    showBonusLamps();
+}
+
+void TridentGame::setupDropTargets(uint8_t mask) {
+   DropTargetsMask = mask;
+   machine_->pushToSolenoidStack(SOL_DROP_TARGET_RESET, 10);
+   for (uint8_t i = 0; i < 5; i++) {
+      bool targetUp = (mask >> i) & 1;
+      if (!targetUp) {
+         machine_->pushToTimedSolenoidStack(DropTargetSolenoidArray[i], 4, CurrentTime + 500);
+      }
+      machine_->setLampState(DropTargetLampArray[i], targetUp);
+   }
 }
 
 void TridentGame::showBonusLamps() {

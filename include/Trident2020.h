@@ -108,7 +108,8 @@ constexpr int EEPROM_ORIGINAL_HISCORE_BEAT_BYTE     = 210;  // uint32_t (4 bytes
 constexpr int EEPROM_ORIGINAL_BALLS_OVERRIDE_BYTE   = 214;  // uint8_t  (1 byte)
 constexpr int EEPROM_MAXIMUM_CREDITS_BYTE           = 215;  // uint8_t  (1 byte)
 constexpr int EEPROM_HIGH_SCORE_REPLAY_BYTE         = 216;  // uint8_t  (1 byte, bool)
-constexpr int EEPROM_ACTIVE_RULE_SET_BYTE           = 217;  // uint8_t  (1 byte, RuleSet)
+constexpr int EEPROM_ACTIVE_RULE_SET_BYTE              = 217;  // uint8_t  (1 byte, RuleSet)
+constexpr int EEPROM_ORIGINAL_DROP_TARGET_SPECIAL_BYTE = 218;  // uint8_t  (1 byte, 4 or 5)
 
 constexpr uint8_t SOUND_SELECTOR_NONE = 0;
 constexpr uint8_t SOUND_SELECTOR_ORIGINAL = 1;
