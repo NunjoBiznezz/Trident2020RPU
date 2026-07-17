@@ -16,7 +16,7 @@ public:
    void setBallInPlay(int value, bool displayOn, bool showBothDigits = false);
    void cycleAll(unsigned long curTime, uint8_t digitNum = 0);
    void setMatch(int value, bool displayOn, bool showBothDigits = false);
-   void setBlank(int displayNumber, uint8_t bitMask);
+   void setBlank(int displayNumber, uint8_t bitMask=0x00);
    uint8_t getBlank(int displayNumber) const;
    void setFlash(int displayNumber, unsigned long value, unsigned long curTime, unsigned period, uint8_t minDigits = 0);
    void setFlashCredits(unsigned long curTime, int period);

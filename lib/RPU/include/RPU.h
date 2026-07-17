@@ -128,7 +128,7 @@ void RPU_UpdateTimedSolenoidStack(unsigned long curTime);
 //   Displays
 uint8_t RPU_SetDisplay(int displayNumber, unsigned long value, bool blankByMagnitude = false, uint8_t minDigits = 2,
                        bool showCommasByMagnitude = false);
-void RPU_SetDisplayBlank(int displayNumber, uint8_t bitMask);
+void RPU_SetDisplayBlank(int displayNumber, uint8_t bitMask=0x00);
 void RPU_SetDisplayCredits(int value, bool displayOn = true, bool showBothDigits = true);
 void RPU_SetDisplayMatch(int value, bool displayOn = true, bool showBothDigits = true);
 void RPU_SetDisplayBallInPlay(int value, bool displayOn = true, bool showBothDigits = true);
