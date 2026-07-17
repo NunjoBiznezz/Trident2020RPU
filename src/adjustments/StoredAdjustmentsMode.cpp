@@ -7,6 +7,34 @@
 #include "RPU.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
+#include <EEPROM.h>
+
+// ListByteAdjustment that previews brightness by blinking the bonus lamps.
+class DimLevelAdjustment : public ListByteAdjustment {
+public:
+   void onEnter(PinballMachine& machine) override {
+      ListByteAdjustment::onEnter(machine);
+      for (int i = 0; i < 10; i++) {
+         machine.setLampState(LAMP_BONUS_1 + i, true, 1);
+      }
+   }
+   void onPress(PinballMachine& machine, bool doubleClick) override {
+      ListByteAdjustment::onPress(machine, doubleClick);
+      machine.setDimDivisor(1, *field_);
+   }
+   void onTick(PinballMachine& machine, unsigned long currentTime) override {
+      for (int i = 0; i < 10; i++) {
+         machine.setLampState(LAMP_BONUS_1 + i, true, (uint8_t)((currentTime / 1000) % 2));
+      }
+   }
+};
+
+// ---------------------------------------------------------------------------
+// Value lists for LIST-type adjustments
+// ---------------------------------------------------------------------------
+
+static const uint8_t kBallSaveValues[] = { 0, 5, 10, 15, 20 };
+static const uint8_t kDimLevelValues[] = { 2, 3 };
 
 // ---------------------------------------------------------------------------
 // Adjustment objects — heterogeneous types require separate named variables;
@@ -14,13 +42,27 @@
 // All objects use two-phase init via setDependencies().
 // ---------------------------------------------------------------------------
 
-static MinMaxByteAdjustment     sCredits;
-static AuditAdjustment<uint32_t> sTotalPlays;
-static AuditAdjustment<uint32_t> sTotalReplays;
-static AuditAdjustment<uint32_t> sChute2Coins;
-static AuditAdjustment<uint32_t> sChute1Coins;
-static AuditAdjustment<uint32_t> sChute3Coins;
-static BootAdjustment            sBoot;
+static MinMaxByteAdjustment        sFreePlay;
+static MinMaxByteAdjustment        sMaximumCredits;
+static MinMaxByteAdjustment        sMatchFeature;
+static MinMaxByteAdjustment        sHighScoreReplay;
+static MinMaxByteAdjustment        sActiveRuleSet;
+static ListByteAdjustment          sBallSave;
+static MinMaxByteAdjustment        sSoundSelector;
+static MinMaxByteAdjustment        sMusicVolume;
+static MinMaxByteAdjustment        sSfxVolume;
+static MinMaxByteAdjustment        sCalloutsVolume;
+static MinMaxByteAdjustment        sTournamentScoring;
+static MinMaxByteAdjustment        sTiltWarnings;
+static MinMaxByteAdjustment        sScrollingScores;
+static DimLevelAdjustment          sDimLevel;
+static MinMaxByteAdjustment        sCredits;
+static AuditAdjustment<uint32_t>   sTotalPlays;
+static AuditAdjustment<uint32_t>   sTotalReplays;
+static AuditAdjustment<uint32_t>   sChute2Coins;
+static AuditAdjustment<uint32_t>   sChute1Coins;
+static AuditAdjustment<uint32_t>   sChute3Coins;
+static BootAdjustment              sBoot;
 
 struct AdjEntry {
    StoredAdjustment* adj;
@@ -28,13 +70,27 @@ struct AdjEntry {
 };
 
 static AdjEntry kAdjustments[] = {
-   { &sCredits,      143 },
-   { &sTotalPlays,   144 },
-   { &sTotalReplays, 145 },
-   { &sChute2Coins,  147 },
-   { &sChute1Coins,  148 },
-   { &sChute3Coins,  149 },
-   { &sBoot,         138 },
+   { &sFreePlay,          153 },
+   { &sMaximumCredits,    172 },
+   { &sMatchFeature,      173 },
+   { &sHighScoreReplay,   174 },
+   { &sActiveRuleSet,     175 },
+   { &sBallSave,          154 },
+   { &sSoundSelector,     155 },
+   { &sMusicVolume,       156 },
+   { &sSfxVolume,         157 },
+   { &sCalloutsVolume,    158 },
+   { &sTournamentScoring, 159 },
+   { &sTiltWarnings,      160 },
+   { &sScrollingScores,   163 },
+   { &sDimLevel,          171 },
+   { &sCredits,           143 },
+   { &sTotalPlays,        144 },
+   { &sTotalReplays,      145 },
+   { &sChute2Coins,       147 },
+   { &sChute1Coins,       148 },
+   { &sChute3Coins,       149 },
+   { &sBoot,              138 },
 };
 
 static constexpr uint8_t kNumAdjustments = sizeof(kAdjustments) / sizeof(kAdjustments[0]);
@@ -46,12 +102,27 @@ static constexpr uint8_t kNumAdjustments = sizeof(kAdjustments) / sizeof(kAdjust
 void StoredAdjustmentsMode::setDependencies(PinballMachine& machine) {
    machine_ = &machine;
    MachineSettings& s = machine.getSettings();
-   sCredits.init     (&s.credits,       EEPROM_CREDITS_BYTE,      0, 99);
-   sTotalPlays.init  (&s.totalPlays,    EEPROM_TOTAL_PLAYS_BYTE);
-   sTotalReplays.init(&s.totalReplays,  EEPROM_TOTAL_REPLAYS_BYTE);
-   sChute2Coins.init (&s.chute2Coins,   EEPROM_CHUTE_2_COINS_BYTE);
-   sChute1Coins.init (&s.chute1Coins,   EEPROM_CHUTE_1_COINS_BYTE);
-   sChute3Coins.init (&s.chute3Coins,   EEPROM_CHUTE_3_COINS_BYTE);
+
+   sFreePlay.init         ((uint8_t*)&s.freePlayMode,         EEPROM_FREE_PLAY_BYTE,            0,  1);
+   sMaximumCredits.init   (&s.maximumCredits,                  EEPROM_MAXIMUM_CREDITS_BYTE,      1, 99);
+   sMatchFeature.init     ((uint8_t*)&s.matchFeature,         EEPROM_MATCH_FEATURE_BYTE,         0,  1);
+   sHighScoreReplay.init  ((uint8_t*)&s.highScoreReplay,      EEPROM_HIGH_SCORE_REPLAY_BYTE,     0,  1);
+   sActiveRuleSet.init    ((uint8_t*)&s.activeRuleSet,        EEPROM_ACTIVE_RULE_SET_BYTE,       0,  1);
+   sBallSave.init         (&s.ballSaveNumSeconds,              EEPROM_BALL_SAVE_BYTE,             kBallSaveValues, 5);
+   sSoundSelector.init    (&s.soundSelector,                   EEPROM_SOUND_SELECTOR_BYTE,        0,  5);
+   sMusicVolume.init      (&s.musicVolume,                     EEPROM_MUSIC_VOLUME_BYTE,          0, 10);
+   sSfxVolume.init        (&s.sfxVolume,                       EEPROM_SFX_VOLUME_BYTE,            0, 10);
+   sCalloutsVolume.init   (&s.calloutsVolume,                  EEPROM_CALLOUTS_VOLUME_BYTE,       0, 10);
+   sTournamentScoring.init((uint8_t*)&s.tournamentScoring,    EEPROM_TOURNAMENT_SCORING_BYTE,    0,  1);
+   sTiltWarnings.init     (&s.maxTiltWarnings,                 EEPROM_TILT_WARNING_BYTE,          0,  2);
+   sScrollingScores.init  ((uint8_t*)&s.scrollingScores,      EEPROM_SCROLLING_SCORES_BYTE,      0,  1);
+   sDimLevel.init         (&s.dimLevel,                        EEPROM_DIM_LEVEL_BYTE,             kDimLevelValues, 2);
+   sCredits.init          (&s.credits,                         EEPROM_CREDITS_BYTE,               0, 99);
+   sTotalPlays.init       (&s.totalPlays,                      EEPROM_TOTAL_PLAYS_BYTE);
+   sTotalReplays.init     (&s.totalReplays,                    EEPROM_TOTAL_REPLAYS_BYTE);
+   sChute2Coins.init      (&s.chute2Coins,                     EEPROM_CHUTE_2_COINS_BYTE);
+   sChute1Coins.init      (&s.chute1Coins,                     EEPROM_CHUTE_1_COINS_BYTE);
+   sChute3Coins.init      (&s.chute3Coins,                     EEPROM_CHUTE_3_COINS_BYTE);
 }
 
 void StoredAdjustmentsMode::enter(unsigned long /*currentTime*/) {

@@ -126,12 +126,23 @@ void PinballMachine::stopAllAudio() {
 
 void PinballMachine::readStoredParameters() {
    // --- Gameplay / operator settings ---
+   settings_.maximumCredits = readSetting(EEPROM_MAXIMUM_CREDITS_BYTE, 99);
+   if (settings_.maximumCredits < 1) {
+      settings_.maximumCredits = 99;
+   }
+
    settings_.credits = readSetting(EEPROM_CREDITS_BYTE, 0);
    if (settings_.credits > settings_.maximumCredits) {
       settings_.credits = settings_.maximumCredits;
    }
 
-   settings_.freePlayMode = (readSetting(EEPROM_FREE_PLAY_BYTE, 0)) != 0;
+   settings_.freePlayMode    = (readSetting(EEPROM_FREE_PLAY_BYTE,        0)) != 0;
+   settings_.matchFeature    = (readSetting(EEPROM_MATCH_FEATURE_BYTE,    1)) != 0;
+   settings_.highScoreReplay = (readSetting(EEPROM_HIGH_SCORE_REPLAY_BYTE, 1)) != 0;
+
+   uint8_t ruleSetByte = readSetting(EEPROM_ACTIVE_RULE_SET_BYTE, (uint8_t)RuleSet::Trident2020);
+   settings_.activeRuleSet = (ruleSetByte <= (uint8_t)RuleSet::Trident2020)
+                             ? (RuleSet)ruleSetByte : RuleSet::Trident2020;
 
    settings_.ballSaveNumSeconds = readSetting(EEPROM_BALL_SAVE_BYTE, BALL_SAVE_TIME_S_DEFAULT);
    if (settings_.ballSaveNumSeconds > BALL_SAVE_TIME_S_MAX) {
@@ -152,9 +163,16 @@ void PinballMachine::readStoredParameters() {
 
    uint8_t ballsOverride = readSetting(EEPROM_BALLS_OVERRIDE_BYTE, 99);
    if (ballsOverride == 3 || ballsOverride == 5) {
-      settings_.ballsPerGame = ballsOverride;
+      settings_.trident2020Settings.ballsPerGame = ballsOverride;
    } else if (ballsOverride != 99) {
       EEPROM.write(EEPROM_BALLS_OVERRIDE_BYTE, 99);
+   }
+
+   uint8_t origBallsOverride = readSetting(EEPROM_ORIGINAL_BALLS_OVERRIDE_BYTE, 99);
+   if (origBallsOverride == 3 || origBallsOverride == 5) {
+      settings_.tridentSettings.ballsPerGame = origBallsOverride;
+   } else if (origBallsOverride != 99) {
+      EEPROM.write(EEPROM_ORIGINAL_BALLS_OVERRIDE_BYTE, 99);
    }
 
    settings_.scrollingScores = (readSetting(EEPROM_SCROLLING_SCORES_BYTE, 1)) != 0;

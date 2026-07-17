@@ -74,7 +74,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
          CurrentStandupsHit = StandupsHit[CurrentPlayer];
          scoreAtTop = CurrentPlayerCurrentScore;
 
-         if (CurrentBallInPlay > settings_->ballsPerGame) {
+         if (CurrentBallInPlay > settings_->trident2020Settings.ballsPerGame) {
             checkHighScores();
             machine_->playSoundEffect(SOUND_EFFECT_GAME_OVER);
             setPlayerLamps(0);
@@ -1597,7 +1597,7 @@ void Trident2020Game::startBallBackgroundSong(uint8_t ballNum) {
    uint8_t song;
    if (ballNum == 1) {
       song = SOUND_EFFECT_BACKGROUND_1;
-   } else if (ballNum == settings_->ballsPerGame) {
+   } else if (ballNum == settings_->trident2020Settings.ballsPerGame) {
       song = SOUND_EFFECT_BACKGROUND_6;
    } else {
       song = SOUND_EFFECT_BACKGROUND_2 + (uint8_t)(CurrentTime % 4);

@@ -22,26 +22,27 @@ struct TridentGameSettings {
    unsigned long specialValue     = 0;
    uint8_t       scoreAwardReplay = 0;
    uint32_t      hiscoreBeat      = 0;
+   uint8_t       ballsPerGame     = 3;
 };
 
 // Trident 2020 rule-specific settings: scores, awards, audit, and game balance.
 struct Trident2020GameSettings {
-   unsigned long highScore        = 0;
-   unsigned long awardScores[3]   = {};
-   unsigned long extraBallValue   = 0;
-   unsigned long specialValue     = 0;
-   uint8_t       scoreAwardReplay = 0;
-   uint32_t      hiscoreBeat      = 0;
-   uint8_t sharpShooterStartBonus = 3;
-   uint8_t targetSpecialBonus     = 4;
-   uint8_t standupSpecialLevel    = 2;
+   unsigned long  highScore        = 0;
+   unsigned long  awardScores[3]   = {};
+   unsigned long  extraBallValue   = 0;
+   unsigned long  specialValue     = 0;
+   uint8_t        scoreAwardReplay = 0;
+   uint32_t       hiscoreBeat      = 0;
+   uint8_t        ballsPerGame     = 3;
+   uint8_t        sharpShooterStartBonus = 3;
+   uint8_t        targetSpecialBonus     = 4;
+   uint8_t        standupSpecialLevel    = 2;
 };
 
 struct MachineSettings {
    // --- Credits / play options ---
    uint8_t       credits                  = 0;     // Current stored credits (loaded from RPU EEPROM at boot)
    uint8_t       maximumCredits           = 99;    // Hard cap on stored credits
-   uint8_t       ballsPerGame             = 3;     // 3 or 5; EEPROM_BALLS_OVERRIDE_BYTE must be 3 or 5 to change
    uint8_t       ballSaveNumSeconds       = 0;     // Ball-save grace period after launch (0 = off, max 20 s)
    bool          freePlayMode             = true;  // When true, START never requires credits
    bool          tournamentScoring        = false; // When true, score-based awards (EB, special) are suppressed
@@ -52,10 +53,6 @@ struct MachineSettings {
 
    // --- Rule set selection ---
    RuleSet       activeRuleSet            = RuleSet::Trident2020;
-
-   // --- Per-ruleset: scores, awards, audit, and game balance ---
-   TridentGameSettings     tridentSettings;
-   Trident2020GameSettings trident2020Settings;
 
    // --- Display ---
    uint8_t       dimLevel                 = 2;    // RPU lamp dim divisor (2 or 3); higher = dimmer
@@ -74,6 +71,10 @@ struct MachineSettings {
    uint32_t      chute1Coins  = 0;
    uint32_t      chute2Coins  = 0;
    uint32_t      chute3Coins  = 0;
+
+   // --- Per-ruleset: scores, awards, audit, and game balance ---
+   TridentGameSettings     tridentSettings;
+   Trident2020GameSettings trident2020Settings;
 
    // --- Transient flags (not EEPROM-backed) ---
    bool          resetScoresToClearVersion = false; // Game sets this to request a score-display clear on version change

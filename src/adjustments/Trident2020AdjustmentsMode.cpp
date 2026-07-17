@@ -9,46 +9,16 @@
 #include "Trident2020.h"
 #include <EEPROM.h>
 
-// ListByteAdjustment that previews brightness by blinking the bonus lamps.
-class DimLevelAdjustment : public ListByteAdjustment {
-public:
-   void onEnter(PinballMachine& machine) override {
-      ListByteAdjustment::onEnter(machine);
-      for (int i = 0; i < 10; i++) {
-         machine.setLampState(LAMP_BONUS_1 + i, true, 1);
-      }
-   }
-   void onPress(PinballMachine& machine, bool doubleClick) override {
-      ListByteAdjustment::onPress(machine, doubleClick);
-      machine.setDimDivisor(1, *field_);
-   }
-   void onTick(PinballMachine& machine, unsigned long currentTime) override {
-      for (int i = 0; i < 10; i++) {
-         machine.setLampState(LAMP_BONUS_1 + i, true, (uint8_t)((currentTime / 1000) % 2));
-      }
-   }
-};
-
 // ---------------------------------------------------------------------------
 // Value lists for LIST-type adjustments
 // ---------------------------------------------------------------------------
 
-static const uint8_t kBallSaveValues[] = { 0, 5, 10, 15, 20 };
-static const uint8_t kBallsValues[]    = { 3, 5, 99 };
-static const uint8_t kDimLevelValues[] = { 2, 3 };
+static const uint8_t kBallsValues[] = { 3, 5, 99 };
 
 // ---------------------------------------------------------------------------
 // File-static adjustment objects — pointers initialised in setDependencies()
 // ---------------------------------------------------------------------------
 
-static MinMaxByteAdjustment        sFreePlay;
-static ListByteAdjustment          sBallSave;
-static MinMaxByteAdjustment        sSoundSelector;
-static MinMaxByteAdjustment        sMusicVolume;
-static MinMaxByteAdjustment        sSfxVolume;
-static MinMaxByteAdjustment        sCalloutsVolume;
-static MinMaxByteAdjustment        sTournamentScoring;
-static MinMaxByteAdjustment        sTiltWarnings;
 static MinMaxDefaultByteAdjustment sAwardOverride;
 static ScoreAdjustment             sScoreLevel1;
 static ScoreAdjustment             sScoreLevel2;
@@ -56,10 +26,8 @@ static ScoreAdjustment             sScoreLevel3;
 static ScoreAdjustment             sHighScore;
 static AuditAdjustment<uint32_t>   sHiscrBeat;
 static ListByteAdjustment          sBallsOverride;
-static MinMaxByteAdjustment        sScrollingScores;
 static ScoreULAdjustment           sExtraBallAward;
 static ScoreULAdjustment           sSpecialAward;
-static DimLevelAdjustment          sDimLevel;
 static MinMaxByteAdjustment        sSharpShooterBonus;
 static MinMaxByteAdjustment        sTargetSpecialBonus;
 static MinMaxByteAdjustment        sStandupSpecialLevel;
@@ -70,14 +38,6 @@ struct AdjEntry {
 };
 
 static AdjEntry kAdjustments[] = {
-   { &sFreePlay,            153 },
-   { &sBallSave,            154 },
-   { &sSoundSelector,       155 },
-   { &sMusicVolume,         156 },
-   { &sSfxVolume,           157 },
-   { &sCalloutsVolume,      158 },
-   { &sTournamentScoring,   159 },
-   { &sTiltWarnings,        160 },
    { &sAwardOverride,       161 },
    { &sScoreLevel1,         140 },
    { &sScoreLevel2,         141 },
@@ -85,10 +45,8 @@ static AdjEntry kAdjustments[] = {
    { &sHighScore,           139 },
    { &sHiscrBeat,           146 },
    { &sBallsOverride,       162 },
-   { &sScrollingScores,     163 },
    { &sExtraBallAward,      164 },
    { &sSpecialAward,        165 },
-   { &sDimLevel,            171 },
    { &sSharpShooterBonus,   166 },
    { &sTargetSpecialBonus,  167 },
    { &sStandupSpecialLevel, 168 },
@@ -106,28 +64,18 @@ void Trident2020AdjustmentsMode::setDependencies(Trident2020Game& game, PinballM
 
    MachineSettings& s = machine.getSettings();
 
-   sFreePlay.init           ((uint8_t*)&s.freePlayMode,                   EEPROM_FREE_PLAY_BYTE,                 0, 1);
-   sBallSave.init           (&s.ballSaveNumSeconds,                        EEPROM_BALL_SAVE_BYTE,                 kBallSaveValues,   5);
-   sSoundSelector.init      (&s.soundSelector,                             EEPROM_SOUND_SELECTOR_BYTE,            0, 5);
-   sMusicVolume.init        (&s.musicVolume,                               EEPROM_MUSIC_VOLUME_BYTE,              0, 10);
-   sSfxVolume.init          (&s.sfxVolume,                                 EEPROM_SFX_VOLUME_BYTE,                0, 10);
-   sCalloutsVolume.init     (&s.calloutsVolume,                            EEPROM_CALLOUTS_VOLUME_BYTE,           0, 10);
-   sTournamentScoring.init  ((uint8_t*)&s.tournamentScoring,              EEPROM_TOURNAMENT_SCORING_BYTE,        0, 1);
-   sTiltWarnings.init       (&s.maxTiltWarnings,                           EEPROM_TILT_WARNING_BYTE,              0, 2);
    sAwardOverride.init      (&s.trident2020Settings.scoreAwardReplay,        EEPROM_AWARD_OVERRIDE_BYTE,            0, 7);
-   sScoreLevel1.init        (&s.trident2020Settings.awardScores[0],          EEPROM_AWARD_SCORE_1_BYTE);
-   sScoreLevel2.init        (&s.trident2020Settings.awardScores[1],          EEPROM_AWARD_SCORE_2_BYTE);
-   sScoreLevel3.init        (&s.trident2020Settings.awardScores[2],          EEPROM_AWARD_SCORE_3_BYTE);
-   sHighScore.init          (&s.trident2020Settings.highScore,                EEPROM_HIGHSCORE_BYTE);
-   sHiscrBeat.init          (&s.trident2020Settings.hiscoreBeat,            EEPROM_HISCORE_BEAT_BYTE);
-   sBallsOverride.init      (&s.ballsPerGame,                              EEPROM_BALLS_OVERRIDE_BYTE,            kBallsValues,      3);
-   sScrollingScores.init    ((uint8_t*)&s.scrollingScores,                EEPROM_SCROLLING_SCORES_BYTE,          0, 1);
-   sExtraBallAward.init     (&s.trident2020Settings.extraBallValue,          EEPROM_EXTRA_BALL_SCORE_BYTE);
-   sSpecialAward.init       (&s.trident2020Settings.specialValue,            EEPROM_SPECIAL_SCORE_BYTE);
-   sDimLevel.init           (&s.dimLevel,                                   EEPROM_DIM_LEVEL_BYTE,                 kDimLevelValues,   2);
-   sSharpShooterBonus.init  (&s.trident2020Settings.sharpShooterStartBonus, EEPROM_SHARP_SHOOTER_START_BONUS_BYTE, 1, 5);
-   sTargetSpecialBonus.init (&s.trident2020Settings.targetSpecialBonus,     EEPROM_TARGET_SPECIAL_BONUS_BYTE,      1, 5);
-   sStandupSpecialLevel.init(&s.trident2020Settings.standupSpecialLevel,    EEPROM_STANDUP_SPECIAL_LEVEL_BYTE,     1, 4);
+   sScoreLevel1.init        (&s.trident2020Settings.awardScores[0],           EEPROM_AWARD_SCORE_1_BYTE);
+   sScoreLevel2.init        (&s.trident2020Settings.awardScores[1],           EEPROM_AWARD_SCORE_2_BYTE);
+   sScoreLevel3.init        (&s.trident2020Settings.awardScores[2],           EEPROM_AWARD_SCORE_3_BYTE);
+   sHighScore.init          (&s.trident2020Settings.highScore,                 EEPROM_HIGHSCORE_BYTE);
+   sHiscrBeat.init          (&s.trident2020Settings.hiscoreBeat,              EEPROM_HISCORE_BEAT_BYTE);
+   sBallsOverride.init      (&s.trident2020Settings.ballsPerGame,             EEPROM_BALLS_OVERRIDE_BYTE,            kBallsValues, 3);
+   sExtraBallAward.init     (&s.trident2020Settings.extraBallValue,            EEPROM_EXTRA_BALL_SCORE_BYTE);
+   sSpecialAward.init       (&s.trident2020Settings.specialValue,              EEPROM_SPECIAL_SCORE_BYTE);
+   sSharpShooterBonus.init  (&s.trident2020Settings.sharpShooterStartBonus,   EEPROM_SHARP_SHOOTER_START_BONUS_BYTE, 1, 5);
+   sTargetSpecialBonus.init (&s.trident2020Settings.targetSpecialBonus,       EEPROM_TARGET_SPECIAL_BONUS_BYTE,      1, 5);
+   sStandupSpecialLevel.init(&s.trident2020Settings.standupSpecialLevel,      EEPROM_STANDUP_SPECIAL_LEVEL_BYTE,     1, 4);
 }
 
 void Trident2020AdjustmentsMode::enter(unsigned long /*currentTime*/) {

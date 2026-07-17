@@ -79,7 +79,7 @@ TopState TridentGame::update(unsigned long currentTime) {
             CurrentBallInPlay += 1;
          }
          CurrentPlayerCurrentScore = CurrentScores[CurrentPlayer];
-         if (CurrentBallInPlay > settings_->ballsPerGame) {
+         if (CurrentBallInPlay > settings_->tridentSettings.ballsPerGame) {
             machine_->playSoundEffect(SOUND_EFFECT_GAME_OVER);
             setPlayerLamps(0);
             machine_->setLastGameResult(CurrentNumPlayers, CurrentScores);
@@ -288,7 +288,7 @@ void TridentGame::startBallBackgroundSong(uint8_t ballNum) {
    uint8_t song;
    if (ballNum == 1) {
       song = SOUND_EFFECT_BACKGROUND_1;
-   } else if (ballNum == settings_->ballsPerGame) {
+   } else if (ballNum == settings_->tridentSettings.ballsPerGame) {
       song = SOUND_EFFECT_BACKGROUND_6;
    } else {
       song = SOUND_EFFECT_BACKGROUND_2 + (uint8_t)(CurrentTime % 4);

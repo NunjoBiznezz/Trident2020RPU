@@ -13,6 +13,7 @@
 // File-static adjustment objects — pointers initialised in setDependencies()
 // ---------------------------------------------------------------------------
 
+static ListByteAdjustment          sBallsOverride;
 static MinMaxDefaultByteAdjustment sAwardOverride;
 static ScoreAdjustment             sScoreLevel1;
 static ScoreAdjustment             sScoreLevel2;
@@ -27,7 +28,10 @@ struct AdjEntry {
    uint8_t           callout;
 };
 
+static const uint8_t kBallsValues[] = { 3, 5, 99 };
+
 static AdjEntry kAdjustments[] = {
+   { &sBallsOverride,  162 },
    { &sAwardOverride,  161 },
    { &sScoreLevel1,    140 },
    { &sScoreLevel2,    141 },
@@ -49,6 +53,7 @@ void TridentAdjustmentsMode::setDependencies(PinballMachine& machine) {
 
    MachineSettings& s = machine.getSettings();
 
+   sBallsOverride.init (&s.tridentSettings.ballsPerGame,       EEPROM_ORIGINAL_BALLS_OVERRIDE_BYTE,   kBallsValues,  3);
    sAwardOverride.init (&s.tridentSettings.scoreAwardReplay,  EEPROM_ORIGINAL_AWARD_OVERRIDE_BYTE,   0, 7);
    sScoreLevel1.init   (&s.tridentSettings.awardScores[0],    EEPROM_ORIGINAL_AWARD_SCORE_1_BYTE);
    sScoreLevel2.init   (&s.tridentSettings.awardScores[1],    EEPROM_ORIGINAL_AWARD_SCORE_2_BYTE);
