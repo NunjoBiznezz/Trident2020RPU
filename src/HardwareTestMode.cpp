@@ -142,7 +142,7 @@ TopState HardwareTestMode::update(unsigned long currentTime) {
 #if defined(RPU_OS_USE_SB100)
       uint8_t soundToPlay = 0x01 << (((currentTime - selfTestLastPressedTime_) / 750) % 8);
       if (soundPlaying_ != soundToPlay) {
-         machine_->playSoundCardEffect(soundToPlay);
+         machine_->playNativeSound(soundToPlay);
          soundPlaying_ = soundToPlay;
          machine_->setDisplay(0, (unsigned long)soundToPlay, true);
          lastSolTestTime_ = currentTime;
@@ -150,7 +150,7 @@ TopState HardwareTestMode::update(unsigned long currentTime) {
 #elif defined(RPU_OS_USE_S_AND_T)
       uint8_t soundToPlay = ((currentTime - selfTestLastPressedTime_) / 2000) % 256;
       if (soundPlaying_ != soundToPlay) {
-         machine_->playSoundCardEffect(soundToPlay);
+         machine_->playNativeSound(soundToPlay);
          soundPlaying_ = soundToPlay;
          machine_->setDisplay(0, (unsigned long)soundToPlay, true);
          lastSolTestTime_ = currentTime;
@@ -161,7 +161,7 @@ TopState HardwareTestMode::update(unsigned long currentTime) {
          if (soundToPlay == 17) {
             soundToPlay = 0;
          }
-         machine_->playSoundCardEffect(soundToPlay);
+         machine_->playNativeSound(soundToPlay);
          soundPlaying_ = soundToPlay;
          machine_->setDisplay(0, (unsigned long)soundToPlay, true);
          lastSolTestTime_ = currentTime;

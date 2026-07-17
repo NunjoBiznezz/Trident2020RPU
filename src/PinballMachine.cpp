@@ -435,7 +435,7 @@ void PinballMachine::setCoinLockout(bool lock) {
    RPU_SetCoinLockout(lock);
 }
 
-void PinballMachine::playSoundCardEffect(uint8_t sound) {
+void PinballMachine::playNativeSound(uint8_t sound) {
    RPU_PlayNativeSound(sound);
 }
 

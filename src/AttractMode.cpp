@@ -44,7 +44,7 @@ static constexpr int REPEAT_LAMP_ANIMATIONS = 3;
 
 
 void AttractMode::enter(unsigned long currentTime) {
-   machine_->playSoundCardEffect(0);
+   machine_->stopNativeSound();
    machine_->disableSolenoidStack();
    machine_->turnOffAllLamps();
    machine_->setDisableFlippers(true);

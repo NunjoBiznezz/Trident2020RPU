@@ -44,7 +44,7 @@ public:
    //   Sound card   — original Stern SB-100 / Squawk & Talk / Dash-51 hardware
    //
    // playSoundEffect / playBackgroundSong / playCallout target the WAV Trigger
-   // path (managed by WavTriggerHandler). playSoundCardEffect targets the
+   // path (managed by WavTriggerHandler). playNativeSound targets the
    // native sound card path (managed by AudioHandler).
    // -----------------------------------------------------------------------
 
@@ -65,7 +65,11 @@ public:
 
    // Send a command directly to the native sound card (SB-100, S&T, Dash-51).
    // sound = 0 typically silences. Separate from the WAV Trigger path.
-   void playSoundCardEffect(uint8_t sound);
+   void playNativeSound(uint8_t sound);
+
+   void stopNativeSound() {
+      playNativeSound(0);
+   }
 
    // -----------------------------------------------------------------------
    // Credits and coins
