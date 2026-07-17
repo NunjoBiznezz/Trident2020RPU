@@ -57,6 +57,18 @@ private:
    uint8_t       NumTiltWarnings          = 0;
    unsigned long LastTiltWarningTime      = 0;
 
+   uint8_t       CurrentBonusValue        = 1;  // bonus positions 1–19
+   unsigned long BonusCountdownTime       = 0;
+
+   // Drop-target multiplier state
+   uint8_t       DropTargetsMask          = 0;  // bit i = drop target (i+1) is UP
+   uint8_t       BonusMultiplier          = 1;  // current multiplier level (1–5)
+   unsigned long CurrentSaucerValue       = 0;  // current top-eject award
+
+   // kBallOver multi-pass countdown state
+   uint8_t       SavedBonusValue          = 1;
+   uint8_t       BonusCountdownPassesLeft = 0;
+
    void setPlayerLamps(uint8_t numPlayers, uint8_t playerOffset = 0, int flashPeriod = 0);
    void showPlayerScores(uint8_t displayToUpdate, bool flashCurrent, bool dashCurrent,
                          unsigned long allScoresShowValue = 0);
@@ -64,4 +76,7 @@ private:
    int  initGamePlay();
    int  initNewBall(bool curStateChanged, uint8_t playerNum, int ballNum);
    void startBallBackgroundSong(uint8_t ballNum);
+
+   void advanceBonus(uint8_t positions = 1);
+   void showBonusLamps();
 };
