@@ -2,11 +2,10 @@
  * TridentAdjustmentsMode.cpp
  **************************************************************************/
 
-#include "../../include/adjustments/TridentAdjustmentsMode.h"
+#include "adjustments/TridentAdjustmentsMode.h"
 #include "adjustments/AdjustmentTypes.h"
 #include "RPU.h"
 #include "Trident2020.h"
-#include <EEPROM.h>
 
 // ---------------------------------------------------------------------------
 // File-static adjustment objects — pointers initialised in setDependencies()

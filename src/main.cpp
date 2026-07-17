@@ -72,8 +72,8 @@ static const BuildInfoRecord FIRMWARE_BUILD_INFO PROGMEM = {
 static unsigned long CurrentTime = 0;
 
 static PinballMachine pinballMachine;
-static Trident2020Game trident2020;
 static TridentGame tridentGame;
+static Trident2020Game trident2020Game;
 static HardwareTestMode hardwareTestMode;
 static StoredAdjustmentsMode storedAdjustmentsMode;
 static TridentAdjustmentsMode tridentAdjustmentsMode;
@@ -108,13 +108,13 @@ void setup() {
    pinballMachine.init(CurrentTime); // hardware setup, RPU init, diag notifications
    pinballMachine.readStoredParameters();
 
-   trident2020.setMachine(pinballMachine);
+   trident2020Game.setMachine(pinballMachine);
    tridentGame.setMachine(pinballMachine);
 
    hardwareTestMode.setDependencies(pinballMachine);
    storedAdjustmentsMode.setDependencies(pinballMachine);
    tridentAdjustmentsMode.setDependencies(pinballMachine);
-   t2020AdjustmentsMode.setDependencies(trident2020, pinballMachine);
+   t2020AdjustmentsMode.setDependencies(trident2020Game, pinballMachine);
    matchMode.setDependencies(pinballMachine);
    attractMode.setDependencies(pinballMachine);
 
@@ -125,7 +125,7 @@ void loop() {
    RPU_DataRead(0);
    CurrentTime = millis();
 
-   // Tick audio handlers first so currentTime_ is fresh when trident2020 logic calls playSoundEffect.
+   // Tick audio handlers first so currentTime_ is fresh when trident2020Game logic calls playSoundEffect.
    pinballMachine.update(CurrentTime);
 
    TopState newState = activeMode->update(CurrentTime);
@@ -158,7 +158,7 @@ void loop() {
          if (pinballMachine.getSettings().activeRuleSet == RuleSet::Original) {
             activeMode = &tridentGame;
          } else {
-            activeMode = &trident2020;
+            activeMode = &trident2020Game;
          }
          break;
       }
