@@ -5,7 +5,6 @@
 #include "../../include/adjustments/Trident2020AdjustmentsMode.h"
 #include "adjustments/AdjustmentTypes.h"
 #include "RPU.h"
-#include "SoundEffects.h"
 #include "Trident2020.h"
 #include <EEPROM.h>
 
@@ -32,24 +31,19 @@ static MinMaxByteAdjustment        sSharpShooterBonus;
 static MinMaxByteAdjustment        sTargetSpecialBonus;
 static MinMaxByteAdjustment        sStandupSpecialLevel;
 
-struct AdjEntry {
-   StoredAdjustment* adj;
-   uint8_t           callout;
-};
-
-static AdjEntry kAdjustments[] = {
-   { &sAwardOverride,       161 },
-   { &sScoreLevel1,         140 },
-   { &sScoreLevel2,         141 },
-   { &sScoreLevel3,         142 },
-   { &sHighScore,           139 },
-   { &sHiscrBeat,           146 },
-   { &sBallsOverride,       162 },
-   { &sExtraBallAward,      164 },
-   { &sSpecialAward,        165 },
-   { &sSharpShooterBonus,   166 },
-   { &sTargetSpecialBonus,  167 },
-   { &sStandupSpecialLevel, 168 },
+static StoredAdjustment* kAdjustments[] = {
+   &sAwardOverride,
+   &sScoreLevel1,
+   &sScoreLevel2,
+   &sScoreLevel3,
+   &sHighScore,
+   &sHiscrBeat,
+   &sBallsOverride,
+   &sExtraBallAward,
+   &sSpecialAward,
+   &sSharpShooterBonus,
+   &sTargetSpecialBonus,
+   &sStandupSpecialLevel,
 };
 
 static constexpr uint8_t kNumAdjustments = sizeof(kAdjustments) / sizeof(kAdjustments[0]);
@@ -108,25 +102,24 @@ TopState Trident2020AdjustmentsMode::update(unsigned long currentTime) {
    }
 
    if (curState >= 1 && curState <= kNumAdjustments) {
-      AdjEntry& entry = kAdjustments[curState - 1];
+      StoredAdjustment* adj = kAdjustments[curState - 1];
 
       if (curStateChanged) {
          machine_->stopAllAudio();
-         machine_->playCallout(entry.callout);
          for (int i = 0; i < 4; i++) {
             machine_->setDisplay(i, 0);
             machine_->setDisplayBlank(i, 0x00);
          }
          machine_->setDisplayCredits(curState, true);
          machine_->setDisplayBallInPlay(0, false);
-         entry.adj->onEnter(*machine_);
+         adj->onEnter(*machine_);
       }
 
       if (curSwitch == SW_CREDIT_RESET) {
-         entry.adj->onPress(*machine_, false);
+         adj->onPress(*machine_, false);
       }
 
-      entry.adj->onTick(*machine_, currentTime);
+      adj->onTick(*machine_, currentTime);
    }
 
    if (returnState != internalState_) {

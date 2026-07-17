@@ -5,7 +5,6 @@
 #include "../../include/adjustments/StoredAdjustmentsMode.h"
 #include "adjustments/AdjustmentTypes.h"
 #include "RPU.h"
-#include "SoundEffects.h"
 #include "Trident2020.h"
 #include <EEPROM.h>
 
@@ -64,33 +63,28 @@ static AuditAdjustment<uint32_t>   sChute1Coins;
 static AuditAdjustment<uint32_t>   sChute3Coins;
 static BootAdjustment              sBoot;
 
-struct AdjEntry {
-   StoredAdjustment* adj;
-   uint8_t           callout;
-};
-
-static AdjEntry kAdjustments[] = {
-   { &sFreePlay,          153 },
-   { &sMaximumCredits,    172 },
-   { &sMatchFeature,      173 },
-   { &sHighScoreReplay,   174 },
-   { &sActiveRuleSet,     175 },
-   { &sBallSave,          154 },
-   { &sSoundSelector,     155 },
-   { &sMusicVolume,       156 },
-   { &sSfxVolume,         157 },
-   { &sCalloutsVolume,    158 },
-   { &sTournamentScoring, 159 },
-   { &sTiltWarnings,      160 },
-   { &sScrollingScores,   163 },
-   { &sDimLevel,          171 },
-   { &sCredits,           143 },
-   { &sTotalPlays,        144 },
-   { &sTotalReplays,      145 },
-   { &sChute2Coins,       147 },
-   { &sChute1Coins,       148 },
-   { &sChute3Coins,       149 },
-   { &sBoot,              138 },
+static StoredAdjustment* kAdjustments[] = {
+   &sFreePlay,
+   &sMaximumCredits,
+   &sMatchFeature,
+   &sHighScoreReplay,
+   &sActiveRuleSet,
+   &sBallSave,
+   &sSoundSelector,
+   &sMusicVolume,
+   &sSfxVolume,
+   &sCalloutsVolume,
+   &sTournamentScoring,
+   &sTiltWarnings,
+   &sScrollingScores,
+   &sDimLevel,
+   &sCredits,
+   &sTotalPlays,
+   &sTotalReplays,
+   &sChute2Coins,
+   &sChute1Coins,
+   &sChute3Coins,
+   &sBoot,
 };
 
 static constexpr uint8_t kNumAdjustments = sizeof(kAdjustments) / sizeof(kAdjustments[0]);
@@ -152,11 +146,11 @@ TopState StoredAdjustmentsMode::update(unsigned long currentTime) {
       lastResetPress_ = currentTime;
    }
 
-   AdjEntry& entry = kAdjustments[curState - 1];
+   StoredAdjustment* adj = kAdjustments[curState - 1];
 
    if (resetHold_ != 0 && !machine_->readSingleSwitchState(SW_CREDIT_RESET)) {
       resetHold_ = 0;
-      entry.adj->onHeldReleased(*machine_);
+      adj->onHeldReleased(*machine_);
    }
 
    bool resetBeingHeld = (resetHold_ != 0 && (currentTime - resetHold_) > 1300);
@@ -185,23 +179,22 @@ TopState StoredAdjustmentsMode::update(unsigned long currentTime) {
       machine_->setDisplayCredits(0, false);
       machine_->setDisplayBallInPlay(curState);
       machine_->stopAllAudio();
-      machine_->playCallout(entry.callout);
-      entry.adj->onEnter(*machine_);
+      adj->onEnter(*machine_);
    }
 
    if (curSwitch == SW_CREDIT_RESET || resetDoubleClick) {
-      if (entry.adj->exitsOnPress()) {
+      if (adj->exitsOnPress()) {
          returnState = 0;
       } else {
-         entry.adj->onPress(*machine_, resetDoubleClick);
+         adj->onPress(*machine_, resetDoubleClick);
       }
    }
 
    if (resetBeingHeld) {
-      entry.adj->onHeld(*machine_, currentTime);
+      adj->onHeld(*machine_, currentTime);
    }
 
-   entry.adj->onTick(*machine_, currentTime);
+   adj->onTick(*machine_, currentTime);
 
    if (returnState != internalState_) {
       internalState_ = returnState;
