@@ -217,10 +217,13 @@ void PinballMachine::readStoredParameters() {
    settings_.trident2020Settings.awardScores[1]  = readULSetting(EEPROM_AWARD_SCORE_2_BYTE);
    settings_.trident2020Settings.awardScores[2]  = readULSetting(EEPROM_AWARD_SCORE_3_BYTE);
 
-   settings_.tridentSettings.highScore           = readULSetting(EEPROM_ORIGINAL_HIGHSCORE_BYTE, 10000);
-   settings_.tridentSettings.awardScores[0]      = readULSetting(EEPROM_ORIGINAL_AWARD_SCORE_1_BYTE);
-   settings_.tridentSettings.awardScores[1]      = readULSetting(EEPROM_ORIGINAL_AWARD_SCORE_2_BYTE);
-   settings_.tridentSettings.awardScores[2]      = readULSetting(EEPROM_ORIGINAL_AWARD_SCORE_3_BYTE);
+   {
+      bool is5Ball = (settings_.tridentSettings.ballsPerGame == 5);
+      settings_.tridentSettings.highScore      = readULSetting(EEPROM_ORIGINAL_HIGHSCORE_BYTE,      is5Ball ? 800000UL : 700000UL);
+      settings_.tridentSettings.awardScores[0] = readULSetting(EEPROM_ORIGINAL_AWARD_SCORE_1_BYTE, is5Ball ? 540000UL : 360000UL);
+      settings_.tridentSettings.awardScores[1] = readULSetting(EEPROM_ORIGINAL_AWARD_SCORE_2_BYTE, is5Ball ? 680000UL : 520000UL);
+      settings_.tridentSettings.awardScores[2] = readULSetting(EEPROM_ORIGINAL_AWARD_SCORE_3_BYTE, 0UL);
+   }
    settings_.tridentSettings.extraBallValue      = readULSetting(EEPROM_ORIGINAL_EXTRA_BALL_SCORE_BYTE);
    settings_.tridentSettings.specialValue        = readULSetting(EEPROM_ORIGINAL_SPECIAL_SCORE_BYTE);
    uint8_t dropTargetSpecialAt = readSetting(EEPROM_ORIGINAL_DROP_TARGET_SPECIAL_BYTE, 5);

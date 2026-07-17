@@ -22,7 +22,7 @@ struct TridentGameSettings {
    unsigned long specialValue          = 0;
    uint8_t       scoreAwardReplay      = 0;
    uint32_t      hiscoreBeat           = 0;
-   uint8_t       ballsPerGame          = 3;
+   uint8_t       ballsPerGame          = 3;  // Switch 7
    uint8_t       dropTargetSpecialAt   = 5;  // BonusMultiplier level that lights the outlane special (4 or 5)
 };
 

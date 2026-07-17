@@ -60,6 +60,19 @@ private:
    uint8_t       CurrentBonusValue        = 1;  // bonus positions 1–19
    unsigned long BonusCountdownTime       = 0;
 
+   // Left lane value progression (rollover advances, left inlane collects)
+   uint8_t       LeftLaneValueIndex       = 0;  // 0–3 → 2K/4K/6K/8K
+
+   // Standup target completion state
+   uint8_t       StandupTargetsMask      = 0;     // bit i = target i lit this round
+   uint8_t       StandupCompletions      = 0;     // times all 5 completed this ball
+   bool          StandupExtraBallAvailable = false;
+
+   // Spinner values (per-spin score) and bonus tracking
+   uint8_t       SpinnerBonusMask        = 0;     // bit i = spinner bonus for target i awarded this ball
+   uint16_t      LeftSpinnerValue        = 200;   // 200 base + 400 per lit left-side target
+   uint16_t      RightSpinnerValue       = 200;   // 200 base + 400 per lit right-side target
+
    // Drop-target multiplier state
    uint8_t       DropTargetsMask          = 0;    // bit i = drop target (i+1) is UP
    uint8_t       BonusMultiplier          = 1;    // current multiplier level (1–5)
