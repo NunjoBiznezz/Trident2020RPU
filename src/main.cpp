@@ -21,49 +21,46 @@
 // Scores not ending in zero (wizard mode)
 // unstructured play jackpots
 // increase mode start time with new qualifier
+#include "adjustments/StoredAdjustmentsMode.h"
+#include "adjustments/Trident2020AdjustmentsMode.h"
+#include "adjustments/TridentAdjustmentsMode.h"
 #include "AttractMode.h"
+#include "BuildVersion.h"
 #include "HardwareTestMode.h"
 #include "MachineMode.h"
 #include "MachineSettings.h"
-#include "MachineState.h"
-#include "RPU.h"
-#include "RPU_config.h"
-#include "RPU_Internal.h"
+#include "MatchMode.h"
+#include "PinballMachine.h"
 #include "SoundEffects.h"
-#include "StoredAdjustmentsMode.h"
 #include "Trident2020.h"
-#include "Trident2020AdjustmentsMode.h"
 #include "Trident2020Game.h"
-#include "TridentMachine.h"
+#include "TridentGame.h"
 #include <Arduino.h>
 #include <stdint.h>
-
-constexpr unsigned long TRIDENT2020_MAJOR_VERSION = 2020;
-constexpr unsigned long TRIDENT2020_MINOR_VERSION = 3;
 
 // Queryable build record embedded in flash. Extract with:
 //   pio run -t version -e <env>
 struct __attribute__((packed)) BuildInfoRecord {
-   char     magic[8];    // "TRID2020"
+   char magic[8]; // "TRID2020"
    uint16_t major;
    uint16_t minor;
-   char     branch[32];
-   char     describe[64];
-   char     built[24];
+   char branch[32];
+   char describe[64];
+   char built[24];
 };
 static const BuildInfoRecord FIRMWARE_BUILD_INFO PROGMEM = {
-   {'T', 'R', 'I', 'D', '2', '0', '2', '0'},
-   (uint16_t)TRIDENT2020_MAJOR_VERSION,
-   (uint16_t)TRIDENT2020_MINOR_VERSION,
-   BUILD_GIT_BRANCH,
-   BUILD_GIT_DESCRIBE,
-   __DATE__ " " __TIME__,
+    {'T', 'R', 'I', 'D', '2', '0', '2', '0'},
+    (uint16_t)TRIDENT2020_MAJOR_VERSION,
+    (uint16_t)TRIDENT2020_MINOR_VERSION,
+    BUILD_GIT_BRANCH,
+    BUILD_GIT_DESCRIBE,
+    __DATE__ " " __TIME__,
 };
 
 #if defined(DEBUG_MESSAGES) && defined(DEBUG_PORT)
-#  define DEBUG_MESSAGE(x) DEBUG_PORT.write(x)
+#define DEBUG_MESSAGE(x) DEBUG_PORT.write(x)
 #else
-#  define DEBUG_MESSAGE(x)
+#define DEBUG_MESSAGE(x)
 #endif
 
 /*********************************************************************
@@ -71,24 +68,26 @@ static const BuildInfoRecord FIRMWARE_BUILD_INFO PROGMEM = {
 *********************************************************************/
 static unsigned long CurrentTime = 0;
 
-static TridentMachine         pinballMachine;
-static Trident2020Game        game;
-static HardwareTestMode       hardwareTestMode;
-static StoredAdjustmentsMode  storedAdjustmentsMode;
-static Trident2020AdjustmentsMode        adjustmentsMode;
-static AttractMode            attractMode;
+static PinballMachine pinballMachine;
+static TridentGame tridentGame;
+static Trident2020Game trident2020Game;
+static HardwareTestMode hardwareTestMode;
+static StoredAdjustmentsMode storedAdjustmentsMode;
+static TridentAdjustmentsMode tridentAdjustmentsMode;
+static Trident2020AdjustmentsMode t2020AdjustmentsMode;
+static MatchMode matchMode;
+static AttractMode attractMode;
 
-static TopState     topState   = TopState::Attract;
+static TopState topState = TopState::Attract;
 static MachineMode* activeMode = &attractMode;
-
 
 void setup() {
    // Opaque to LTO — prevents --gc-sections from discarding FIRMWARE_BUILD_INFO.
-   __asm__ volatile("" :: "r"(&FIRMWARE_BUILD_INFO) : "memory");
+   __asm__ volatile("" ::"r"(&FIRMWARE_BUILD_INFO) : "memory");
 
 #if defined(DEBUG_PORT)
    DEBUG_PORT.begin(115200);
-#  if defined(DEBUG_MESSAGES)
+#if defined(DEBUG_MESSAGES)
    DEBUG_PORT.print(F("Trident2020 v"));
    DEBUG_PORT.print(TRIDENT2020_MAJOR_VERSION);
    DEBUG_PORT.print('.');
@@ -99,31 +98,31 @@ void setup() {
    DEBUG_PORT.println(F(BUILD_GIT_DESCRIBE));
    DEBUG_PORT.print(F("Built:    "));
    DEBUG_PORT.println(F(__DATE__ " " __TIME__));
-#  endif
+#endif
 #endif
 
    CurrentTime = millis();
-   pinballMachine.init(CurrentTime);    // hardware setup, RPU init, diag notifications
+   pinballMachine.init(CurrentTime); // hardware setup, RPU init, diag notifications
    pinballMachine.readStoredParameters();
 
-   MachineSettings& s = pinballMachine.settings();
-   game.setSettings(s);
-   game.setMachine(pinballMachine);
+   trident2020Game.setMachine(pinballMachine);
+   tridentGame.setMachine(pinballMachine);
+
    hardwareTestMode.setDependencies(pinballMachine);
    storedAdjustmentsMode.setDependencies(pinballMachine);
-   adjustmentsMode.setDependencies(game, pinballMachine, s);
-   attractMode.setDependencies(pinballMachine, s);
-   attractMode.setVersionInfo(TRIDENT2020_MAJOR_VERSION, TRIDENT2020_MINOR_VERSION,
-                               RPU_OS_MAJOR_VERSION, RPU_OS_MINOR_VERSION);
+   tridentAdjustmentsMode.setDependencies(pinballMachine);
+   t2020AdjustmentsMode.setDependencies(trident2020Game, pinballMachine);
+   matchMode.setDependencies(pinballMachine);
+   attractMode.setDependencies(pinballMachine);
 
    attractMode.enter(CurrentTime);
 }
 
 void loop() {
-   RPU_DataRead(0);
+   pinballMachine.readInputs();
    CurrentTime = millis();
 
-   // Tick audio handlers first so currentTime_ is fresh when game logic calls playSoundEffect.
+   // Tick audio handlers first so currentTime_ is fresh when trident2020Game logic calls playSoundEffect.
    pinballMachine.update(CurrentTime);
 
    TopState newState = activeMode->update(CurrentTime);
@@ -131,21 +130,37 @@ void loop() {
       activeMode->exit();
       topState = newState;
       switch (topState) {
-      case TopState::HardwareTest:      activeMode = &hardwareTestMode;       break;
-      case TopState::MachineEeprom:     activeMode = &storedAdjustmentsMode;  break;
-      case TopState::StoredAdjustments: activeMode = &storedAdjustmentsMode;  break;
-      case TopState::Adjustments:       activeMode = &adjustmentsMode;        break;
-      case TopState::Attract: {
-         unsigned long scores[4];
-         for (uint8_t i = 0; i < 4; i++) scores[i] = game.getScore(i);
-         attractMode.setLastGameScores(game.getNumPlayers(), scores);
+      case TopState::HardwareTest:
+         activeMode = &hardwareTestMode;
+         break;
+      case TopState::MachineEeprom:
+         activeMode = &storedAdjustmentsMode;
+         break;
+      case TopState::StoredAdjustments:
+         activeMode = &storedAdjustmentsMode;
+         break;
+      case TopState::TridentAdjustments:
+         activeMode = &tridentAdjustmentsMode;
+         break;
+      case TopState::Trident2020Adjustments:
+         activeMode = &t2020AdjustmentsMode;
+         break;
+      case TopState::Attract:
          activeMode = &attractMode;
          break;
-      }
-      case TopState::Game:              activeMode = &game;                   break;
+      case TopState::Match:
+         activeMode = &matchMode;
+         break;
+      case TopState::Game:
+         if (pinballMachine.getSettings().activeRuleSet == RuleSet::Original) {
+            activeMode = &tridentGame;
+         } else {
+            activeMode = &trident2020Game;
+         }
+         break;
       }
       activeMode->enter(CurrentTime);
    }
 
-   RPU_Update(CurrentTime);
+   pinballMachine.flushOutputs();
 }

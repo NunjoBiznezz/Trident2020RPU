@@ -38,8 +38,8 @@
 static void InitializeU10PIA() {
    // CA1 - Self Test Switch
    // CB1 - zero crossing detector
-   // CA2 - NOR'd with display latch strobe
-   // CB2 - lamp strobe 1
+   // CA2 - NOR'd with display latch zeroCrossingISR
+   // CB2 - lamp zeroCrossingISR 1
    // PA0-7 - output for switch bank, lamps, and BCD
    // PB0-7 - switch returns
 
@@ -61,7 +61,7 @@ static void InitializeU10PIA() {
 static void InitializeU11PIA() {
    // CA1 - Display interrupt generator
    // CB1 - test connector pin 32
-   // CA2 - lamp strobe 2
+   // CA2 - lamp zeroCrossingISR 2
    // CB2 - solenoid bank select
    // PA0-7 - display digit enable
    // PB0-7 - solenoid data
@@ -158,7 +158,7 @@ ISR(TIMER1_COMPA_vect) {
 }
 
 // IRQ handler: services self-test switch (U10A CA1), display interrupt (U11A CA1),
-// and zero-crossing / lamp-strobe / solenoid-service (U10B CB1)
+// and zero-crossing / lamp-zeroCrossingISR / solenoid-zeroCrossingISR (U10B CB1)
 static void InterruptService3() {
    const uint8_t u10AControl = RPU_DataRead(ADDRESS_U10_A_CONTROL);
    if (u10AControl & 0x80) {
@@ -188,9 +188,9 @@ static void InterruptService3() {
       const uint8_t backupU10BControl = RPU_DataRead(ADDRESS_U10_B_CONTROL);
       const uint8_t backup10A = RPU_DataRead(ADDRESS_U10_A);
 
-      RPU::switches.service();
-      RPU::solenoids.service();
-      RPU::lamps.strobe();
+      RPU::switches.zeroCrossingISR();
+      RPU::solenoids.zeroCrossingISR();
+      RPU::lamps.zeroCrossingISR();
 
       interrupts();
       noInterrupts();

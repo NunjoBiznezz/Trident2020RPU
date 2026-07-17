@@ -18,8 +18,10 @@ public:
 
    // Set once from main.cpp after construction; both remain valid for the
    // lifetime of the program.
-   void setSettings(MachineSettings& s)  { ctx_     = &s;   }
-   void setMachine(PinballMachine& m)    { machine_ = &m;   }
+   void setMachine(PinballMachine& m) {
+      machine_ = &m;
+      settings_ = &m.getSettings();
+   }
 
    // MachineMode interface
    void     enter(unsigned long currentTime) override;
@@ -55,12 +57,20 @@ public:
    void showLeftLaneLamps();
 
 private:
-   // Set once via setSettings() / setMachine(); valid for the lifetime of the program.
-   MachineSettings*  ctx_     = nullptr;
-   PinballMachine* machine_ = nullptr;
+   // Internal substates — private to this class; not shared with other modes.
+   static constexpr int kInitGameplay   =   1;
+   static constexpr int kInitNewBall    =   2;
+   static constexpr int kNormalGameplay =   4;
+   static constexpr int kCountdownBonus =  99;
+   static constexpr int kBallOver       = 100;
+   static constexpr int kMatchMode      = 110;
 
-   // Top-level state machine: internal game state and change flag.
-   int  internalState_    = 0;
+   // Set once via setMachine(); valid for the lifetime of the program.
+   const MachineSettings*  settings_ = nullptr;
+   PinballMachine*         machine_  = nullptr;
+
+   // Internal game substate and change flag.
+   int  internalState_        = kInitGameplay;
    bool internalStateChanged_ = false;
 
    unsigned long CurrentTime = 0;
@@ -121,9 +131,10 @@ private:
    unsigned long LastMiniGameBonusTime = 0;
 
    // Display management state
-   unsigned long LastTimeScoreChanged = 0;
-   unsigned long ScoreOverrideValue[4] = {};
-   uint8_t       ScoreOverrideStatus = 0;
+   unsigned long LastTimeScoreChanged      = 0;
+   unsigned long ScoreOverrideValue[4]     = {};
+   uint8_t       ScoreOverrideStatus       = 0;
+   unsigned long lastTimeOverrideAnimated_ = 0;
    int           LastReportedValue = 0;
 
    // Bonus countdown state
@@ -131,12 +142,6 @@ private:
    unsigned long LastCountdownReportTime = 0;
    unsigned long BonusCountDownEndTime = 0;
 
-   // Match sequence state
-   unsigned long MatchSequenceStartTime = 0;
-   unsigned long MatchDelay = 150;
-   uint8_t       MatchDigit = 0;
-   uint8_t       NumMatchSpins = 0;
-   uint8_t       ScoreMatches = 0;
 
    // --- Private helpers ---
    void    overrideScoreDisplay(uint8_t displayNum, unsigned long value, bool animate);
@@ -159,5 +164,5 @@ private:
    int  manageGameMode();
    int  countdownBonus(bool curStateChanged);
    void checkHighScores();
-   int  showMatchSequence(bool curStateChanged);
+   void startBallBackgroundSong(uint8_t ballNum);
 };

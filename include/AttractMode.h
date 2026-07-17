@@ -16,37 +16,18 @@ class AttractMode : public MachineMode {
    uint8_t          lastPlayfieldMode_ = 255;
    uint8_t          animNum_           = 0;
    uint8_t          animStep_          = 0;
+   uint8_t          animCount_         = 0; // Repeat animations 3 times
    unsigned long    lastAnimFrameTime_ = 0;
    unsigned long    savedScores_[4]    = {};
    uint8_t          savedNumPlayers_   = 0;
-   unsigned long    enterTime_         = 0;
+   unsigned long    enterTime_               = 0;
+   unsigned long    selfTestLastPressedTime_ = 0;
 
    PinballMachine*  machine_  = nullptr;
-   MachineSettings* settings_ = nullptr;
-
-   // Firmware version shown on the score displays at startup.
-   unsigned long versionMajor_ = 0;
-   unsigned long versionMinor_ = 0;
-   unsigned long rpuMajor_     = 0;
-   unsigned long rpuMinor_     = 0;
 
 public:
-   void setDependencies(PinballMachine& machine, MachineSettings& s) {
+   void setDependencies(PinballMachine& machine) {
       machine_  = &machine;
-      settings_ = &s;
-   }
-
-   void setLastGameScores(uint8_t numPlayers, const unsigned long* scores) {
-      savedNumPlayers_ = numPlayers;
-      for (uint8_t i = 0; i < 4; i++) savedScores_[i] = scores[i];
-   }
-
-   void setVersionInfo(unsigned long major, unsigned long minor,
-                       unsigned long rpuMajor, unsigned long rpuMinor) {
-      versionMajor_ = major;
-      versionMinor_ = minor;
-      rpuMajor_     = rpuMajor;
-      rpuMinor_     = rpuMinor;
    }
 
    void     enter(unsigned long currentTime) override;

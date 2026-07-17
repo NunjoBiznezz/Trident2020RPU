@@ -69,6 +69,9 @@ constexpr uint8_t LAMP_PLAYER_2_UP = 57;
 constexpr uint8_t LAMP_PLAYER_3_UP = 58;
 constexpr uint8_t LAMP_PLAYER_4_UP = 59;
 
+constexpr uint8_t DropTargetLampArray[] = {LAMP_DROP_TARGET_1, LAMP_DROP_TARGET_2, LAMP_DROP_TARGET_3, LAMP_DROP_TARGET_4,
+                                              LAMP_DROP_TARGET_5};
+
 // Defines for switches
 constexpr uint8_t SW_CREDIT_RESET = 5;
 constexpr uint8_t SW_TILT = 6;
@@ -108,6 +111,8 @@ constexpr uint8_t SW_LR_SLING = 12;
 
 constexpr uint8_t SW_ROLLOVER = 9;
 
+constexpr uint8_t DropTargetSwitchArray[] = {SW_DROP_TARGET_1, SW_DROP_TARGET_2, SW_DROP_TARGET_3, SW_DROP_TARGET_4, SW_DROP_TARGET_5};
+
 // Defines for solenoids
 constexpr uint8_t SOL_TOP_BUMPER = 0;
 constexpr uint8_t SOL_BOTTOM_BUMPER = 1;
@@ -144,18 +149,4 @@ const struct PlayfieldAndCabinetSwitch TriggeredSwitches[NUM_SWITCHES_WITH_TRIGG
     {SW_LR_SLING,      SOL_LR_SLING,      4},
 };
 
-constexpr uint16_t RPU_CREDITS_EEPROM_BYTE = 5;
-constexpr uint16_t RPU_HIGHSCORE_EEPROM_START_BYTE = 1;
-constexpr uint16_t RPU_AWARD_SCORE_1_EEPROM_START_BYTE = 10;
-constexpr uint16_t RPU_AWARD_SCORE_2_EEPROM_START_BYTE = 14;
-constexpr uint16_t RPU_AWARD_SCORE_3_EEPROM_START_BYTE = 18;
-constexpr uint16_t RPU_TOTAL_PLAYS_EEPROM_START_BYTE = 26;
-constexpr uint16_t RPU_TOTAL_REPLAYS_EEPROM_START_BYTE = 30;
-constexpr uint16_t RPU_TOTAL_HISCORE_BEATEN_START_BYTE = 34;
-constexpr uint16_t RPU_CHUTE_2_COINS_START_BYTE = 38;
-constexpr uint16_t RPU_CHUTE_1_COINS_START_BYTE = 42;
-constexpr uint16_t RPU_CHUTE_3_COINS_START_BYTE = 46;
-constexpr uint16_t RPU_CPC_CHUTE_1_SELECTION_BYTE = 50;
-constexpr uint16_t RPU_CPC_CHUTE_2_SELECTION_BYTE = 51;
-constexpr uint16_t RPU_CPC_CHUTE_3_SELECTION_BYTE = 52;
 
