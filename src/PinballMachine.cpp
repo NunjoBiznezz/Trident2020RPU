@@ -399,6 +399,18 @@ uint8_t       PinballMachine::getHardwareMinorVersion() const { return RPU_OS_MI
 unsigned long PinballMachine::getMaxDisplayScore()      const { return RPU_OS_MAX_DISPLAY_SCORE; }
 uint8_t       PinballMachine::getNumDisplayDigits()     const { return RPU_OS_NUM_DIGITS; }
 
+uint8_t PinballMachine::getTotalDisplayDigits() const {
+#ifdef RPU_OS_USE_7_DIGIT_DISPLAYS
+#  ifdef RPU_OS_USE_6_DIGIT_CREDIT_DISPLAY_WITH_7_DIGIT_DISPLAYS
+   return 34;
+#  else
+   return 35;
+#  endif
+#else
+   return 30;
+#endif
+}
+
 uint8_t PinballMachine::magnitudeOfScore(unsigned long score) {
    if (score == 0) {
       return 0;

@@ -5,15 +5,6 @@
 #include "HardwareTestMode.h"
 #include "Trident2020.h"
 
-#ifdef RPU_OS_USE_7_DIGIT_DISPLAYS
-#ifdef RPU_OS_USE_6_DIGIT_CREDIT_DISPLAY_WITH_7_DIGIT_DISPLAYS
-constexpr uint8_t kTotalDisplayDigits = 34;
-#else
-constexpr uint8_t kTotalDisplayDigits = 35;
-#endif
-#else
-constexpr uint8_t kTotalDisplayDigits = 30;
-#endif
 
 void HardwareTestMode::enter(unsigned long currentTime) {
    internalState_ = kTestLamps;
@@ -99,7 +90,7 @@ TopState HardwareTestMode::update(unsigned long currentTime) {
       }
       if (curSwitch == SW_CREDIT_RESET || resetDoubleClick) {
          curValue_ += 1;
-         if (curValue_ > kTotalDisplayDigits) {
+         if (curValue_ > machine_->getTotalDisplayDigits()) {
             for (int count = 0; count < 4; count++) {
                machine_->setDisplayBlank(count, PinballMachine::ALL_DIGITS_MASK);
             }

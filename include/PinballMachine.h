@@ -239,6 +239,7 @@ public:
    uint8_t       getHardwareMinorVersion()  const;
    unsigned long getMaxDisplayScore()       const;
    uint8_t       getNumDisplayDigits()      const;
+   uint8_t       getTotalDisplayDigits()    const;
 
    unsigned long getHighScore() const         { return settings_.trident2020Settings.highScore; }
    unsigned long getOriginalHighScore() const { return settings_.tridentSettings.highScore; }
