@@ -129,5 +129,5 @@ TopState Trident2020AdjustmentsMode::update(unsigned long currentTime) {
    if (internalState_ == 0 || internalState_ > kNumAdjustments) {
       return TopState::Attract;
    }
-   return TopState::Adjustments;
+   return TopState::Trident2020Adjustments;
 }

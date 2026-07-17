@@ -111,7 +111,7 @@ TopState TridentAdjustmentsMode::update(unsigned long currentTime) {
       stateChanged_  = true;
    }
    if (internalState_ == 0 || internalState_ > kNumAdjustments) {
-      return TopState::Adjustments;
+      return TopState::Trident2020Adjustments;
    }
    return TopState::TridentAdjustments;
 }

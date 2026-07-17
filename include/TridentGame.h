@@ -16,8 +16,7 @@ class TridentGame : public MachineMode {
 public:
    TridentGame();
 
-   void setSettings(const MachineSettings& s) { settings_ = &s; }
-   void setMachine(PinballMachine& m)         { machine_ = &m; }
+   void setMachine(PinballMachine& m) { machine_ = &m; settings_ = &m.getSettings(); }
 
    void     enter(unsigned long currentTime) override;
    void     exit() override {}

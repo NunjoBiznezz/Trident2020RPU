@@ -1,5 +1,5 @@
 /**************************************************************************
- * adjustments/Adjustments.h
+ * adjustments/Trident2020Adjustments.h
  *
  * StoredAdjustment base class and concrete types used by StoredAdjustmentsMode.
  * PinballMachine is forward-declared so this header has no dependency on the
