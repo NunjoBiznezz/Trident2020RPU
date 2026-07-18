@@ -110,6 +110,9 @@ constexpr int EEPROM_MAXIMUM_CREDITS_BYTE           = 215;  // uint8_t  (1 byte)
 constexpr int EEPROM_HIGH_SCORE_REPLAY_BYTE         = 216;  // uint8_t  (1 byte, bool)
 constexpr int EEPROM_ACTIVE_RULE_SET_BYTE              = 217;  // uint8_t  (1 byte, RuleSet)
 constexpr int EEPROM_ORIGINAL_DROP_TARGET_SPECIAL_BYTE = 218;  // uint8_t  (1 byte, 4 or 5)
+constexpr int EEPROM_ORIGINAL_HIGH_SCORE_FEATURE_BYTE  = 219;  // uint8_t  (0=extra ball, 1=replay)
+constexpr int EEPROM_ORIGINAL_MELODY_OPTION_BYTE      = 220;
+constexpr int EEPROM_ORIGINAL_HSTD_FEATURE_BYTE       = 221;
 
 constexpr uint8_t SOUND_SELECTOR_NONE = 0;
 constexpr uint8_t SOUND_SELECTOR_ORIGINAL = 1;

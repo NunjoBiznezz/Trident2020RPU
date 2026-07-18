@@ -52,6 +52,7 @@ private:
    unsigned long CurrentPlayerCurrentScore = 0;
 
    bool          SamePlayerShootsAgain    = false;
+   bool          HighScoreBeaten[4]       = {};
    bool          BallSaveUsed             = false;
    unsigned long BallFirstSwitchHitTime   = 0;
    uint8_t       NumTiltWarnings          = 0;

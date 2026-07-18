@@ -22,8 +22,11 @@ struct TridentGameSettings {
    unsigned long specialValue          = 0;
    uint8_t       scoreAwardReplay      = 0;
    uint32_t      hiscoreBeat           = 0;
-   uint8_t       ballsPerGame          = 3;  // Switch 7
    uint8_t       dropTargetSpecialAt   = 5;  // BonusMultiplier level that lights the outlane special (4 or 5)
+   uint8_t       highScoreFeature      = 1;  // Switch 6: 1 = high score awards replay, 0 = awards extra ball
+   uint8_t       ballsPerGame          = 3;  // Switch 7:
+   uint8_t       melodyOption          = 1;  // Switch 8: ON=Full melodies, OFF=2 Tones for coin and credit
+   uint8_t       hstdFeature           = 1;  // Switch 15/16: 00=Novelty, 01=1 Free Game, 10=2 Free Games, 11=3 Free Games
 };
 
 // Trident 2020 rule-specific settings: scores, awards, audit, and game balance.

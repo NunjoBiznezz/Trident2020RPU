@@ -228,6 +228,8 @@ void PinballMachine::readStoredParameters() {
    settings_.tridentSettings.specialValue        = readULSetting(EEPROM_ORIGINAL_SPECIAL_SCORE_BYTE);
    uint8_t dropTargetSpecialAt = readSetting(EEPROM_ORIGINAL_DROP_TARGET_SPECIAL_BYTE, 5);
    settings_.tridentSettings.dropTargetSpecialAt = (dropTargetSpecialAt == 4) ? 4 : 5;
+   uint8_t highScoreFeature = readSetting(EEPROM_ORIGINAL_HIGH_SCORE_FEATURE_BYTE, 1);
+   settings_.tridentSettings.highScoreFeature = (highScoreFeature == 0) ? 0 : 1;
    uint8_t origAwardOverride = readSetting(EEPROM_ORIGINAL_AWARD_OVERRIDE_BYTE, 99);
    if (origAwardOverride != 99) {
       settings_.tridentSettings.scoreAwardReplay = origAwardOverride;
@@ -470,6 +472,13 @@ void PinballMachine::saveHighScore(unsigned long score) {
    EEPROM.put(EEPROM_HIGHSCORE_BYTE, (uint32_t)score);
    settings_.trident2020Settings.hiscoreBeat += 1;
    EEPROM.put(EEPROM_HISCORE_BEAT_BYTE, settings_.trident2020Settings.hiscoreBeat);
+}
+
+void PinballMachine::saveOriginalHighScore(unsigned long score) {
+   settings_.tridentSettings.highScore = score;
+   EEPROM.put(EEPROM_ORIGINAL_HIGHSCORE_BYTE, (uint32_t)score);
+   settings_.tridentSettings.hiscoreBeat += 1;
+   EEPROM.put(EEPROM_ORIGINAL_HISCORE_BEAT_BYTE, settings_.tridentSettings.hiscoreBeat);
 }
 
 void PinballMachine::acknowledgeResetScores() {

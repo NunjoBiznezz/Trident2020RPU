@@ -204,6 +204,10 @@ public:
    // persists to EEPROM, and increments the beaten counter.
    void saveHighScore(unsigned long score);
 
+   // Record a new original Trident high score: updates the in-memory field,
+   // persists to EEPROM, and increments the beaten counter.
+   void saveOriginalHighScore(unsigned long score);
+
    // Clear the resetScoresToClearVersion flag once the game has acted on it.
    void acknowledgeResetScores();
 
