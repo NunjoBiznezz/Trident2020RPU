@@ -259,9 +259,14 @@ TopState TridentGame::update(unsigned long currentTime) {
                         machine_->setLampState(LAMP_STAND_UP_SPECIAL, true);
                      } else {
                         machine_->setLampState(LAMP_STAND_UP_SPECIAL, false);
-                        if (settings_->tournamentScoring) {
-                           CurrentPlayerCurrentScore += settings_->tridentSettings.specialValue;
+                        if (settings_->tridentSettings.specialAward == 0) {
+                           CurrentPlayerCurrentScore += 100000UL;
                         } else {
+                           if (settings_->tridentSettings.specialAward == 3) {
+                              SamePlayerShootsAgain = true;
+                              machine_->setLampState(LAMP_SHOOT_AGAIN, true);
+                              machine_->playSoundEffect(SOUND_EFFECT_EXTRA_BALL);
+                           }
                            machine_->addSpecialCredit();
                         }
                      }
@@ -345,9 +350,14 @@ TopState TridentGame::update(unsigned long currentTime) {
                   DropTargetSpecialAvailable = false;
                   machine_->setLampState(LAMP_RIGHT_OUTLANE_SPECIAL, false);
                   machine_->setLampState(LAMP_DROP_TARGET_SPECIAL, false);
-                  if (settings_->tournamentScoring) {
-                     CurrentPlayerCurrentScore += settings_->tridentSettings.specialValue;
+                  if (settings_->tridentSettings.specialAward == 0) {
+                     CurrentPlayerCurrentScore += 100000UL;
                   } else {
+                     if (settings_->tridentSettings.specialAward == 3) {
+                        SamePlayerShootsAgain = true;
+                        machine_->setLampState(LAMP_SHOOT_AGAIN, true);
+                        machine_->playSoundEffect(SOUND_EFFECT_EXTRA_BALL);
+                     }
                      machine_->addSpecialCredit();
                   }
                }

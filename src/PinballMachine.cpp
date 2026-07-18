@@ -225,7 +225,10 @@ void PinballMachine::readStoredParameters() {
       settings_.tridentSettings.awardScores[2] = readULSetting(EEPROM_ORIGINAL_AWARD_SCORE_3_BYTE, 0UL);
    }
    settings_.tridentSettings.extraBallValue      = readULSetting(EEPROM_ORIGINAL_EXTRA_BALL_SCORE_BYTE);
-   settings_.tridentSettings.specialValue        = readULSetting(EEPROM_ORIGINAL_SPECIAL_SCORE_BYTE);
+   {
+      uint8_t specialAward = readSetting(EEPROM_ORIGINAL_SPECIAL_SCORE_BYTE, 0);
+      settings_.tridentSettings.specialAward = (specialAward <= 3) ? specialAward : 0;
+   }
    uint8_t dropTargetSpecialAt = readSetting(EEPROM_ORIGINAL_DROP_TARGET_SPECIAL_BYTE, 5);
    settings_.tridentSettings.dropTargetSpecialAt = (dropTargetSpecialAt == 4) ? 4 : 5;
    uint8_t highScoreFeature = readSetting(EEPROM_ORIGINAL_HIGH_SCORE_FEATURE_BYTE, 1);

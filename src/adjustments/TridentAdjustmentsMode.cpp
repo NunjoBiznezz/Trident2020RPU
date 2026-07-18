@@ -19,7 +19,7 @@ static ScoreAdjustment             sScoreLevel3;
 static ScoreAdjustment             sHighScore;
 static AuditAdjustment<uint32_t>   sHiscrBeat;
 static ScoreULAdjustment           sExtraBallAward;
-static ScoreULAdjustment           sSpecialAward;
+static MinMaxByteAdjustment        sSpecialAward;
 static ListByteAdjustment          sDropTargetSpecial;
 static MinMaxByteAdjustment        sHighScoreFeature;
 static MinMaxByteAdjustment        sMelodyOption;
@@ -62,7 +62,7 @@ void TridentAdjustmentsMode::setDependencies(PinballMachine& machine) {
    sHighScore.init        (&s.tridentSettings.highScore,          EEPROM_ORIGINAL_HIGHSCORE_BYTE);
    sHiscrBeat.init        (&s.tridentSettings.hiscoreBeat,        EEPROM_ORIGINAL_HISCORE_BEAT_BYTE);
    sExtraBallAward.init   (&s.tridentSettings.extraBallValue,     EEPROM_ORIGINAL_EXTRA_BALL_SCORE_BYTE);
-   sSpecialAward.init     (&s.tridentSettings.specialValue,       EEPROM_ORIGINAL_SPECIAL_SCORE_BYTE);
+   sSpecialAward.init(&s.tridentSettings.specialAward, EEPROM_ORIGINAL_SPECIAL_SCORE_BYTE, 0, 3);
    sDropTargetSpecial.init(&s.tridentSettings.dropTargetSpecialAt, EEPROM_ORIGINAL_DROP_TARGET_SPECIAL_BYTE, kDropTargetSpecialValues, 2);
    sHighScoreFeature.init(&s.tridentSettings.highScoreFeature, EEPROM_ORIGINAL_HIGH_SCORE_FEATURE_BYTE, 0, 1);
    sMelodyOption.init(&s.tridentSettings.melodyOption, EEPROM_ORIGINAL_MELODY_OPTION_BYTE, 0, 1);

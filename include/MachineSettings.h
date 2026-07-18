@@ -18,8 +18,8 @@ enum class RuleSet : uint8_t {
 struct TridentGameSettings {
    unsigned long highScore             = 0;
    unsigned long awardScores[3]        = {};
-   unsigned long extraBallValue        = 0;
-   unsigned long specialValue          = 0;
+   unsigned long extraBallValue        = 0;  // Switch 23
+   uint8_t       specialAward          = 0;  // 00=100K pts, 01=free game, 10=free game, 11=free ball+free game
    uint8_t       scoreAwardReplay      = 0;
    uint32_t      hiscoreBeat           = 0;
    uint8_t       dropTargetSpecialAt   = 5;  // BonusMultiplier level that lights the outlane special (4 or 5)
