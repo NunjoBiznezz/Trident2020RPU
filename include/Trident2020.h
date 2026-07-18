@@ -19,6 +19,7 @@
  */
 
 #include "Trident.h"
+#include "MachineEeprom.h"
 #include <stdint.h>
 
 
@@ -65,54 +66,41 @@ constexpr uint8_t GAME_MODE_EXPLORE_THE_DEPTHS_FLAG = 0x40;
 constexpr uint8_t GAME_MODE_WIZARD_WITHOUT_FLAGS = 0x0F;
 constexpr uint8_t GAME_MODE_WIZARD = 0x7F;
 
-constexpr int EEPROM_BALL_SAVE_BYTE = 100;
-constexpr int EEPROM_FREE_PLAY_BYTE = 101;
-constexpr int EEPROM_SOUND_SELECTOR_BYTE = 102;
-constexpr int EEPROM_SKILL_SHOT_BYTE = 103;
-constexpr int EEPROM_TILT_WARNING_BYTE = 104;
-constexpr int EEPROM_AWARD_OVERRIDE_BYTE = 105;
-constexpr int EEPROM_BALLS_OVERRIDE_BYTE = 106;
-constexpr int EEPROM_TOURNAMENT_SCORING_BYTE = 107;
-constexpr int EEPROM_MUSIC_VOLUME_BYTE = 108;
-constexpr int EEPROM_SFX_VOLUME_BYTE = 109;
-constexpr int EEPROM_SCROLLING_SCORES_BYTE = 110;
-constexpr int EEPROM_CALLOUTS_VOLUME_BYTE = 111;
-constexpr int EEPROM_MATCH_FEATURE_BYTE   = 112;
-constexpr int EEPROM_DIM_LEVEL_BYTE       = 113;
-constexpr int EEPROM_SHARP_SHOOTER_START_BONUS_BYTE = 114;
-constexpr int EEPROM_TARGET_SPECIAL_BONUS_BYTE = 115;
-constexpr int EEPROM_STANDUP_SPECIAL_LEVEL_BYTE = 116;
-constexpr int EEPROM_ORIGINAL_HIGHSCORE_BYTE = 117; // 4 bytes (117–120)
-constexpr int EEPROM_EXTRA_BALL_SCORE_BYTE = 140;  // uint32_t (4 bytes, 140-143)
-constexpr int EEPROM_SPECIAL_SCORE_BYTE    = 144;  // uint32_t (4 bytes, 144-147)
-constexpr int EEPROM_AWARD_SCORE_1_BYTE    = 148;  // uint32_t (4 bytes, 148-151)
-constexpr int EEPROM_AWARD_SCORE_2_BYTE    = 152;  // uint32_t (4 bytes, 152-155)
-constexpr int EEPROM_AWARD_SCORE_3_BYTE    = 156;  // uint32_t (4 bytes, 156-159)
-constexpr int EEPROM_HIGHSCORE_BYTE        = 160;  // uint32_t (4 bytes, 160-163)
-constexpr int EEPROM_CREDITS_BYTE          = 164;  // uint8_t  (1 byte)
-constexpr int EEPROM_TOTAL_PLAYS_BYTE    = 165;  // uint32_t (4 bytes)
-constexpr int EEPROM_TOTAL_REPLAYS_BYTE  = 169;  // uint32_t (4 bytes)
-constexpr int EEPROM_HISCORE_BEAT_BYTE   = 173;  // uint32_t (4 bytes) — Trident 2020 ruleset
-constexpr int EEPROM_CHUTE_2_COINS_BYTE  = 177;  // uint32_t (4 bytes)
-constexpr int EEPROM_CHUTE_1_COINS_BYTE  = 181;  // uint32_t (4 bytes)
-constexpr int EEPROM_CHUTE_3_COINS_BYTE  = 185;  // uint32_t (4 bytes)
+// T2020-specific operator adjustments (103, 105–106, 114–116)
+constexpr int EEPROM_SKILL_SHOT_BYTE                 = 103;
+constexpr int EEPROM_AWARD_OVERRIDE_BYTE             = 105;
+constexpr int EEPROM_BALLS_OVERRIDE_BYTE             = 106;
+constexpr int EEPROM_SHARP_SHOOTER_START_BONUS_BYTE  = 114;
+constexpr int EEPROM_TARGET_SPECIAL_BONUS_BYTE       = 115;
+constexpr int EEPROM_STANDUP_SPECIAL_LEVEL_BYTE      = 116;
 
-// Original Trident ruleset settings (189–213)
-constexpr int EEPROM_ORIGINAL_AWARD_OVERRIDE_BYTE   = 189;  // uint8_t  (1 byte)
-constexpr int EEPROM_ORIGINAL_AWARD_SCORE_1_BYTE    = 190;  // uint32_t (4 bytes)
-constexpr int EEPROM_ORIGINAL_AWARD_SCORE_2_BYTE    = 194;  // uint32_t (4 bytes)
-constexpr int EEPROM_ORIGINAL_AWARD_SCORE_3_BYTE    = 198;  // uint32_t (4 bytes)
-constexpr int EEPROM_ORIGINAL_EXTRA_BALL_SCORE_BYTE = 202;  // uint32_t (4 bytes)
-constexpr int EEPROM_ORIGINAL_SPECIAL_SCORE_BYTE    = 206;  // uint32_t (4 bytes)
-constexpr int EEPROM_ORIGINAL_HISCORE_BEAT_BYTE     = 210;  // uint32_t (4 bytes)
-constexpr int EEPROM_ORIGINAL_BALLS_OVERRIDE_BYTE   = 214;  // uint8_t  (1 byte)
-constexpr int EEPROM_MAXIMUM_CREDITS_BYTE           = 215;  // uint8_t  (1 byte)
-constexpr int EEPROM_HIGH_SCORE_REPLAY_BYTE         = 216;  // uint8_t  (1 byte, bool)
-constexpr int EEPROM_ACTIVE_RULE_SET_BYTE              = 217;  // uint8_t  (1 byte, RuleSet)
-constexpr int EEPROM_ORIGINAL_DROP_TARGET_SPECIAL_BYTE = 218;  // uint8_t  (1 byte, 4 or 5)
+// Original Trident high score (117–120)
+constexpr int EEPROM_ORIGINAL_HIGHSCORE_BYTE         = 117;  // uint32_t (4 bytes)
+
+// Trident 2020 ruleset scores and audits (140–188)
+constexpr int EEPROM_EXTRA_BALL_SCORE_BYTE  = 140;  // uint32_t (4 bytes)
+constexpr int EEPROM_SPECIAL_SCORE_BYTE     = 144;  // uint32_t (4 bytes)
+constexpr int EEPROM_AWARD_SCORE_1_BYTE     = 148;  // uint32_t (4 bytes)
+constexpr int EEPROM_AWARD_SCORE_2_BYTE     = 152;  // uint32_t (4 bytes)
+constexpr int EEPROM_AWARD_SCORE_3_BYTE     = 156;  // uint32_t (4 bytes)
+constexpr int EEPROM_HIGHSCORE_BYTE         = 160;  // uint32_t (4 bytes)
+// 164–185: machine audits — defined in MachineEeprom.h
+constexpr int EEPROM_HISCORE_BEAT_BYTE      = 173;  // uint32_t (4 bytes) — T2020 ruleset
+
+// Original Trident ruleset settings (189–221)
+constexpr int EEPROM_ORIGINAL_AWARD_OVERRIDE_BYTE    = 189;  // uint8_t  (1 byte)
+constexpr int EEPROM_ORIGINAL_AWARD_SCORE_1_BYTE     = 190;  // uint32_t (4 bytes)
+constexpr int EEPROM_ORIGINAL_AWARD_SCORE_2_BYTE     = 194;  // uint32_t (4 bytes)
+constexpr int EEPROM_ORIGINAL_AWARD_SCORE_3_BYTE     = 198;  // uint32_t (4 bytes)
+constexpr int EEPROM_ORIGINAL_EXTRA_BALL_SCORE_BYTE  = 202;  // uint32_t (4 bytes)
+constexpr int EEPROM_ORIGINAL_SPECIAL_SCORE_BYTE     = 206;  // uint32_t (4 bytes)
+constexpr int EEPROM_ORIGINAL_HISCORE_BEAT_BYTE      = 210;  // uint32_t (4 bytes)
+constexpr int EEPROM_ORIGINAL_BALLS_OVERRIDE_BYTE    = 214;  // uint8_t  (1 byte)
+// 215–217: freed — now in MachineEeprom.h at addresses 121–123
+constexpr int EEPROM_ORIGINAL_DROP_TARGET_SPECIAL_BYTE = 218;  // uint8_t  (1 byte)
 constexpr int EEPROM_ORIGINAL_HIGH_SCORE_FEATURE_BYTE  = 219;  // uint8_t  (0=extra ball, 1=replay)
-constexpr int EEPROM_ORIGINAL_MELODY_OPTION_BYTE      = 220;
-constexpr int EEPROM_ORIGINAL_HSTD_FEATURE_BYTE       = 221;
+constexpr int EEPROM_ORIGINAL_MELODY_OPTION_BYTE       = 220;  // uint8_t  (1 byte)
+constexpr int EEPROM_ORIGINAL_HSTD_FEATURE_BYTE        = 221;  // uint8_t  (1 byte)
 
 constexpr uint8_t SOUND_SELECTOR_NONE = 0;
 constexpr uint8_t SOUND_SELECTOR_ORIGINAL = 1;

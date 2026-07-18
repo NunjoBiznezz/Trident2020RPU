@@ -4,8 +4,9 @@
 
 #include "../../include/adjustments/StoredAdjustmentsMode.h"
 #include "adjustments/AdjustmentTypes.h"
+#include "MachineEeprom.h"
 #include "RPU.h"
-#include "Trident2020.h"
+#include "Trident.h"
 
 // ListByteAdjustment that previews brightness by blinking the bonus lamps.
 class DimLevelAdjustment : public ListByteAdjustment {
