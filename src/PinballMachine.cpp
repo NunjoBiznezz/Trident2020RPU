@@ -129,6 +129,14 @@ void PinballMachine::stopAllAudio() {
 }
 
 void PinballMachine::readStoredParameters() {
+   // Reset all settings to defaults if the stored version doesn't match.
+   if (EEPROM.read(EEPROM_VERSION_BYTE) != EEPROM_VERSION) {
+      for (int addr = EEPROM_SETTINGS_START; addr <= EEPROM_SETTINGS_END; addr++) {
+         EEPROM.write(addr, 0xFF);
+      }
+      EEPROM.write(EEPROM_VERSION_BYTE, EEPROM_VERSION);
+   }
+
    // --- Gameplay / operator settings ---
    settings_.maximumCredits = readSetting(EEPROM_MAXIMUM_CREDITS_BYTE, 99);
    if (settings_.maximumCredits < 1) {

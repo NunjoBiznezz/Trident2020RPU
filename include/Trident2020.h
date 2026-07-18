@@ -66,41 +66,7 @@ constexpr uint8_t GAME_MODE_EXPLORE_THE_DEPTHS_FLAG = 0x40;
 constexpr uint8_t GAME_MODE_WIZARD_WITHOUT_FLAGS = 0x0F;
 constexpr uint8_t GAME_MODE_WIZARD = 0x7F;
 
-// T2020-specific operator adjustments (103, 105–106, 114–116)
-constexpr int EEPROM_SKILL_SHOT_BYTE                 = 103;
-constexpr int EEPROM_AWARD_OVERRIDE_BYTE             = 105;
-constexpr int EEPROM_BALLS_OVERRIDE_BYTE             = 106;
-constexpr int EEPROM_SHARP_SHOOTER_START_BONUS_BYTE  = 114;
-constexpr int EEPROM_TARGET_SPECIAL_BONUS_BYTE       = 115;
-constexpr int EEPROM_STANDUP_SPECIAL_LEVEL_BYTE      = 116;
-
-// Original Trident high score (117–120)
-constexpr int EEPROM_ORIGINAL_HIGHSCORE_BYTE         = 117;  // uint32_t (4 bytes)
-
-// Trident 2020 ruleset scores and audits (140–188)
-constexpr int EEPROM_EXTRA_BALL_SCORE_BYTE  = 140;  // uint32_t (4 bytes)
-constexpr int EEPROM_SPECIAL_SCORE_BYTE     = 144;  // uint32_t (4 bytes)
-constexpr int EEPROM_AWARD_SCORE_1_BYTE     = 148;  // uint32_t (4 bytes)
-constexpr int EEPROM_AWARD_SCORE_2_BYTE     = 152;  // uint32_t (4 bytes)
-constexpr int EEPROM_AWARD_SCORE_3_BYTE     = 156;  // uint32_t (4 bytes)
-constexpr int EEPROM_HIGHSCORE_BYTE         = 160;  // uint32_t (4 bytes)
-// 164–185: machine audits — defined in MachineEeprom.h
-constexpr int EEPROM_HISCORE_BEAT_BYTE      = 173;  // uint32_t (4 bytes) — T2020 ruleset
-
-// Original Trident ruleset settings (189–221)
-constexpr int EEPROM_ORIGINAL_AWARD_OVERRIDE_BYTE    = 189;  // uint8_t  (1 byte)
-constexpr int EEPROM_ORIGINAL_AWARD_SCORE_1_BYTE     = 190;  // uint32_t (4 bytes)
-constexpr int EEPROM_ORIGINAL_AWARD_SCORE_2_BYTE     = 194;  // uint32_t (4 bytes)
-constexpr int EEPROM_ORIGINAL_AWARD_SCORE_3_BYTE     = 198;  // uint32_t (4 bytes)
-constexpr int EEPROM_ORIGINAL_EXTRA_BALL_SCORE_BYTE  = 202;  // uint32_t (4 bytes)
-constexpr int EEPROM_ORIGINAL_SPECIAL_SCORE_BYTE     = 206;  // uint32_t (4 bytes)
-constexpr int EEPROM_ORIGINAL_HISCORE_BEAT_BYTE      = 210;  // uint32_t (4 bytes)
-constexpr int EEPROM_ORIGINAL_BALLS_OVERRIDE_BYTE    = 214;  // uint8_t  (1 byte)
-// 215–217: freed — now in MachineEeprom.h at addresses 121–123
-constexpr int EEPROM_ORIGINAL_DROP_TARGET_SPECIAL_BYTE = 218;  // uint8_t  (1 byte)
-constexpr int EEPROM_ORIGINAL_HIGH_SCORE_FEATURE_BYTE  = 219;  // uint8_t  (0=extra ball, 1=replay)
-constexpr int EEPROM_ORIGINAL_MELODY_OPTION_BYTE       = 220;  // uint8_t  (1 byte)
-constexpr int EEPROM_ORIGINAL_HSTD_FEATURE_BYTE        = 221;  // uint8_t  (1 byte)
+// All EEPROM address assignments are in MachineEeprom.h (included above).
 
 constexpr uint8_t SOUND_SELECTOR_NONE = 0;
 constexpr uint8_t SOUND_SELECTOR_ORIGINAL = 1;
