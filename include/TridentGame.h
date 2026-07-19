@@ -90,7 +90,6 @@ private:
 
    int  initGamePlay();
    int  initNewBall(bool curStateChanged, uint8_t playerNum, int ballNum);
-   void startBallBackgroundSong(uint8_t ballNum);
 
    void advanceBonus(uint8_t positions = 1);
    void showBonusLamps();

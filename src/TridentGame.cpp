@@ -580,7 +580,6 @@ int TridentGame::initNewBall(bool curStateChanged, uint8_t playerNum, int ballNu
       if (CurrentNumPlayers > 1 && (ballNum != 1 || playerNum != 0)) {
          machine_->playSoundEffect(SOUND_EFFECT_PLAYER_1_UP + playerNum);
       }
-      startBallBackgroundSong(ballNum);
 
       machine_->setDisplayBallInPlay(ballNum);
       machine_->setLampState(LAMP_BALL_IN_PLAY, true);
@@ -657,18 +656,6 @@ int TridentGame::initNewBall(bool curStateChanged, uint8_t playerNum, int ballNu
       return kInitNewBall;
    }
    return kNormalGameplay;
-}
-
-void TridentGame::startBallBackgroundSong(uint8_t ballNum) {
-   uint8_t song;
-   if (ballNum == 1) {
-      song = SOUND_EFFECT_BACKGROUND_1;
-   } else if (ballNum == settings_->tridentSettings.ballsPerGame) {
-      song = SOUND_EFFECT_BACKGROUND_6;
-   } else {
-      song = SOUND_EFFECT_BACKGROUND_2 + (uint8_t)(CurrentTime % 4);
-   }
-   machine_->playBackgroundSong(song);
 }
 
 void TridentGame::advanceBonus(uint8_t positions) {
