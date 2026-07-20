@@ -6,6 +6,7 @@
  **************************************************************************/
 
 #pragma once
+#include <stdint.h>
 
 // ---------------------------------------------------------------------------
 // Version — stored at byte 0; mismatch resets all settings to defaults.
@@ -21,7 +22,6 @@ constexpr int EEPROM_SETTINGS_END   = 221;
 // ---------------------------------------------------------------------------
 // Machine — shared across all rulesets
 // ---------------------------------------------------------------------------
-constexpr int EEPROM_BALL_SAVE_BYTE           = 100;  // uint8_t
 constexpr int EEPROM_FREE_PLAY_BYTE           = 101;  // uint8_t (bool)
 constexpr int EEPROM_SOUND_SELECTOR_BYTE      = 102;  // uint8_t
 constexpr int EEPROM_TILT_WARNING_BYTE        = 104;  // uint8_t
@@ -62,6 +62,7 @@ constexpr int EEPROM_ORIGINAL_HSTD_FEATURE_BYTE         = 221;  // uint8_t
 // ---------------------------------------------------------------------------
 // Trident 2020 ruleset
 // ---------------------------------------------------------------------------
+constexpr int EEPROM_BALL_SAVE_BYTE                  = 100;  // uint8_t
 constexpr int EEPROM_SKILL_SHOT_BYTE                 = 103;  // uint8_t
 constexpr int EEPROM_AWARD_OVERRIDE_BYTE             = 105;  // uint8_t
 constexpr int EEPROM_BALLS_OVERRIDE_BYTE             = 106;  // uint8_t

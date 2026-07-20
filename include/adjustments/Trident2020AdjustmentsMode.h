@@ -1,30 +1,27 @@
 /**************************************************************************
  * Trident2020AdjustmentsMode.h
  *
- * Operator adjustment menu for the 17 Trident 2020 game settings.
+ * Operator adjustment menu for the Trident 2020 game settings.
  * Setting numbers, EEPROM addresses, and adjustment objects are all
  * private to Trident2020AdjustmentsMode.cpp.
  **************************************************************************/
 
 #pragma once
-#include "../MachineMode.h"
-#include "../PinballMachine.h"
+#include "GameAdjustmentsMode.h"
 #include "../Trident2020Game.h"
 #include <stdint.h>
 
-class Trident2020AdjustmentsMode : public MachineMode {
-   uint8_t internalState_ = 0;
-   bool    stateChanged_  = false;
+class Trident2020AdjustmentsMode : public GameAdjustmentsMode {
+   Trident2020Game* game_ = nullptr;
 
-   Trident2020Game* game_    = nullptr;
-   PinballMachine*  machine_ = nullptr;
-
-   unsigned long selfTestLastPressedTime_ = 0;
+   uint8_t           adjustmentCount() const override;
+   StoredAdjustment* getAdjustment(uint8_t index) override;
+   TopState          activeState()     const override;
+   TopState          completedState()  const override;
+   uint8_t           modeId()          const override { return 20; }
+   void              onUpdate()              override;
+   void              onExit()               override;
 
 public:
    void setDependencies(Trident2020Game& game, PinballMachine& machine);
-
-   void     enter(unsigned long currentTime) override;
-   void     exit() override;
-   TopState update(unsigned long currentTime) override;
 };

@@ -110,7 +110,7 @@ void setup() {
 
    hardwareTestMode.setDependencies(pinballMachine);
    storedAdjustmentsMode.setDependencies(pinballMachine);
-   tridentAdjustmentsMode.setDependencies(pinballMachine);
+   tridentAdjustmentsMode.setDependencies(tridentGame, pinballMachine);
    t2020AdjustmentsMode.setDependencies(trident2020Game, pinballMachine);
    matchMode.setDependencies(pinballMachine);
    attractMode.setDependencies(pinballMachine);

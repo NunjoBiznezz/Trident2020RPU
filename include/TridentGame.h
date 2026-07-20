@@ -7,10 +7,25 @@
  **************************************************************************/
 
 #pragma once
+#include "MachineEeprom.h"
 #include "MachineMode.h"
 #include "MachineSettings.h"
 #include "PinballMachine.h"
 #include <stdint.h>
+
+struct TridentGameSettings {
+   unsigned long highScore           = 0;
+   unsigned long awardScores[3]      = {};
+   unsigned long extraBallValue      = 0;       // Switch 23
+   uint8_t       specialAward        = 0;       // 00=100K pts, 01=free game, 10=free game, 11=free ball+free game
+   uint8_t       scoreAwardReplay    = 0;
+   uint32_t      hiscoreBeat         = 0;
+   uint8_t       dropTargetSpecialAt = 5;       // BonusMultiplier level that lights the outlane special (4 or 5)
+   uint8_t       highScoreFeature    = 1;       // Switch 6: 1=high score awards replay, 0=awards extra ball
+   uint8_t       ballsPerGame        = 3;       // Switch 7
+   uint8_t       melodyOption        = 1;       // Switch 8: ON=Full melodies, OFF=2 tones for coin/credit
+   uint8_t       hstdFeature         = 1;       // Switch 15/16: 00=Novelty, 01=1 Free Game…11=3 Free Games
+};
 
 class TridentGame : public MachineMode {
 public:
@@ -28,6 +43,11 @@ public:
    unsigned long getCurrentPlayerScore() const         { return CurrentPlayerCurrentScore; }
    uint8_t       getCurrentPlayer() const              { return CurrentPlayer; }
    uint8_t       getNumPlayers() const                 { return CurrentNumPlayers; }
+
+   TridentGameSettings& getSettings() { return tridentSettings_; }
+   unsigned long        getHighScore() const { return tridentSettings_.highScore; }
+
+   void readSettings();
 
 private:
    // Internal substates — private to this class; not shared with other modes.
@@ -83,6 +103,10 @@ private:
    // kBallOver multi-pass countdown state
    uint8_t       SavedBonusValue          = 1;
    uint8_t       BonusCountdownPassesLeft = 0;
+
+   TridentGameSettings tridentSettings_;
+
+   void saveHighScore(unsigned long score);
 
    void setPlayerLamps(uint8_t numPlayers, uint8_t playerOffset = 0, int flashPeriod = 0);
    void showPlayerScores(uint8_t displayToUpdate, bool flashCurrent, bool dashCurrent,

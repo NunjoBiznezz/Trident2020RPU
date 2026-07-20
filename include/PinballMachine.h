@@ -200,14 +200,6 @@ public:
    // multiple replays at once (e.g. 3 for beating the high score).
    void addReplayAudit(uint8_t count);
 
-   // Record a new Trident 2020 high score: updates the in-memory field,
-   // persists to EEPROM, and increments the beaten counter.
-   void saveHighScore(unsigned long score);
-
-   // Record a new original Trident high score: updates the in-memory field,
-   // persists to EEPROM, and increments the beaten counter.
-   void saveOriginalHighScore(unsigned long score);
-
    // Clear the resetScoresToClearVersion flag once the game has acted on it.
    void acknowledgeResetScores();
 
@@ -249,8 +241,11 @@ public:
    uint8_t       getNumDisplayDigits()      const;
    uint8_t       getTotalDisplayDigits()    const;
 
-   unsigned long getHighScore() const         { return settings_.trident2020Settings.highScore; }
-   unsigned long getOriginalHighScore() const { return settings_.tridentSettings.highScore; }
+   // High scores for attract-mode display; updated by games via setHighScore().
+   unsigned long getHighScore()         const { return t2020HighScore_; }
+   unsigned long getOriginalHighScore() const { return tridentHighScore_; }
+   void          setHighScore(unsigned long v)         { t2020HighScore_ = v; }
+   void          setOriginalHighScore(unsigned long v) { tridentHighScore_ = v; }
 
    // -----------------------------------------------------------------------
    // Last-game result — stored between games for attract mode display.
@@ -290,6 +285,11 @@ private:
    uint8_t       displayScrollPhase_[4]  = {0xFF, 0xFF, 0xFF, 0xFF};
 
    bool haveSettings_ = false;
+
+   // High scores cached from EEPROM for attract-mode display.
+   // Each game updates these via setHighScore() / setOriginalHighScore().
+   unsigned long t2020HighScore_   = 0;
+   unsigned long tridentHighScore_ = 0;
 
    // Last completed game results (for attract mode).
    unsigned long lastGameScores_[4]  = {};

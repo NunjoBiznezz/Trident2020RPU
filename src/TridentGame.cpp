@@ -7,9 +7,11 @@
  **************************************************************************/
 
 #include "TridentGame.h"
+#include "EepromHelpers.h"
 #include "SoundEffects.h"
 #include "Trident.h"
 #include "Trident2020.h"
+#include <EEPROM.h>
 
 static constexpr unsigned BUMPER_AWARD_3_BALL = 1000;
 static constexpr unsigned BUMPER_AWARD_5_BALL = 100;
@@ -64,10 +66,65 @@ static constexpr uint8_t FIVE_TARGETS_UP = 0x1F;  // 11111 < 5X: all targets up.
 TridentGame::TridentGame() {}
 
 // ===========================================================================
+// Settings
+// ===========================================================================
+
+void TridentGame::readSettings() {
+   uint8_t origBallsOverride = readEepromSetting(EEPROM_ORIGINAL_BALLS_OVERRIDE_BYTE, 99);
+   if (origBallsOverride == 3 || origBallsOverride == 5) {
+      tridentSettings_.ballsPerGame = origBallsOverride;
+   } else {
+      if (origBallsOverride != 99) {
+         EEPROM.write(EEPROM_ORIGINAL_BALLS_OVERRIDE_BYTE, 99);
+      }
+      tridentSettings_.ballsPerGame = 3;
+   }
+
+   bool is5Ball = (tridentSettings_.ballsPerGame == 5);
+   tridentSettings_.highScore      = readEepromULSetting(EEPROM_ORIGINAL_HIGHSCORE_BYTE,      is5Ball ? 800000UL : 700000UL);
+   tridentSettings_.awardScores[0] = readEepromULSetting(EEPROM_ORIGINAL_AWARD_SCORE_1_BYTE,  is5Ball ? 540000UL : 360000UL);
+   tridentSettings_.awardScores[1] = readEepromULSetting(EEPROM_ORIGINAL_AWARD_SCORE_2_BYTE,  is5Ball ? 680000UL : 520000UL);
+   tridentSettings_.awardScores[2] = readEepromULSetting(EEPROM_ORIGINAL_AWARD_SCORE_3_BYTE,  0UL);
+   tridentSettings_.extraBallValue = readEepromULSetting(EEPROM_ORIGINAL_EXTRA_BALL_SCORE_BYTE);
+
+   uint8_t specialAward = readEepromSetting(EEPROM_ORIGINAL_SPECIAL_SCORE_BYTE, 0);
+   tridentSettings_.specialAward = (specialAward <= 3) ? specialAward : 0;
+
+   uint8_t dropTargetSpecialAt = readEepromSetting(EEPROM_ORIGINAL_DROP_TARGET_SPECIAL_BYTE, 5);
+   tridentSettings_.dropTargetSpecialAt = (dropTargetSpecialAt == 4) ? 4 : 5;
+
+   uint8_t highScoreFeature = readEepromSetting(EEPROM_ORIGINAL_HIGH_SCORE_FEATURE_BYTE, 1);
+   tridentSettings_.highScoreFeature = (highScoreFeature == 0) ? 0 : 1;
+
+   tridentSettings_.melodyOption = readEepromSetting(EEPROM_ORIGINAL_MELODY_OPTION_BYTE, 1);
+
+   uint8_t hstdFeature = readEepromSetting(EEPROM_ORIGINAL_HSTD_FEATURE_BYTE, 1);
+   tridentSettings_.hstdFeature = (hstdFeature <= 3) ? hstdFeature : 1;
+
+   uint8_t origAwardOverride = readEepromSetting(EEPROM_ORIGINAL_AWARD_OVERRIDE_BYTE, 99);
+   if (origAwardOverride != 99) {
+      tridentSettings_.scoreAwardReplay = origAwardOverride;
+   }
+
+   tridentSettings_.hiscoreBeat = readEepromULSetting(EEPROM_ORIGINAL_HISCORE_BEAT_BYTE);
+
+   machine_->setOriginalHighScore(tridentSettings_.highScore);
+}
+
+void TridentGame::saveHighScore(unsigned long score) {
+   tridentSettings_.highScore = score;
+   EEPROM.put(EEPROM_ORIGINAL_HIGHSCORE_BYTE, (uint32_t)score);
+   tridentSettings_.hiscoreBeat += 1;
+   EEPROM.put(EEPROM_ORIGINAL_HISCORE_BEAT_BYTE, tridentSettings_.hiscoreBeat);
+   machine_->setOriginalHighScore(score);
+}
+
+// ===========================================================================
 // MachineMode interface
 // ===========================================================================
 
 void TridentGame::enter(unsigned long currentTime) {
+   readSettings();
    CurrentTime = currentTime;
    addPlayer(true);
    internalState_ = kInitGameplay;
@@ -90,9 +147,9 @@ TopState TridentGame::update(unsigned long currentTime) {
       showPlayerScores(CurrentPlayer, BallFirstSwitchHitTime == 0,
                        BallFirstSwitchHitTime > 0 && (CurrentTime - BallFirstSwitchHitTime) > 2000);
       if (!HighScoreBeaten[CurrentPlayer] &&
-          CurrentPlayerCurrentScore > settings_->tridentSettings.highScore) {
+          CurrentPlayerCurrentScore > tridentSettings_.highScore) {
          HighScoreBeaten[CurrentPlayer] = true;
-         if (settings_->tridentSettings.highScoreFeature == 1) {
+         if (tridentSettings_.highScoreFeature == 1) {
             machine_->addSpecialCredit();
          } else {
             machine_->setLampState(LAMP_SHOOT_AGAIN, true);
@@ -133,13 +190,13 @@ TopState TridentGame::update(unsigned long currentTime) {
                   CurrentBallInPlay += 1;
                }
                CurrentPlayerCurrentScore = CurrentScores[CurrentPlayer];
-               if (CurrentBallInPlay > settings_->tridentSettings.ballsPerGame) {
+               if (CurrentBallInPlay > tridentSettings_.ballsPerGame) {
                   unsigned long maxScore = 0;
                   for (uint8_t i = 0; i < CurrentNumPlayers; i++) {
                      if (CurrentScores[i] > maxScore) maxScore = CurrentScores[i];
                   }
-                  if (maxScore > settings_->tridentSettings.highScore) {
-                     machine_->saveOriginalHighScore(maxScore);
+                  if (maxScore > tridentSettings_.highScore) {
+                     saveHighScore(maxScore);
                   }
                   machine_->playSoundEffect(SOUND_EFFECT_GAME_OVER);
                   setPlayerLamps(0);
@@ -190,13 +247,7 @@ TopState TridentGame::update(unsigned long currentTime) {
 
          case SW_OUTHOLE:
             if (curState == kNormalGameplay) {
-               if (!BallSaveUsed && settings_->ballSaveNumSeconds > 0 && BallFirstSwitchHitTime != 0 &&
-                   (CurrentTime - BallFirstSwitchHitTime) < ((unsigned long)settings_->ballSaveNumSeconds * 1000)) {
-                  machine_->pushToTimedSolenoidStack(SOL_OUTHOLE, 4, CurrentTime + 100);
-                  BallSaveUsed = true;
-               } else {
-                  returnState = kBallOver;
-               }
+               returnState = kBallOver;
             }
             break;
 
@@ -259,10 +310,10 @@ TopState TridentGame::update(unsigned long currentTime) {
                         machine_->setLampState(LAMP_STAND_UP_SPECIAL, true);
                      } else {
                         machine_->setLampState(LAMP_STAND_UP_SPECIAL, false);
-                        if (settings_->tridentSettings.specialAward == 0) {
+                        if (tridentSettings_.specialAward == 0) {
                            CurrentPlayerCurrentScore += 100000UL;
                         } else {
-                           if (settings_->tridentSettings.specialAward == 3) {
+                           if (tridentSettings_.specialAward == 3) {
                               SamePlayerShootsAgain = true;
                               machine_->setLampState(LAMP_SHOOT_AGAIN, true);
                               machine_->playSoundEffect(SOUND_EFFECT_EXTRA_BALL);
@@ -350,10 +401,10 @@ TopState TridentGame::update(unsigned long currentTime) {
                   DropTargetSpecialAvailable = false;
                   machine_->setLampState(LAMP_RIGHT_OUTLANE_SPECIAL, false);
                   machine_->setLampState(LAMP_DROP_TARGET_SPECIAL, false);
-                  if (settings_->tridentSettings.specialAward == 0) {
+                  if (tridentSettings_.specialAward == 0) {
                      CurrentPlayerCurrentScore += 100000UL;
                   } else {
-                     if (settings_->tridentSettings.specialAward == 3) {
+                     if (tridentSettings_.specialAward == 3) {
                         SamePlayerShootsAgain = true;
                         machine_->setLampState(LAMP_SHOOT_AGAIN, true);
                         machine_->playSoundEffect(SOUND_EFFECT_EXTRA_BALL);
@@ -415,7 +466,7 @@ TopState TridentGame::update(unsigned long currentTime) {
                         setupDropTargets(FIVE_TARGETS_UP);
                         break;
                      }
-                     if (BonusMultiplier >= settings_->tridentSettings.dropTargetSpecialAt) {
+                     if (BonusMultiplier >= tridentSettings_.dropTargetSpecialAt) {
                         DropTargetSpecialAvailable = true;
                         machine_->setLampState(LAMP_RIGHT_OUTLANE_SPECIAL, true);
                         machine_->setLampState(LAMP_DROP_TARGET_SPECIAL, true);
@@ -432,7 +483,7 @@ TopState TridentGame::update(unsigned long currentTime) {
                if (BallFirstSwitchHitTime == 0) {
                   BallFirstSwitchHitTime = CurrentTime;
                }
-               unsigned bumperAward = (settings_->tridentSettings.ballsPerGame == 3) ? BUMPER_AWARD_3_BALL : BUMPER_AWARD_5_BALL;
+               unsigned bumperAward = (tridentSettings_.ballsPerGame == 3) ? BUMPER_AWARD_3_BALL : BUMPER_AWARD_5_BALL;
                CurrentPlayerCurrentScore += bumperAward;
             }
             break;
@@ -584,10 +635,6 @@ int TridentGame::initNewBall(bool curStateChanged, uint8_t playerNum, int ballNu
       machine_->setDisplayBallInPlay(ballNum);
       machine_->setLampState(LAMP_BALL_IN_PLAY, true);
       machine_->setLampState(LAMP_TILT, false);
-
-      if (settings_->ballSaveNumSeconds > 0) {
-         machine_->setLampState(LAMP_SHOOT_AGAIN, true, 0, 500);
-      }
 
       CurrentPlayerCurrentScore = CurrentScores[CurrentPlayer];
 

@@ -7,10 +7,25 @@
  **************************************************************************/
 
 #pragma once
+#include "MachineEeprom.h"
 #include "MachineMode.h"
 #include "MachineSettings.h"
 #include "PinballMachine.h"
 #include <stdint.h>
+
+struct Trident2020GameSettings {
+   unsigned long highScore              = 0;
+   unsigned long awardScores[3]         = {};
+   unsigned long extraBallValue         = 0;
+   unsigned long specialValue           = 0;
+   uint8_t       scoreAwardReplay       = 0;
+   uint32_t      hiscoreBeat            = 0;
+   uint8_t       ballsPerGame           = 3;
+   uint8_t       sharpShooterStartBonus = 3;
+   uint8_t       targetSpecialBonus     = 4;
+   uint8_t       standupSpecialLevel    = 2;
+   uint8_t       ballSaveNumSeconds     = 0;
+};
 
 class Trident2020Game : public MachineMode {
 public:
@@ -31,6 +46,11 @@ public:
    // Called from AttractMode and internally.
    // Uses the MachineSettings already provided via setSettings().
    bool addPlayer(bool resetNumPlayers);
+
+   Trident2020GameSettings& getSettings()      { return trident2020Settings_; }
+   unsigned long            getHighScore() const { return trident2020Settings_.highScore; }
+
+   void readSettings();
 
    // Score/player accessors for attract mode and self-test
    unsigned long getScore(uint8_t player) const         { return CurrentScores[player]; }
@@ -142,6 +162,10 @@ private:
    unsigned long LastCountdownReportTime = 0;
    unsigned long BonusCountDownEndTime = 0;
 
+
+   // --- Game-owned settings and EEPROM helpers ---
+   Trident2020GameSettings trident2020Settings_;
+   void saveHighScore(unsigned long score);
 
    // --- Private helpers ---
    void    overrideScoreDisplay(uint8_t displayNum, unsigned long value, bool animate);

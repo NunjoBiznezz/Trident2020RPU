@@ -32,7 +32,6 @@ public:
 // Value lists for LIST-type adjustments
 // ---------------------------------------------------------------------------
 
-static const uint8_t kBallSaveValues[] = { 0, 5, 10, 15, 20 };
 static const uint8_t kDimLevelValues[] = { 2, 3 };
 
 // ---------------------------------------------------------------------------
@@ -46,7 +45,6 @@ static MinMaxByteAdjustment        sMaximumCredits;
 static MinMaxByteAdjustment        sMatchFeature;
 static MinMaxByteAdjustment        sHighScoreReplay;
 static MinMaxByteAdjustment        sActiveRuleSet;
-static ListByteAdjustment          sBallSave;
 static MinMaxByteAdjustment        sSoundSelector;
 static MinMaxByteAdjustment        sMusicVolume;
 static MinMaxByteAdjustment        sSfxVolume;
@@ -69,7 +67,6 @@ static StoredAdjustment* kAdjustments[] = {
    &sMatchFeature,
    &sHighScoreReplay,
    &sActiveRuleSet,
-   &sBallSave,
    &sSoundSelector,
    &sMusicVolume,
    &sSfxVolume,
@@ -102,7 +99,6 @@ void StoredAdjustmentsMode::setDependencies(PinballMachine& machine) {
    sMatchFeature.init     ((uint8_t*)&s.matchFeature,         EEPROM_MATCH_FEATURE_BYTE,         0,  1);
    sHighScoreReplay.init  ((uint8_t*)&s.highScoreReplay,      EEPROM_HIGH_SCORE_REPLAY_BYTE,     0,  1);
    sActiveRuleSet.init    ((uint8_t*)&s.activeRuleSet,        EEPROM_ACTIVE_RULE_SET_BYTE,       0,  1);
-   sBallSave.init         (&s.ballSaveNumSeconds,              EEPROM_BALL_SAVE_BYTE,             kBallSaveValues, 5);
    sSoundSelector.init    (&s.soundSelector,                   EEPROM_SOUND_SELECTOR_BYTE,        0,  5);
    sMusicVolume.init      (&s.musicVolume,                     EEPROM_MUSIC_VOLUME_BYTE,          0, 10);
    sSfxVolume.init        (&s.sfxVolume,                       EEPROM_SFX_VOLUME_BYTE,            0, 10);
