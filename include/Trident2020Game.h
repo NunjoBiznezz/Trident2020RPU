@@ -9,7 +9,6 @@
 #pragma once
 #include "MachineEeprom.h"
 #include "MachineMode.h"
-#include "MachineSettings.h"
 #include "PinballMachine.h"
 #include <stdint.h>
 
@@ -33,10 +32,7 @@ public:
 
    // Set once from main.cpp after construction; both remain valid for the
    // lifetime of the program.
-   void setMachine(PinballMachine& m) {
-      machine_ = &m;
-      settings_ = &m.getSettings();
-   }
+   void setMachine(PinballMachine& m) { machine_ = &m; }
 
    // MachineMode interface
    void     enter(unsigned long currentTime) override;
@@ -86,8 +82,7 @@ private:
    static constexpr int kMatchMode      = 110;
 
    // Set once via setMachine(); valid for the lifetime of the program.
-   const MachineSettings*  settings_ = nullptr;
-   PinballMachine*         machine_  = nullptr;
+   PinballMachine* machine_ = nullptr;
 
    // Internal game substate and change flag.
    int  internalState_        = kInitGameplay;

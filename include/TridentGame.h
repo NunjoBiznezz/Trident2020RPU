@@ -9,7 +9,6 @@
 #pragma once
 #include "MachineEeprom.h"
 #include "MachineMode.h"
-#include "MachineSettings.h"
 #include "PinballMachine.h"
 #include <stdint.h>
 
@@ -31,7 +30,7 @@ class TridentGame : public MachineMode {
 public:
    TridentGame();
 
-   void setMachine(PinballMachine& m) { machine_ = &m; settings_ = &m.getSettings(); }
+   void setMachine(PinballMachine& m) { machine_ = &m; }
 
    void     enter(unsigned long currentTime) override;
    void     exit() override {}
@@ -57,8 +56,7 @@ private:
    static constexpr int kBallOver       = 100;
    static constexpr int kMatchMode      = 110;
 
-   const MachineSettings* settings_ = nullptr;
-   PinballMachine*        machine_  = nullptr;
+   PinballMachine* machine_ = nullptr;
 
    int  internalState_        = kInitGameplay;
    bool internalStateChanged_ = false;

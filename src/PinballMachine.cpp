@@ -154,9 +154,9 @@ void PinballMachine::readStoredParameters() {
    settings_.tournamentScoring = (readSetting(EEPROM_TOURNAMENT_SCORING_BYTE, 0)) != 0;
    settings_.scrollingScores   = (readSetting(EEPROM_SCROLLING_SCORES_BYTE,   1)) != 0;
 
-   uint8_t ruleSetByte = readSetting(EEPROM_ACTIVE_RULE_SET_BYTE, (uint8_t)RuleSet::Trident2020);
+   uint8_t ruleSetByte = readSetting(EEPROM_ACTIVE_RULE_SET_BYTE, (uint8_t)DEFAULT_RULE_SET);
    settings_.activeRuleSet = (ruleSetByte <= (uint8_t)RuleSet::Trident2020)
-                             ? (RuleSet)ruleSetByte : RuleSet::Trident2020;
+                             ? (RuleSet)ruleSetByte : DEFAULT_RULE_SET;
 
    settings_.maxTiltWarnings = readSetting(EEPROM_TILT_WARNING_BYTE, TILT_WARNINGS_DEFAULT);
    if (settings_.maxTiltWarnings > TILT_WARNINGS_MAX) {

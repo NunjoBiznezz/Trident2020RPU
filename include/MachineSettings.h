@@ -10,9 +10,21 @@
 #include <stdint.h>
 
 enum class RuleSet : uint8_t {
-   Original   = 0,
+   Original    = 0,
    Trident2020 = 1,
 };
+constexpr uint8_t TILT_WARNINGS_DEFAULT = 2;
+constexpr uint8_t TILT_WARNINGS_MAX = 2;
+
+constexpr uint8_t AWARD_OVERRIDE_DEFAULT = 99;
+constexpr uint8_t AWARD_OVERRIDE_MAX = 99;
+
+constexpr uint8_t BALLS_PER_GAME_DEFAULT = 5;
+
+constexpr uint8_t BALL_SAVE_TIME_S_DEFAULT = 15;
+constexpr uint8_t BALL_SAVE_TIME_S_MAX = 20;
+
+constexpr RuleSet DEFAULT_RULE_SET = RuleSet::Original;
 
 struct MachineSettings {
    // --- Credits / play options ---
@@ -21,12 +33,12 @@ struct MachineSettings {
    bool          freePlayMode             = true;  // When true, START never requires credits
    bool          tournamentScoring        = false; // When true, score-based awards (EB, special) are suppressed
    bool          scrollingScores          = true;  // When true, scores above 999 999 scroll across the display
-   uint8_t       maxTiltWarnings          = 2;     // Tilt warnings before ball loss (0–2)
+   uint8_t       maxTiltWarnings          = TILT_WARNINGS_DEFAULT; // Tilt warnings before ball loss (0–2)
    bool          matchFeature             = true;  // When true, a match on the last two score digits gives a free credit
    bool          highScoreReplay          = true;  // When true, beating the high score awards a replay
 
    // --- Rule set selection ---
-   RuleSet       activeRuleSet            = RuleSet::Original;
+   RuleSet       activeRuleSet            = DEFAULT_RULE_SET;
 
    // --- Display ---
    uint8_t       dimLevel                 = 2;    // RPU lamp dim divisor (2 or 3); higher = dimmer
@@ -50,13 +62,3 @@ struct MachineSettings {
    bool          resetScoresToClearVersion = false; // Game sets this to request a score-display clear on version change
 };
 
-constexpr uint8_t TILT_WARNINGS_DEFAULT = 2;
-constexpr uint8_t TILT_WARNINGS_MAX = 2;
-
-constexpr uint8_t AWARD_OVERRIDE_DEFAULT = 99;
-constexpr uint8_t AWARD_OVERRIDE_MAX = 99;
-
-constexpr uint8_t BALLS_PER_GAME_DEFAULT = 5;
-
-constexpr uint8_t BALL_SAVE_TIME_S_DEFAULT = 15;
-constexpr uint8_t BALL_SAVE_TIME_S_MAX = 20;

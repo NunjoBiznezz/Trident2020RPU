@@ -228,9 +228,16 @@ public:
    // Accessors
    // -----------------------------------------------------------------------
 
-   uint8_t          getCredits() const       { return settings_.credits; }
-   bool             getFreePlayMode() const  { return settings_.freePlayMode; }
-   bool             getMatchFeature() const  { return settings_.matchFeature; }
+   uint8_t          getCredits() const           { return settings_.credits; }
+   bool             getFreePlayMode() const      { return settings_.freePlayMode; }
+   bool             getMatchFeature() const      { return settings_.matchFeature; }
+   bool             isHighScoreReplay() const    { return settings_.highScoreReplay; }
+   bool             isTournamentScoring() const  { return settings_.tournamentScoring; }
+   bool             isScrollingScores() const    { return settings_.scrollingScores; }
+   int              getMaxTiltWarnings() const   { return settings_.maxTiltWarnings; }
+   int              getMaximumCredits() const    { return settings_.maximumCredits; }
+   RuleSet          getActiveRuleSet() const     { return settings_.activeRuleSet; }
+
    MachineSettings& getSettings();
 
    // Hardware capability queries — use these instead of RPU_* constants.

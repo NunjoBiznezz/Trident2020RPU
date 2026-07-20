@@ -160,7 +160,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
 
    uint8_t switchHit;
 
-   if (NumTiltWarnings <= settings_->maxTiltWarnings) {
+   if (NumTiltWarnings <= machine_->getMaxTiltWarnings()) {
       while ((switchHit = machine_->pullFirstFromSwitchStack()) != SWITCH_STACK_EMPTY) {
          switch (switchHit) {
          case SW_SLAM:
@@ -170,7 +170,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
             if ((CurrentTime - LastTiltWarningTime) > TILT_WARNING_DEBOUNCE_TIME) {
                LastTiltWarningTime = CurrentTime;
                NumTiltWarnings += 1;
-               if (NumTiltWarnings > settings_->maxTiltWarnings) {
+               if (NumTiltWarnings > machine_->getMaxTiltWarnings()) {
                   machine_->disableSolenoidStack();
                   machine_->setDisableFlippers(true);
                   machine_->turnOffAllLamps();
@@ -207,7 +207,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
             machine_->playSoundEffect(SOUND_EFFECT_RIGHT_OUTLANE);
             if (NumberOfStandupClears == trident2020Settings_.standupSpecialLevel && !SpecialCollected) {
                SpecialCollected = true;
-               if (settings_->tournamentScoring) {
+               if (machine_->isTournamentScoring()) {
                   CurrentPlayerCurrentScore += (unsigned long)trident2020Settings_.specialValue;
                }
             }
@@ -453,8 +453,8 @@ TopState Trident2020Game::update(unsigned long currentTime) {
             if (CurrentBallInPlay < 2) {
                addPlayer(false);
             } else {
-               if (settings_->credits >= 1 || settings_->freePlayMode) {
-                  if (!settings_->freePlayMode) {
+               if (machine_->getCredits() >= 1 || machine_->getFreePlayMode()) {
+                  if (!machine_->getFreePlayMode()) {
                      machine_->decrementCredits();
                      machine_->setDisplayCredits(machine_->getCredits());
                   }
@@ -482,7 +482,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
             machine_->addCredit(true, 1);
             break;
          case SW_OUTHOLE:
-            if (NumTiltWarnings > settings_->maxTiltWarnings) {
+            if (NumTiltWarnings > machine_->getMaxTiltWarnings()) {
                returnState = kCountdownBonus;
             }
             break;
@@ -494,13 +494,13 @@ TopState Trident2020Game::update(unsigned long currentTime) {
       showBonusOnTree(Bonus);
    }
 
-   if (!settings_->scrollingScores && CurrentPlayerCurrentScore > machine_->getMaxDisplayScore()) {
+   if (!machine_->isScrollingScores() && CurrentPlayerCurrentScore > machine_->getMaxDisplayScore()) {
       CurrentPlayerCurrentScore -= machine_->getMaxDisplayScore();
    }
 
    if (scoreAtTop != CurrentPlayerCurrentScore) {
       LastTimeScoreChanged = CurrentTime;
-      if (!settings_->tournamentScoring) {
+      if (!machine_->isTournamentScoring()) {
          for (int awardCount = 0; awardCount < 3; awardCount++) {
             if (trident2020Settings_.awardScores[awardCount] != 0 &&
                 scoreAtTop < trident2020Settings_.awardScores[awardCount] &&
@@ -533,7 +533,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
 }
 
 bool Trident2020Game::addPlayer(bool resetNumPlayers) {
-   if (settings_->credits < 1 && !settings_->freePlayMode) {
+   if (machine_->getCredits() < 1 && !machine_->getFreePlayMode()) {
       return false;
    }
    if (resetNumPlayers) {
@@ -547,7 +547,7 @@ bool Trident2020Game::addPlayer(bool resetNumPlayers) {
    machine_->setDisplay(CurrentNumPlayers - 1, 0);
    machine_->setDisplayBlank(CurrentNumPlayers - 1, 0x30);
 
-   if (!settings_->freePlayMode) {
+   if (!machine_->getFreePlayMode()) {
       machine_->decrementCredits();
       machine_->setDisplayCredits(machine_->getCredits());
       machine_->setCoinLockout(false);
@@ -1067,7 +1067,7 @@ void Trident2020Game::handleDropTargetHit(uint8_t switchHit, unsigned long score
                BonusX += 1;
                machine_->playSoundEffect(SOUND_EFFECT_DROP_TARGET_CLEAR_1 + (BonusX - 1));
                if (BonusX == trident2020Settings_.targetSpecialBonus) {
-                  if (settings_->tournamentScoring) {
+                  if (machine_->isTournamentScoring()) {
                      CurrentPlayerCurrentScore += trident2020Settings_.specialValue;
                   } else {
                      machine_->addSpecialCredit();
@@ -1150,7 +1150,7 @@ void Trident2020Game::handleStandupHit(uint8_t switchHit, unsigned long scoreMul
       LastStandupTargetHit = 0;
       NumberOfStandupClears += 1;
       if (NumberOfStandupClears == trident2020Settings_.standupSpecialLevel) {
-         if (settings_->tournamentScoring) {
+         if (machine_->isTournamentScoring()) {
             CurrentPlayerCurrentScore += (unsigned long)trident2020Settings_.specialValue;
          } else {
             machine_->addSpecialCredit();
@@ -1176,7 +1176,7 @@ int Trident2020Game::initGamePlay() {
    DEBUG_MESSAGE("Starting game\n\r");
 
    machine_->enableSolenoidStack();
-   machine_->setCoinLockout(settings_->credits >= settings_->maximumCredits);
+   machine_->setCoinLockout(machine_->getCredits() >= machine_->getMaximumCredits());
    machine_->turnOffAllLamps();
    setPlayerLamps(1);
 
@@ -1216,7 +1216,7 @@ int Trident2020Game::initNewBall(bool curStateChanged, uint8_t playerNum, int ba
 
       machine_->setDisableFlippers(false);
       machine_->enableSolenoidStack();
-      machine_->setDisplayCredits(settings_->credits, true);
+      machine_->setDisplayCredits(machine_->getCredits(), true);
       setPlayerLamps(playerNum + 1, 4);
       if (CurrentNumPlayers > 1 && (ballNum != 1 || playerNum != 0)) {
          machine_->playSoundEffect(SOUND_EFFECT_PLAYER_1_UP + playerNum);
@@ -1558,7 +1558,7 @@ int Trident2020Game::manageGameMode() {
          BallTimeInTrough = CurrentTime;
       } else {
          if ((CurrentTime - BallTimeInTrough) > 500) {
-            if (BallFirstSwitchHitTime == 0 && NumTiltWarnings <= settings_->maxTiltWarnings) {
+            if (BallFirstSwitchHitTime == 0 && NumTiltWarnings <= machine_->getMaxTiltWarnings()) {
                machine_->pushToTimedSolenoidStack(SOL_OUTHOLE, 4, CurrentTime);
                BallTimeInTrough = 0;
                returnState = kNormalGameplay;
@@ -1605,7 +1605,7 @@ int Trident2020Game::countdownBonus(bool curStateChanged) {
 
    if ((CurrentTime - LastCountdownReportTime) > 200) {
       if (Bonus > 0) {
-         if (NumTiltWarnings <= settings_->maxTiltWarnings) {
+         if (NumTiltWarnings <= machine_->getMaxTiltWarnings()) {
             machine_->playSoundEffect(SOUND_EFFECT_BONUS_COUNT + (BonusX - 1));
             CurrentPlayerCurrentScore += (unsigned long)1000 * ((unsigned long)BonusX);
          }
@@ -1638,7 +1638,7 @@ void Trident2020Game::checkHighScores() {
    }
 
    if (highestScore > trident2020Settings_.highScore) {
-      if (settings_->highScoreReplay) {
+      if (machine_->isHighScoreReplay()) {
          machine_->addCredit(false, 3);
          machine_->addReplayAudit(3);
       }

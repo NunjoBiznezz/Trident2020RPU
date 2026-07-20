@@ -39,6 +39,9 @@ bool AudioHandler::queueSound(uint16_t soundIndex, unsigned long timeToPlay, uin
 
 void AudioHandler::stopAllSoundFX() {
    clearSoundQueue();
+#if defined(RPU_OS_USE_SB100) || defined(RPU_OS_USE_DASH51) || defined(RPU_OS_USE_S_AND_T)
+   RPU_PlayNativeSound(0);
+#endif
 }
 
 void AudioHandler::clearSoundQueue() {

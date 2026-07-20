@@ -152,7 +152,7 @@ void loop() {
          activeMode = &matchMode;
          break;
       case TopState::Game:
-         if (pinballMachine.getSettings().activeRuleSet == RuleSet::Original) {
+         if (pinballMachine.getActiveRuleSet() == RuleSet::Original) {
             activeMode = &tridentGame;
          } else {
             activeMode = &trident2020Game;

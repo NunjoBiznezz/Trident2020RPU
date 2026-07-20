@@ -81,10 +81,10 @@ void TridentGame::readSettings() {
    }
 
    bool is5Ball = (tridentSettings_.ballsPerGame == 5);
-   tridentSettings_.highScore      = readEepromULSetting(EEPROM_ORIGINAL_HIGHSCORE_BYTE,      is5Ball ? 800000UL : 700000UL);
-   tridentSettings_.awardScores[0] = readEepromULSetting(EEPROM_ORIGINAL_AWARD_SCORE_1_BYTE,  is5Ball ? 540000UL : 360000UL);
-   tridentSettings_.awardScores[1] = readEepromULSetting(EEPROM_ORIGINAL_AWARD_SCORE_2_BYTE,  is5Ball ? 680000UL : 520000UL);
-   tridentSettings_.awardScores[2] = readEepromULSetting(EEPROM_ORIGINAL_AWARD_SCORE_3_BYTE,  0UL);
+   tridentSettings_.highScore = readEepromULSetting(EEPROM_ORIGINAL_HIGHSCORE_BYTE, is5Ball ? 800000UL : 700000UL);
+   tridentSettings_.awardScores[0] = readEepromULSetting(EEPROM_ORIGINAL_AWARD_SCORE_1_BYTE, is5Ball ? 540000UL : 360000UL);
+   tridentSettings_.awardScores[1] = readEepromULSetting(EEPROM_ORIGINAL_AWARD_SCORE_2_BYTE, is5Ball ? 680000UL : 520000UL);
+   tridentSettings_.awardScores[2] = readEepromULSetting(EEPROM_ORIGINAL_AWARD_SCORE_3_BYTE, 0UL);
    tridentSettings_.extraBallValue = readEepromULSetting(EEPROM_ORIGINAL_EXTRA_BALL_SCORE_BYTE);
 
    uint8_t specialAward = readEepromSetting(EEPROM_ORIGINAL_SPECIAL_SCORE_BYTE, 0);
@@ -146,8 +146,7 @@ TopState TridentGame::update(unsigned long currentTime) {
    } else if (curState == kNormalGameplay) {
       showPlayerScores(CurrentPlayer, BallFirstSwitchHitTime == 0,
                        BallFirstSwitchHitTime > 0 && (CurrentTime - BallFirstSwitchHitTime) > 2000);
-      if (!HighScoreBeaten[CurrentPlayer] &&
-          CurrentPlayerCurrentScore > tridentSettings_.highScore) {
+      if (!HighScoreBeaten[CurrentPlayer] && CurrentPlayerCurrentScore > tridentSettings_.highScore) {
          HighScoreBeaten[CurrentPlayer] = true;
          if (tridentSettings_.highScoreFeature == 1) {
             machine_->addSpecialCredit();
@@ -193,7 +192,9 @@ TopState TridentGame::update(unsigned long currentTime) {
                if (CurrentBallInPlay > tridentSettings_.ballsPerGame) {
                   unsigned long maxScore = 0;
                   for (uint8_t i = 0; i < CurrentNumPlayers; i++) {
-                     if (CurrentScores[i] > maxScore) maxScore = CurrentScores[i];
+                     if (CurrentScores[i] > maxScore) {
+                        maxScore = CurrentScores[i];
+                     }
                   }
                   if (maxScore > tridentSettings_.highScore) {
                      saveHighScore(maxScore);
@@ -214,7 +215,7 @@ TopState TridentGame::update(unsigned long currentTime) {
    }
 
    // Switch stack — drain every tick regardless of state
-   if (NumTiltWarnings <= settings_->maxTiltWarnings) {
+   if (NumTiltWarnings <= machine_->getMaxTiltWarnings()) {
       uint8_t switchHit;
       while ((switchHit = machine_->pullFirstFromSwitchStack()) != PinballMachine::SWITCH_STACK_EMPTY) {
          switch (switchHit) {
@@ -225,7 +226,7 @@ TopState TridentGame::update(unsigned long currentTime) {
             if ((CurrentTime - LastTiltWarningTime) > TILT_WARNING_DEBOUNCE_TIME) {
                LastTiltWarningTime = CurrentTime;
                NumTiltWarnings += 1;
-               if (NumTiltWarnings > settings_->maxTiltWarnings) {
+               if (NumTiltWarnings > machine_->getMaxTiltWarnings()) {
                   machine_->disableSolenoidStack();
                   machine_->setDisableFlippers(true);
                   machine_->turnOffAllLamps();
@@ -548,7 +549,7 @@ bool TridentGame::addPlayer(bool resetNumPlayers) {
    machine_->setDisplay(CurrentNumPlayers - 1, 0);
    machine_->setDisplayBlank(CurrentNumPlayers - 1, 0x30);
 
-   if (!settings_->freePlayMode) {
+   if (!machine_->getFreePlayMode()) {
       machine_->decrementCredits();
       machine_->setDisplayCredits(machine_->getCredits());
       machine_->setCoinLockout(false);
@@ -591,7 +592,7 @@ void TridentGame::showPlayerScores(uint8_t displayToUpdate, bool flashCurrent, b
 
 int TridentGame::initGamePlay() {
    machine_->enableSolenoidStack();
-   machine_->setCoinLockout(settings_->credits >= settings_->maximumCredits);
+   machine_->setCoinLockout(machine_->getCredits() >= machine_->getMaximumCredits());
    machine_->turnOffAllLamps();
    setPlayerLamps(1);
 
@@ -605,7 +606,9 @@ int TridentGame::initGamePlay() {
    CurrentBallInPlay = 1;
    CurrentNumPlayers = 1;
    CurrentPlayer = 0;
-   for (uint8_t i = 0; i < 4; i++) HighScoreBeaten[i] = false;
+   for (uint8_t i = 0; i < 4; i++) {
+      HighScoreBeaten[i] = false;
+   }
    showPlayerScores(0xFF, false, false);
 
    if (machine_->readSingleSwitchState(SW_SAUCER)) {
@@ -625,7 +628,7 @@ int TridentGame::initNewBall(bool curStateChanged, uint8_t playerNum, int ballNu
 
       machine_->setDisableFlippers(false);
       machine_->enableSolenoidStack();
-      machine_->setDisplayCredits(settings_->credits, true);
+      machine_->setDisplayCredits(machine_->getCredits(), true);
       setPlayerLamps(playerNum + 1, 4);
 
       if (CurrentNumPlayers > 1 && (ballNum != 1 || playerNum != 0)) {
