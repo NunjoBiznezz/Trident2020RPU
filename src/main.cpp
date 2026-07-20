@@ -69,14 +69,14 @@ static const BuildInfoRecord FIRMWARE_BUILD_INFO PROGMEM = {
 static unsigned long CurrentTime = 0;
 
 static PinballMachine pinballMachine;
+static AttractMode attractMode;
 static TridentGame tridentGame;
 static Trident2020Game trident2020Game;
+static MatchMode matchMode;
 static HardwareTestMode hardwareTestMode;
 static StoredAdjustmentsMode storedAdjustmentsMode;
 static TridentAdjustmentsMode tridentAdjustmentsMode;
 static Trident2020AdjustmentsMode t2020AdjustmentsMode;
-static MatchMode matchMode;
-static AttractMode attractMode;
 
 static TopState topState = TopState::Attract;
 static MachineMode* activeMode = &attractMode;
