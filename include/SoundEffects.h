@@ -4,6 +4,17 @@
 #include <stdint.h>
 
 /*********************************************************************
+    Native SB100 Effect Definitions
+*********************************************************************/
+constexpr uint8_t SOUND_NATIVE_NONE = 0x00;
+constexpr uint8_t SOUND_NATIVE_TEN = 0x01;
+constexpr uint8_t SOUND_NATIVE_ONE_HUNDRED = 0x02;
+constexpr uint8_t SOUND_NATIVE_ONE_THOUSAND = 0x04;
+constexpr uint8_t SOUND_NATIVE_TEN_THOUSAND = 0x08;
+constexpr uint8_t SOUND_NATIVE_ADD_BONUS = 0x10;
+constexpr uint8_t SOUND_NATIVE_POP_BUMPER = 0x20;
+
+/*********************************************************************
     Sound Effect Definitions
 *********************************************************************/
 constexpr uint8_t SOUND_EFFECT_NONE = 0;

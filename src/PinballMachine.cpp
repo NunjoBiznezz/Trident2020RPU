@@ -438,112 +438,112 @@ void PinballMachine::playSoundEffect(uint8_t soundEffectNum) {
       case SOUND_EFFECT_RIGHT_SPINNER:
       case SOUND_EFFECT_DROP_TARGET:
       case SOUND_EFFECT_BALL_OVER:
-         audioHandler_.queueSound(0x02, currentTime_);
-         audioHandler_.queueSound(0x00, currentTime_ + 75);
+         audioHandler_.queueSound(SOUND_NATIVE_ONE_HUNDRED, currentTime_);
+         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
          break;
       case SOUND_EFFECT_LEFT_INLANE:
          for (int count = 0; count < rolloverValue_; count++) {
-            audioHandler_.queueSound(0x04, currentTime_ + 200 * count);
-            audioHandler_.queueSound(0x00, currentTime_ + 75 + (200 * count));
+            audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_ + 200 * count);
+            audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
          }
          break;
       case SOUND_EFFECT_RIGHT_INLANE:
          for (int count = 0; count < 6; count++) {
-            audioHandler_.queueSound((count < 3) ? 0x04 : 0x10, currentTime_ + 200 * count);
-            audioHandler_.queueSound(0x00, currentTime_ + 75 + (200 * count));
+            audioHandler_.queueSound((count < 3) ? SOUND_NATIVE_ONE_THOUSAND : SOUND_NATIVE_ADD_BONUS, currentTime_ + 200 * count);
+            audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
          }
          break;
       case SOUND_EFFECT_SAUCER_HIT_5K:
          for (int count = 0; count < 5; count++) {
-            audioHandler_.queueSound(0x04, currentTime_ + 200 * count);
-            audioHandler_.queueSound(0x00, currentTime_ + 75 + (200 * count));
+            audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_ + 200 * count);
+            audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
          }
          break;
       case SOUND_EFFECT_SAUCER_HIT_30K:
          for (int count = 0; count < 3; count++) {
-            audioHandler_.queueSound(0x08, currentTime_ + 200 * count);
-            audioHandler_.queueSound(0x00, currentTime_ + 75 + (200 * count));
+            audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_ + 200 * count);
+            audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
          }
          break;
       case SOUND_EFFECT_SAUCER_HIT_20K:
          for (int count = 0; count < 2; count++) {
-            audioHandler_.queueSound(0x08, currentTime_ + 200 * count);
-            audioHandler_.queueSound(0x00, currentTime_ + 75 + (200 * count));
+            audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_ + 200 * count);
+            audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
          }
          break;
       case SOUND_EFFECT_SAUCER_HIT_10K:
          for (int count = 0; count < 1; count++) {
-            audioHandler_.queueSound(0x08, currentTime_ + 200 * count);
-            audioHandler_.queueSound(0x00, currentTime_ + 75 + (200 * count));
+            audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_ + 200 * count);
+            audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
          }
          break;
       case SOUND_EFFECT_RIGHT_OUTLANE:
          for (int count = 0; count < 5; count++) {
-            audioHandler_.queueSound(0x04, currentTime_ + 200 * count);
-            audioHandler_.queueSound(0x00, currentTime_ + 75 + (200 * count));
+            audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_ + 200 * count);
+            audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
          }
          break;
       case SOUND_EFFECT_TOP_BUMPER_HIT:
       case SOUND_EFFECT_BOTTOM_BUMPER_HIT:
-         audioHandler_.queueSound(0x20, currentTime_);
-         audioHandler_.queueSound(0x00, currentTime_ + 75);
+         audioHandler_.queueSound(SOUND_NATIVE_POP_BUMPER, currentTime_);
+         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
          break;
       case SOUND_EFFECT_SHOOT_AGAIN:
       case SOUND_EFFECT_PLAYER_1_UP:
       case SOUND_EFFECT_PLAYER_2_UP:
       case SOUND_EFFECT_PLAYER_3_UP:
       case SOUND_EFFECT_PLAYER_4_UP:
-         audioHandler_.queueSound(0x08, currentTime_);
-         audioHandler_.queueSound(0x04, currentTime_ + 75);
-         audioHandler_.queueSound(0x00, currentTime_ + 175);
+         audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_);
+         audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_ + 75);
+         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 175);
          break;
       case SOUND_EFFECT_BONUS_COUNT:
       case SOUND_EFFECT_2X_BONUS_COUNT:
       case SOUND_EFFECT_3X_BONUS_COUNT:
       case SOUND_EFFECT_4X_BONUS_COUNT:
       case SOUND_EFFECT_5X_BONUS_COUNT:
-         audioHandler_.queueSound(0x04, currentTime_);
-         audioHandler_.queueSound(0x00, currentTime_ + 75);
+         audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_);
+         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
          break;
       case SOUND_EFFECT_UPPER_SLING:
       case SOUND_EFFECT_EXTRA_BALL:
       case SOUND_EFFECT_TILT_WARNING:
-         audioHandler_.queueSound(0x10, currentTime_);
-         audioHandler_.queueSound(0x00, currentTime_ + 75);
+         audioHandler_.queueSound(SOUND_NATIVE_ADD_BONUS, currentTime_);
+         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
          break;
       case SOUND_EFFECT_10PT_SWITCH:
       case SOUND_EFFECT_MATCH_SPIN:
       case SOUND_EFFECT_LOWER_SLING:
-         audioHandler_.queueSound(0x01, currentTime_);
-         audioHandler_.queueSound(0x00, currentTime_ + 75);
+         audioHandler_.queueSound(SOUND_NATIVE_TEN, currentTime_);
+         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
          break;
       case SOUND_EFFECT_DROP_TARGET_CLEAR_1:
       case SOUND_EFFECT_DROP_TARGET_CLEAR_2:
       case SOUND_EFFECT_DROP_TARGET_CLEAR_3:
       case SOUND_EFFECT_DROP_TARGET_CLEAR_4:
       case SOUND_EFFECT_DROP_TARGET_CLEAR_5:
-         audioHandler_.queueSound(0x08, currentTime_);
-         audioHandler_.queueSound(0x00, currentTime_ + 75);
+         audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_);
+         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
          break;
       case SOUND_EFFECT_FIRST_SU_SWITCH_HIT:
       case SOUND_EFFECT_SECOND_SU_SWITCH_HIT:
       case SOUND_EFFECT_THIRD_SU_SWITCH_HIT:
       case SOUND_EFFECT_FOURTH_SU_SWITCH_HIT:
       case SOUND_EFFECT_FIFTH_SU_SWITCH_HIT:
-         audioHandler_.queueSound(0x04, currentTime_);
-         audioHandler_.queueSound(0x00, currentTime_ + 75);
+         audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_);
+         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
          break;
       case SOUND_EFFECT_ADD_CREDIT:
       case SOUND_EFFECT_GAME_OVER:
-         audioHandler_.queueSound(0x08, currentTime_);
-         audioHandler_.queueSound(0x04, currentTime_ + 75);
-         audioHandler_.queueSound(0x02, currentTime_ + 150);
-         audioHandler_.queueSound(0x01, currentTime_ + 225);
-         audioHandler_.queueSound(0x08, currentTime_ + 325);
-         audioHandler_.queueSound(0x04, currentTime_ + 400);
-         audioHandler_.queueSound(0x02, currentTime_ + 475);
-         audioHandler_.queueSound(0x01, currentTime_ + 550);
-         audioHandler_.queueSound(0x00, currentTime_ + 650);
+         audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_);
+         audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_ + 75);
+         audioHandler_.queueSound(SOUND_NATIVE_ONE_HUNDRED, currentTime_ + 150);
+         audioHandler_.queueSound(SOUND_NATIVE_TEN, currentTime_ + 225);
+         audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_ + 325);
+         audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_ + 400);
+         audioHandler_.queueSound(SOUND_NATIVE_ONE_HUNDRED, currentTime_ + 475);
+         audioHandler_.queueSound(SOUND_NATIVE_TEN, currentTime_ + 550);
+         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 650);
          break;
       case SOUND_EFFECT_ADD_PLAYER_1:
       case SOUND_EFFECT_ADD_PLAYER_2:
@@ -551,15 +551,15 @@ void PinballMachine::playSoundEffect(uint8_t soundEffectNum) {
       case SOUND_EFFECT_ADD_PLAYER_4:
       case SOUND_EFFECT_RESCUE_FROM_THE_DEEP:
       case SOUND_EFFECT_TRIDENT_INTRO:
-         audioHandler_.queueSound(0x01, currentTime_);
-         audioHandler_.queueSound(0x02, currentTime_ + 75);
-         audioHandler_.queueSound(0x04, currentTime_ + 150);
-         audioHandler_.queueSound(0x08, currentTime_ + 225);
-         audioHandler_.queueSound(0x01, currentTime_ + 325);
-         audioHandler_.queueSound(0x02, currentTime_ + 400);
-         audioHandler_.queueSound(0x04, currentTime_ + 475);
-         audioHandler_.queueSound(0x08, currentTime_ + 550);
-         audioHandler_.queueSound(0x00, currentTime_ + 650);
+         audioHandler_.queueSound(SOUND_NATIVE_TEN, currentTime_);
+         audioHandler_.queueSound(SOUND_NATIVE_ONE_HUNDRED, currentTime_ + 75);
+         audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_ + 150);
+         audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_ + 225);
+         audioHandler_.queueSound(SOUND_NATIVE_TEN, currentTime_ + 325);
+         audioHandler_.queueSound(SOUND_NATIVE_ONE_HUNDRED, currentTime_ + 400);
+         audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_ + 475);
+         audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_ + 550);
+         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 650);
          break;
       }
       break;
