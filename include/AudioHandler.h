@@ -28,6 +28,7 @@ public:
 
    bool playSound(uint16_t soundIndex);
    bool queueSound(uint16_t soundIndex, unsigned long timeToPlay);
+   void playSoundEffect(uint8_t soundEffect);
 
    void stopAllSoundFX();
    void update(unsigned long currentTime);

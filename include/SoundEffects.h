@@ -4,17 +4,6 @@
 #include <stdint.h>
 
 /*********************************************************************
-    SB100 Sampled sounds for the WAV player
-*********************************************************************/
-constexpr uint8_t SOUND_EFFECT_TEN = 100;             // This plays the ten sound
-constexpr uint8_t SOUND_EFFECT_ONE_HUNDRED = 101;     // This plays the one hundred sound
-constexpr uint8_t SOUND_EFFECT_ONE_THOUSAND = 102;    // This plays the one thousand sound
-constexpr uint8_t SOUND_EFFECT_TEN_THOUSAND = 103;    // This plays the ten thousand sound
-constexpr uint8_t SOUND_EFFECT_ADD_BONUS = 104;       // This plays the add bonus sound
-constexpr uint8_t SOUND_EFFECT_POP_BUMPER = 105;      // This plays the pop bumper sound
-constexpr uint8_t SOUND_EFFECT_INTRO = 106;           // This plays the intro sound
-
-/*********************************************************************
     Sound Tracks
 *********************************************************************/
 constexpr uint8_t SOUND_EFFECT_NONE = 0;
@@ -38,13 +27,13 @@ constexpr uint8_t SOUND_EFFECT_FEEDING_FRENZY_START = 17;
 constexpr uint8_t SOUND_EFFECT_SHARP_SHOOTER_START = 18;
 constexpr uint8_t SOUND_EFFECT_JACKPOT = 19;
 constexpr uint8_t SOUND_EFFECT_ADD_PLAYER_1 = 20;
-constexpr uint8_t SOUND_EFFECT_ADD_PLAYER_2 = SOUND_EFFECT_ADD_PLAYER_1 + 1;
-constexpr uint8_t SOUND_EFFECT_ADD_PLAYER_3 = SOUND_EFFECT_ADD_PLAYER_1 + 2;
-constexpr uint8_t SOUND_EFFECT_ADD_PLAYER_4 = SOUND_EFFECT_ADD_PLAYER_1 + 3;
+constexpr uint8_t SOUND_EFFECT_ADD_PLAYER_2 = 21;
+constexpr uint8_t SOUND_EFFECT_ADD_PLAYER_3 = 22;
+constexpr uint8_t SOUND_EFFECT_ADD_PLAYER_4 = 23;
 constexpr uint8_t SOUND_EFFECT_PLAYER_1_UP = 24;
-constexpr uint8_t SOUND_EFFECT_PLAYER_2_UP = SOUND_EFFECT_PLAYER_1_UP + 1;
-constexpr uint8_t SOUND_EFFECT_PLAYER_3_UP = SOUND_EFFECT_PLAYER_1_UP + 2;
-constexpr uint8_t SOUND_EFFECT_PLAYER_4_UP = SOUND_EFFECT_PLAYER_1_UP + 3;
+constexpr uint8_t SOUND_EFFECT_PLAYER_2_UP = 25;
+constexpr uint8_t SOUND_EFFECT_PLAYER_3_UP = 26;
+constexpr uint8_t SOUND_EFFECT_PLAYER_4_UP = 27;
 constexpr uint8_t SOUND_EFFECT_BALL_OVER = 30;
 constexpr uint8_t SOUND_EFFECT_GAME_OVER = 31;
 constexpr uint8_t SOUND_EFFECT_BONUS_COUNT = 32;
@@ -100,6 +89,18 @@ constexpr uint8_t SOUND_EFFECT_BACKGROUND_FOR_TRIPLE_MODE = 99;
 constexpr uint8_t SOUND_EFFECT_COIN_DROP_1 = 100;  // TODO these are not on the sound card ATM
 constexpr uint8_t SOUND_EFFECT_COIN_DROP_2 = 101;  // TODO these are not on the sound card ATM
 constexpr uint8_t SOUND_EFFECT_COIN_DROP_3 = 102;  // TODO these are not on the sound card ATM
+
+/*********************************************************************
+    SB100 Sampled sounds for the WAV player
+*********************************************************************/
+constexpr uint8_t SOUND_EFFECT_TEN = 100;             // This plays the ten sound
+constexpr uint8_t SOUND_EFFECT_ONE_HUNDRED = 101;     // This plays the one hundred sound
+constexpr uint8_t SOUND_EFFECT_ONE_THOUSAND = 102;    // This plays the one thousand sound
+constexpr uint8_t SOUND_EFFECT_TEN_THOUSAND = 103;    // This plays the ten thousand sound
+constexpr uint8_t SOUND_EFFECT_ADD_BONUS = 104;       // This plays the add bonus sound
+constexpr uint8_t SOUND_EFFECT_POP_BUMPER = 105;      // This plays the pop bumper sound
+constexpr uint8_t SOUND_EFFECT_INTRO = 106;           // This plays the intro sound
+
 
 
 
