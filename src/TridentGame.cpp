@@ -111,6 +111,149 @@ void TridentGame::readSettings() {
    machine_->setOriginalHighScore(tridentSettings_.highScore);
 }
 
+// ---------------------------------------------------------------------------
+// Audio
+// ---------------------------------------------------------------------------
+
+void TridentGame::playSoundEffect(uint8_t soundEffectNum) {
+   // Legacy SB100 patterns — queueLegacySound routes to SB100 hardware or
+   // SOUND_LEGACY_xxx WAV sample; both are no-ops when selector != ORIGINAL.
+   switch (soundEffectNum) {
+   case SOUND_EFFECT_ROLLOVER:
+   case SOUND_EFFECT_DT_SKILL_SHOT:
+   case SOUND_EFFECT_ROLLOVER_SKILL_SHOT:
+   case SOUND_EFFECT_SU_SKILL_SHOT:
+   case SOUND_EFFECT_LEFT_SPINNER:
+   case SOUND_EFFECT_RIGHT_SPINNER:
+   case SOUND_EFFECT_DROP_TARGET:
+   case SOUND_EFFECT_BALL_OVER:
+      machine_->queueLegacySound(SOUND_NATIVE_ONE_HUNDRED, CurrentTime);
+      machine_->queueLegacySound(SOUND_NATIVE_NONE, CurrentTime + 75);
+      break;
+   case SOUND_EFFECT_LEFT_INLANE:
+      for (int count = 0; count < machine_->getRolloverValue(); count++) {
+         machine_->queueLegacySound(SOUND_NATIVE_ONE_THOUSAND, CurrentTime + 200 * count);
+         machine_->queueLegacySound(SOUND_NATIVE_NONE, CurrentTime + 75 + (200 * count));
+      }
+      break;
+   case SOUND_EFFECT_RIGHT_INLANE:
+      for (int count = 0; count < 6; count++) {
+         machine_->queueLegacySound((count < 3) ? SOUND_NATIVE_ONE_THOUSAND : SOUND_NATIVE_ADD_BONUS, CurrentTime + 200 * count);
+         machine_->queueLegacySound(SOUND_NATIVE_NONE, CurrentTime + 75 + (200 * count));
+      }
+      break;
+   case SOUND_EFFECT_SAUCER_HIT_5K:
+      for (int count = 0; count < 5; count++) {
+         machine_->queueLegacySound(SOUND_NATIVE_ONE_THOUSAND, CurrentTime + 200 * count);
+         machine_->queueLegacySound(SOUND_NATIVE_NONE, CurrentTime + 75 + (200 * count));
+      }
+      break;
+   case SOUND_EFFECT_SAUCER_HIT_30K:
+      for (int count = 0; count < 3; count++) {
+         machine_->queueLegacySound(SOUND_NATIVE_TEN_THOUSAND, CurrentTime + 200 * count);
+         machine_->queueLegacySound(SOUND_NATIVE_NONE, CurrentTime + 75 + (200 * count));
+      }
+      break;
+   case SOUND_EFFECT_SAUCER_HIT_20K:
+      for (int count = 0; count < 2; count++) {
+         machine_->queueLegacySound(SOUND_NATIVE_TEN_THOUSAND, CurrentTime + 200 * count);
+         machine_->queueLegacySound(SOUND_NATIVE_NONE, CurrentTime + 75 + (200 * count));
+      }
+      break;
+   case SOUND_EFFECT_SAUCER_HIT_10K:
+      machine_->queueLegacySound(SOUND_NATIVE_TEN_THOUSAND, CurrentTime);
+      machine_->queueLegacySound(SOUND_NATIVE_NONE, CurrentTime + 75);
+      break;
+   case SOUND_EFFECT_RIGHT_OUTLANE:
+      for (int count = 0; count < 5; count++) {
+         machine_->queueLegacySound(SOUND_NATIVE_ONE_THOUSAND, CurrentTime + 200 * count);
+         machine_->queueLegacySound(SOUND_NATIVE_NONE, CurrentTime + 75 + (200 * count));
+      }
+      break;
+   case SOUND_EFFECT_TOP_BUMPER_HIT:
+   case SOUND_EFFECT_BOTTOM_BUMPER_HIT:
+      machine_->queueLegacySound(SOUND_NATIVE_POP_BUMPER, CurrentTime);
+      machine_->queueLegacySound(SOUND_NATIVE_NONE, CurrentTime + 75);
+      break;
+   case SOUND_EFFECT_SHOOT_AGAIN:
+   case SOUND_EFFECT_PLAYER_1_UP:
+   case SOUND_EFFECT_PLAYER_2_UP:
+   case SOUND_EFFECT_PLAYER_3_UP:
+   case SOUND_EFFECT_PLAYER_4_UP:
+      machine_->queueLegacySound(SOUND_NATIVE_TEN_THOUSAND, CurrentTime);
+      machine_->queueLegacySound(SOUND_NATIVE_ONE_THOUSAND, CurrentTime + 75);
+      machine_->queueLegacySound(SOUND_NATIVE_NONE, CurrentTime + 175);
+      break;
+   case SOUND_EFFECT_BONUS_COUNT:
+   case SOUND_EFFECT_2X_BONUS_COUNT:
+   case SOUND_EFFECT_3X_BONUS_COUNT:
+   case SOUND_EFFECT_4X_BONUS_COUNT:
+   case SOUND_EFFECT_5X_BONUS_COUNT:
+      machine_->queueLegacySound(SOUND_NATIVE_ONE_THOUSAND, CurrentTime);
+      machine_->queueLegacySound(SOUND_NATIVE_NONE, CurrentTime + 75);
+      break;
+   case SOUND_EFFECT_UPPER_SLING:
+   case SOUND_EFFECT_EXTRA_BALL:
+   case SOUND_EFFECT_TILT_WARNING:
+      machine_->queueLegacySound(SOUND_NATIVE_ADD_BONUS, CurrentTime);
+      machine_->queueLegacySound(SOUND_NATIVE_NONE, CurrentTime + 75);
+      break;
+   case SOUND_EFFECT_10PT_SWITCH:
+   case SOUND_EFFECT_MATCH_SPIN:
+   case SOUND_EFFECT_LOWER_SLING:
+      machine_->queueLegacySound(SOUND_NATIVE_TEN, CurrentTime);
+      machine_->queueLegacySound(SOUND_NATIVE_NONE, CurrentTime + 75);
+      break;
+   case SOUND_EFFECT_DROP_TARGET_CLEAR_1:
+   case SOUND_EFFECT_DROP_TARGET_CLEAR_2:
+   case SOUND_EFFECT_DROP_TARGET_CLEAR_3:
+   case SOUND_EFFECT_DROP_TARGET_CLEAR_4:
+   case SOUND_EFFECT_DROP_TARGET_CLEAR_5:
+      machine_->queueLegacySound(SOUND_NATIVE_TEN_THOUSAND, CurrentTime);
+      machine_->queueLegacySound(SOUND_NATIVE_NONE, CurrentTime + 75);
+      break;
+   case SOUND_EFFECT_FIRST_SU_SWITCH_HIT:
+   case SOUND_EFFECT_SECOND_SU_SWITCH_HIT:
+   case SOUND_EFFECT_THIRD_SU_SWITCH_HIT:
+   case SOUND_EFFECT_FOURTH_SU_SWITCH_HIT:
+   case SOUND_EFFECT_FIFTH_SU_SWITCH_HIT:
+      machine_->queueLegacySound(SOUND_NATIVE_ONE_THOUSAND, CurrentTime);
+      machine_->queueLegacySound(SOUND_NATIVE_NONE, CurrentTime + 75);
+      break;
+   case SOUND_EFFECT_ADD_CREDIT:
+   case SOUND_EFFECT_GAME_OVER:
+      machine_->queueLegacySound(SOUND_NATIVE_TEN_THOUSAND, CurrentTime);
+      machine_->queueLegacySound(SOUND_NATIVE_ONE_THOUSAND, CurrentTime + 75);
+      machine_->queueLegacySound(SOUND_NATIVE_ONE_HUNDRED, CurrentTime + 150);
+      machine_->queueLegacySound(SOUND_NATIVE_TEN, CurrentTime + 225);
+      machine_->queueLegacySound(SOUND_NATIVE_TEN_THOUSAND, CurrentTime + 325);
+      machine_->queueLegacySound(SOUND_NATIVE_ONE_THOUSAND, CurrentTime + 400);
+      machine_->queueLegacySound(SOUND_NATIVE_ONE_HUNDRED, CurrentTime + 475);
+      machine_->queueLegacySound(SOUND_NATIVE_TEN, CurrentTime + 550);
+      machine_->queueLegacySound(SOUND_NATIVE_NONE, CurrentTime + 650);
+      break;
+   case SOUND_EFFECT_ADD_PLAYER_1:
+   case SOUND_EFFECT_ADD_PLAYER_2:
+   case SOUND_EFFECT_ADD_PLAYER_3:
+   case SOUND_EFFECT_ADD_PLAYER_4:
+   case SOUND_EFFECT_RESCUE_FROM_THE_DEEP:
+   case SOUND_EFFECT_TRIDENT_INTRO:
+      machine_->queueLegacySound(SOUND_NATIVE_TEN, CurrentTime);
+      machine_->queueLegacySound(SOUND_NATIVE_ONE_HUNDRED, CurrentTime + 75);
+      machine_->queueLegacySound(SOUND_NATIVE_ONE_THOUSAND, CurrentTime + 150);
+      machine_->queueLegacySound(SOUND_NATIVE_TEN_THOUSAND, CurrentTime + 225);
+      machine_->queueLegacySound(SOUND_NATIVE_TEN, CurrentTime + 325);
+      machine_->queueLegacySound(SOUND_NATIVE_ONE_HUNDRED, CurrentTime + 400);
+      machine_->queueLegacySound(SOUND_NATIVE_ONE_THOUSAND, CurrentTime + 475);
+      machine_->queueLegacySound(SOUND_NATIVE_TEN_THOUSAND, CurrentTime + 550);
+      machine_->queueLegacySound(SOUND_NATIVE_NONE, CurrentTime + 650);
+      break;
+   }
+
+   // Game-specific WAV track — no-op when selector == SOUND_SELECTOR_ORIGINAL.
+   machine_->playWavSound(soundEffectNum);
+}
+
 void TridentGame::saveHighScore(unsigned long score) {
    tridentSettings_.highScore = score;
    EEPROM.put(EEPROM_ORIGINAL_HIGHSCORE_BYTE, (uint32_t)score);
@@ -152,7 +295,7 @@ TopState TridentGame::update(unsigned long currentTime) {
             machine_->addSpecialCredit();
          } else {
             machine_->setLampState(LAMP_SHOOT_AGAIN, true);
-            machine_->playSoundEffect(SOUND_EFFECT_EXTRA_BALL);
+            playSoundEffect(SOUND_EFFECT_EXTRA_BALL);
             SamePlayerShootsAgain = true;
          }
       }
@@ -168,7 +311,7 @@ TopState TridentGame::update(unsigned long currentTime) {
          CurrentPlayerCurrentScore += BONUS_AWARD;
          CurrentBonusValue -= 1;
          showBonusLamps();
-         machine_->playSoundEffect(SOUND_EFFECT_BONUS_COUNT);
+         playSoundEffect(SOUND_EFFECT_BONUS_COUNT);
          showPlayerScores(CurrentPlayer, false, false);
          BonusCountdownTime += BONUS_COUNTDOWN_DELAY;
       }
@@ -199,7 +342,7 @@ TopState TridentGame::update(unsigned long currentTime) {
                   if (maxScore > tridentSettings_.highScore) {
                      saveHighScore(maxScore);
                   }
-                  machine_->playSoundEffect(SOUND_EFFECT_GAME_OVER);
+                  playSoundEffect(SOUND_EFFECT_GAME_OVER);
                   setPlayerLamps(0);
                   machine_->setLastGameResult(CurrentNumPlayers, CurrentScores);
                   for (int count = 0; count < CurrentNumPlayers; count++) {
@@ -232,7 +375,7 @@ TopState TridentGame::update(unsigned long currentTime) {
                   machine_->turnOffAllLamps();
                   machine_->setLampState(LAMP_TILT, true);
                }
-               machine_->playSoundEffect(SOUND_EFFECT_TILT_WARNING);
+               playSoundEffect(SOUND_EFFECT_TILT_WARNING);
             }
             break;
 
@@ -268,7 +411,7 @@ TopState TridentGame::update(unsigned long currentTime) {
                } else {
                   saucerSound = SOUND_EFFECT_SAUCER_HIT_5K;
                }
-               machine_->playSoundEffect(saucerSound);
+               playSoundEffect(saucerSound);
                machine_->pushToTimedSolenoidStack(SOL_SAUCER, 5, CurrentTime + 1000);
             }
             break;
@@ -304,7 +447,7 @@ TopState TridentGame::update(unsigned long currentTime) {
                      }
                      StandupTargetsMask = 0;
                      StandupCompletions += 1;
-                     machine_->playSoundEffect(SOUND_EFFECT_STANDUPS_CLEARED);
+                     playSoundEffect(SOUND_EFFECT_STANDUPS_CLEARED);
                      if (StandupCompletions == 1) {
                         StandupExtraBallAvailable = true;
                         machine_->setLampState(LAMP_EXTRA_BALL, true);
@@ -317,7 +460,7 @@ TopState TridentGame::update(unsigned long currentTime) {
                            if (tridentSettings_.specialAward == 3) {
                               SamePlayerShootsAgain = true;
                               machine_->setLampState(LAMP_SHOOT_AGAIN, true);
-                              machine_->playSoundEffect(SOUND_EFFECT_EXTRA_BALL);
+                              playSoundEffect(SOUND_EFFECT_EXTRA_BALL);
                            }
                            machine_->addSpecialCredit();
                         }
@@ -385,7 +528,7 @@ TopState TridentGame::update(unsigned long currentTime) {
                   StandupExtraBallAvailable = false;
                   machine_->setLampState(LAMP_EXTRA_BALL, false);
                   machine_->setLampState(LAMP_SHOOT_AGAIN, true);
-                  machine_->playSoundEffect(SOUND_EFFECT_EXTRA_BALL);
+                  playSoundEffect(SOUND_EFFECT_EXTRA_BALL);
                   SamePlayerShootsAgain = true;
                }
             }
@@ -408,7 +551,7 @@ TopState TridentGame::update(unsigned long currentTime) {
                      if (tridentSettings_.specialAward == 3) {
                         SamePlayerShootsAgain = true;
                         machine_->setLampState(LAMP_SHOOT_AGAIN, true);
-                        machine_->playSoundEffect(SOUND_EFFECT_EXTRA_BALL);
+                        playSoundEffect(SOUND_EFFECT_EXTRA_BALL);
                      }
                      machine_->addSpecialCredit();
                   }
@@ -555,7 +698,7 @@ bool TridentGame::addPlayer(bool resetNumPlayers) {
       machine_->setCoinLockout(false);
    }
 
-   machine_->playSoundEffect(SOUND_EFFECT_ADD_PLAYER_1 + (CurrentNumPlayers - 1));
+   playSoundEffect(SOUND_EFFECT_ADD_PLAYER_1 + (CurrentNumPlayers - 1));
    setPlayerLamps(CurrentNumPlayers);
    machine_->recordGamePlayed();
    return true;
@@ -632,7 +775,7 @@ int TridentGame::initNewBall(bool curStateChanged, uint8_t playerNum, int ballNu
       setPlayerLamps(playerNum + 1, 4);
 
       if (CurrentNumPlayers > 1 && (ballNum != 1 || playerNum != 0)) {
-         machine_->playSoundEffect(SOUND_EFFECT_PLAYER_1_UP + playerNum);
+         playSoundEffect(SOUND_EFFECT_PLAYER_1_UP + playerNum);
       }
 
       machine_->setDisplayBallInPlay(ballNum);

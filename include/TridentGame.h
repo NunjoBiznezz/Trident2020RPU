@@ -104,6 +104,7 @@ private:
 
    TridentGameSettings tridentSettings_;
 
+   void playSoundEffect(uint8_t soundEffectNum);
    void saveHighScore(unsigned long score);
 
    void setPlayerLamps(uint8_t numPlayers, uint8_t playerOffset = 0, int flashPeriod = 0);

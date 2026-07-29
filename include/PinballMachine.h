@@ -43,15 +43,33 @@ public:
    //   WAV Trigger  — high-quality samples on SD card (RPU_OS_USE_WAV_TRIGGER)
    //   Sound card   — original Stern SB-100 / Squawk & Talk / Dash-51 hardware
    //
-   // playSoundEffect / playBackgroundSong / playCallout target the WAV Trigger
-   // path (managed by WavTriggerHandler). playNativeSound targets the
-   // native sound card path (managed by AudioHandler).
+   // Three primitives cover all audio output:
+   //
+   //   playLegacySound / queueLegacySound — take a SOUND_NATIVE_xxx constant
+   //       and route it to the SB100 hardware (RPU_OS_USE_SB100/SB300) or to
+   //       the matching SOUND_LEGACY_xxx WAV track, based on soundSelector.
+   //       Both are no-ops when soundSelector != SOUND_SELECTOR_ORIGINAL.
+   //       SOUND_NATIVE_NONE is meaningful only for SB100 (mute); it is
+   //       ignored on the WAV path.
+   //
+   //   playWavSound — plays a game-specific WAV track by number.
+   //       No-op when soundSelector == SOUND_SELECTOR_ORIGINAL or when
+   //       RPU_OS_USE_WAV_TRIGGER is not compiled in.
+   //
+   // playNativeSound sends a raw command directly to the sound card (used by
+   // the hardware test mode). Game classes own the mapping from logical sound-
+   // effect IDs to the patterns of native/WAV calls.
    // -----------------------------------------------------------------------
 
-   // One-shot sound effect. soundEffectNum maps directly to the WAV file
-   // track number on the SD card, or to an audioHandler command when the
-   // original sound card is selected.
-   void playSoundEffect(uint8_t soundEffectNum);
+   // Play a SOUND_NATIVE_xxx sound immediately via SB100 or WAV legacy sample.
+   void playLegacySound(uint8_t nativeSoundNum);
+
+   // Queue a SOUND_NATIVE_xxx sound at a future time (SB100 timed queue);
+   // on the WAV path the track plays immediately and `when` is ignored.
+   void queueLegacySound(uint8_t nativeSoundNum, unsigned long when);
+
+   // Play a game-specific WAV track. No-op when selector == SOUND_SELECTOR_ORIGINAL.
+   void playWavSound(uint8_t trackNum);
 
    // Start a looping background song on the WAV Trigger music channel.
    void playBackgroundSong(unsigned short songNum);
@@ -209,7 +227,8 @@ public:
 
    // Set the rollover lane value used by the original-sound-card path to
    // determine how many tones to play on an inlane hit.
-   void setRolloverValue(uint8_t v) { rolloverValue_ = v; }
+   void    setRolloverValue(uint8_t v) { rolloverValue_ = v; }
+   uint8_t getRolloverValue()    const { return rolloverValue_; }
 
    // RPU loop housekeeping — call at start and end of each loop() tick in place
    // of RPU_DataRead / RPU_Update so callers need no RPU headers.

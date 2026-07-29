@@ -161,6 +161,7 @@ private:
    // --- Game-owned settings and EEPROM helpers ---
    Trident2020GameSettings trident2020Settings_;
    void saveHighScore(unsigned long score);
+   void playSoundEffect(uint8_t soundEffectNum);
 
    // --- Private helpers ---
    void    overrideScoreDisplay(uint8_t displayNum, unsigned long value, bool animate);

@@ -128,6 +128,60 @@ void PinballMachine::stopAllAudio() {
    audioHandler_.stopAllSoundFX();
 }
 
+#if defined(RPU_OS_USE_WAV_TRIGGER) && !defined(RPU_OS_USE_SB100) && !defined(RPU_OS_USE_SB300)
+static uint8_t nativeToLegacyTrack(uint8_t nativeSoundNum) {
+   switch (nativeSoundNum) {
+   case SOUND_NATIVE_TEN:          return SOUND_LEGACY_TEN;
+   case SOUND_NATIVE_ONE_HUNDRED:  return SOUND_LEGACY_ONE_HUNDRED;
+   case SOUND_NATIVE_ONE_THOUSAND: return SOUND_LEGACY_ONE_THOUSAND;
+   case SOUND_NATIVE_TEN_THOUSAND: return SOUND_LEGACY_TEN_THOUSAND;
+   case SOUND_NATIVE_ADD_BONUS:    return SOUND_LEGACY_ADD_BONUS;
+   case SOUND_NATIVE_POP_BUMPER:   return SOUND_LEGACY_POP_BUMPER;
+   default:                        return 0xFF;
+   }
+}
+#endif
+
+void PinballMachine::playLegacySound(uint8_t nativeSoundNum) {
+   if (settings_.soundSelector != SOUND_SELECTOR_ORIGINAL) return;
+#if defined(RPU_OS_USE_SB100) || defined(RPU_OS_USE_SB300)
+   audioHandler_.playSound(nativeSoundNum, AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS);
+#elif defined(RPU_OS_USE_WAV_TRIGGER)
+   uint8_t track = nativeToLegacyTrack(nativeSoundNum);
+   if (track != 0xFF) {
+      wavHandler_.playSound(track);
+   }
+#else
+   (void)nativeSoundNum;
+#endif
+}
+
+void PinballMachine::queueLegacySound(uint8_t nativeSoundNum, unsigned long when) {
+   if (settings_.soundSelector != SOUND_SELECTOR_ORIGINAL) return;
+#if defined(RPU_OS_USE_SB100) || defined(RPU_OS_USE_SB300)
+   audioHandler_.queueSound(nativeSoundNum, when);
+#elif defined(RPU_OS_USE_WAV_TRIGGER)
+   (void)when;
+   uint8_t track = nativeToLegacyTrack(nativeSoundNum);
+   if (track != 0xFF) {
+      wavHandler_.playSound(track);
+   }
+#else
+   (void)nativeSoundNum;
+   (void)when;
+#endif
+}
+
+void PinballMachine::playWavSound(uint8_t trackNum) {
+   if (settings_.soundSelector == SOUND_SELECTOR_ORIGINAL) return;
+   if (settings_.soundSelector == SOUND_SELECTOR_NONE) return;
+#if defined(RPU_OS_USE_WAV_TRIGGER)
+   wavHandler_.playSound(trackNum);
+#else
+   (void)trackNum;
+#endif
+}
+
 void PinballMachine::readStoredParameters() {
    // Reset all settings to defaults if the stored version doesn't match.
    if (EEPROM.read(EEPROM_VERSION_BYTE) != EEPROM_VERSION) {
@@ -371,7 +425,10 @@ void PinballMachine::setCoinLockout(bool lock) {
 }
 
 void PinballMachine::playNativeSound(uint8_t sound) {
-   RPU_PlayNativeSound(sound);
+   if (SOUND_NATIVE_NONE != sound) {
+      audioHandler_.queueSound(sound, currentTime_);
+   }
+   audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
 }
 
 void PinballMachine::decrementCredits() {
@@ -423,156 +480,6 @@ void PinballMachine::playBackgroundSong(unsigned short songNum) {
 }
 
 
-void PinballMachine::playSoundEffect(uint8_t soundEffectNum) {
-   switch (settings_.soundSelector) {
-   case SOUND_SELECTOR_NONE:
-      return;
-
-   case SOUND_SELECTOR_ORIGINAL:
-      switch (soundEffectNum) {
-      case SOUND_EFFECT_ROLLOVER:
-      case SOUND_EFFECT_DT_SKILL_SHOT:
-      case SOUND_EFFECT_ROLLOVER_SKILL_SHOT:
-      case SOUND_EFFECT_SU_SKILL_SHOT:
-      case SOUND_EFFECT_LEFT_SPINNER:
-      case SOUND_EFFECT_RIGHT_SPINNER:
-      case SOUND_EFFECT_DROP_TARGET:
-      case SOUND_EFFECT_BALL_OVER:
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_HUNDRED, currentTime_);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
-         break;
-      case SOUND_EFFECT_LEFT_INLANE:
-         for (int count = 0; count < rolloverValue_; count++) {
-            audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_ + 200 * count);
-            audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
-         }
-         break;
-      case SOUND_EFFECT_RIGHT_INLANE:
-         for (int count = 0; count < 6; count++) {
-            audioHandler_.queueSound((count < 3) ? SOUND_NATIVE_ONE_THOUSAND : SOUND_NATIVE_ADD_BONUS, currentTime_ + 200 * count);
-            audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
-         }
-         break;
-      case SOUND_EFFECT_SAUCER_HIT_5K:
-         for (int count = 0; count < 5; count++) {
-            audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_ + 200 * count);
-            audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
-         }
-         break;
-      case SOUND_EFFECT_SAUCER_HIT_30K:
-         for (int count = 0; count < 3; count++) {
-            audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_ + 200 * count);
-            audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
-         }
-         break;
-      case SOUND_EFFECT_SAUCER_HIT_20K:
-         for (int count = 0; count < 2; count++) {
-            audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_ + 200 * count);
-            audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
-         }
-         break;
-      case SOUND_EFFECT_SAUCER_HIT_10K:
-         for (int count = 0; count < 1; count++) {
-            audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_ + 200 * count);
-            audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
-         }
-         break;
-      case SOUND_EFFECT_RIGHT_OUTLANE:
-         for (int count = 0; count < 5; count++) {
-            audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_ + 200 * count);
-            audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
-         }
-         break;
-      case SOUND_EFFECT_TOP_BUMPER_HIT:
-      case SOUND_EFFECT_BOTTOM_BUMPER_HIT:
-         audioHandler_.queueSound(SOUND_NATIVE_POP_BUMPER, currentTime_);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
-         break;
-      case SOUND_EFFECT_SHOOT_AGAIN:
-      case SOUND_EFFECT_PLAYER_1_UP:
-      case SOUND_EFFECT_PLAYER_2_UP:
-      case SOUND_EFFECT_PLAYER_3_UP:
-      case SOUND_EFFECT_PLAYER_4_UP:
-         audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_);
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_ + 75);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 175);
-         break;
-      case SOUND_EFFECT_BONUS_COUNT:
-      case SOUND_EFFECT_2X_BONUS_COUNT:
-      case SOUND_EFFECT_3X_BONUS_COUNT:
-      case SOUND_EFFECT_4X_BONUS_COUNT:
-      case SOUND_EFFECT_5X_BONUS_COUNT:
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
-         break;
-      case SOUND_EFFECT_UPPER_SLING:
-      case SOUND_EFFECT_EXTRA_BALL:
-      case SOUND_EFFECT_TILT_WARNING:
-         audioHandler_.queueSound(SOUND_NATIVE_ADD_BONUS, currentTime_);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
-         break;
-      case SOUND_EFFECT_10PT_SWITCH:
-      case SOUND_EFFECT_MATCH_SPIN:
-      case SOUND_EFFECT_LOWER_SLING:
-         audioHandler_.queueSound(SOUND_NATIVE_TEN, currentTime_);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
-         break;
-      case SOUND_EFFECT_DROP_TARGET_CLEAR_1:
-      case SOUND_EFFECT_DROP_TARGET_CLEAR_2:
-      case SOUND_EFFECT_DROP_TARGET_CLEAR_3:
-      case SOUND_EFFECT_DROP_TARGET_CLEAR_4:
-      case SOUND_EFFECT_DROP_TARGET_CLEAR_5:
-         audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
-         break;
-      case SOUND_EFFECT_FIRST_SU_SWITCH_HIT:
-      case SOUND_EFFECT_SECOND_SU_SWITCH_HIT:
-      case SOUND_EFFECT_THIRD_SU_SWITCH_HIT:
-      case SOUND_EFFECT_FOURTH_SU_SWITCH_HIT:
-      case SOUND_EFFECT_FIFTH_SU_SWITCH_HIT:
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
-         break;
-      case SOUND_EFFECT_ADD_CREDIT:
-      case SOUND_EFFECT_GAME_OVER:
-         audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_);
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_ + 75);
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_HUNDRED, currentTime_ + 150);
-         audioHandler_.queueSound(SOUND_NATIVE_TEN, currentTime_ + 225);
-         audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_ + 325);
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_ + 400);
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_HUNDRED, currentTime_ + 475);
-         audioHandler_.queueSound(SOUND_NATIVE_TEN, currentTime_ + 550);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 650);
-         break;
-      case SOUND_EFFECT_ADD_PLAYER_1:
-      case SOUND_EFFECT_ADD_PLAYER_2:
-      case SOUND_EFFECT_ADD_PLAYER_3:
-      case SOUND_EFFECT_ADD_PLAYER_4:
-      case SOUND_EFFECT_RESCUE_FROM_THE_DEEP:
-      case SOUND_EFFECT_TRIDENT_INTRO:
-         audioHandler_.queueSound(SOUND_NATIVE_TEN, currentTime_);
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_HUNDRED, currentTime_ + 75);
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_ + 150);
-         audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_ + 225);
-         audioHandler_.queueSound(SOUND_NATIVE_TEN, currentTime_ + 325);
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_HUNDRED, currentTime_ + 400);
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_ + 475);
-         audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_ + 550);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 650);
-         break;
-      }
-      break;
-
-   case SOUND_SELECTOR_TRIDENT2020:
-   default:
-#if defined(RPU_OS_USE_WAV_TRIGGER)
-      wavHandler_.playSound(soundEffectNum);
-#endif
-      break;
-   }
-}
-
 // ---------------------------------------------------------------------------
 // Credit and coin operations
 // ---------------------------------------------------------------------------
@@ -585,7 +492,8 @@ void PinballMachine::addCredit(bool playSound, uint8_t numToAdd) {
       }
       EEPROM.write(EEPROM_CREDITS_BYTE, settings_.credits);
       if (playSound) {
-         playSoundEffect(SOUND_EFFECT_ADD_CREDIT);
+         playLegacySound(SOUND_NATIVE_ADD_BONUS);
+         playWavSound(SOUND_EFFECT_ADD_CREDIT);
       }
       RPU_SetDisplayCredits(settings_.credits, !settings_.freePlayMode);
       RPU_SetCoinLockout(false);
@@ -617,7 +525,8 @@ bool PinballMachine::addCoin(uint8_t chuteNum) {
    if (chuteNum > 2) {
       return false;
    }
-   playSoundEffect(SOUND_EFFECT_COIN_DROP_1 + (currentTime_ % 3));
+   playLegacySound(SOUND_NATIVE_TEN);
+   playWavSound(SOUND_EFFECT_COIN_DROP_1 + (currentTime_ % 3));
    addCredit(true, 1);
    return true;
 }
