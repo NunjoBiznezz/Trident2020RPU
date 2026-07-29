@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 /*********************************************************************
-    Sound Tracks
+    Sound Effects - map directly to wav files
 *********************************************************************/
 constexpr uint8_t SOUND_EFFECT_NONE = 0;
 constexpr uint8_t SOUND_EFFECT_DT_SKILL_SHOT = 1;

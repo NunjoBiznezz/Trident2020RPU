@@ -458,7 +458,6 @@ void PinballMachine::addCredit(bool playSound, uint8_t numToAdd) {
       }
       EEPROM.write(EEPROM_CREDITS_BYTE, settings_.credits);
       if (playSound) {
-         playSoundEffect(SOUND_EFFECT_ADD_BONUS);
          playSoundEffect(SOUND_EFFECT_ADD_CREDIT);
       }
       RPU_SetDisplayCredits(settings_.credits, !settings_.freePlayMode);

@@ -33,7 +33,6 @@ TopState MatchMode::update(unsigned long currentTime) {
          if (MatchDigit > 9) {
             MatchDigit = 0;
          }
-         machine_->playSoundEffect(SOUND_EFFECT_TEN);
          machine_->playSoundEffect(SOUND_EFFECT_MATCH_SPIN);
          machine_->setDisplayBallInPlay((int)MatchDigit * 10);
          MatchDelay += 50 + 4 * NumMatchSpins;
