@@ -2,13 +2,8 @@
 
 #include <stdint.h>
 
-// These are also used as masks in initDevices, so leave them as powers of 2.
-constexpr uint8_t AUDIO_PLAY_TYPE_CHIMES          = 1;
-constexpr uint8_t AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS = 2;
-
 struct SoundEntry {
    uint16_t soundIndex;
-   uint8_t  audioType;
    unsigned long playTime;
 };
 
@@ -20,9 +15,8 @@ public:
 
    void initDevices();
 
-   bool playSound(uint16_t soundIndex, uint8_t audioType);
-
-   bool queueSound(uint16_t soundIndex, unsigned long timeToPlay, uint8_t audioType = AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS );
+   bool playSound(uint16_t soundIndex);
+   bool queueSound(uint16_t soundIndex, unsigned long timeToPlay);
 
    void stopAllSoundFX();
    void update(unsigned long currentTime);
@@ -33,5 +27,4 @@ private:
    SoundEntry soundQueue[SOUND_QUEUE_SIZE];
 
    void clearSoundQueue();
-   void serviceSoundQueue(unsigned long currentTime);
 };

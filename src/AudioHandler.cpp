@@ -10,27 +10,16 @@ void AudioHandler::initDevices() {
    RPU_InitNativeAudio();
 }
 
-bool AudioHandler::playSound(uint16_t soundIndex, uint8_t audioType) {
-   switch (audioType) {
-   case AUDIO_PLAY_TYPE_CHIMES:
-#if defined(RPU_OS_USE_SB100) && (RPU_OS_HARDWARE_REV == 2)
-      RPU_PlayNativeChime((uint8_t)soundIndex);
-      return true;
-#endif
-   case AUDIO_PLAY_TYPE_ORIGINAL_SOUNDS:
+bool AudioHandler::playSound(uint16_t soundIndex) {
       RPU_PlayNativeSound((uint8_t)soundIndex);
       return true;
-   default: break;
-   }
-   return false;
 }
 
-bool AudioHandler::queueSound(uint16_t soundIndex, unsigned long timeToPlay, uint8_t audioType) {
+bool AudioHandler::queueSound(uint16_t soundIndex, unsigned long timeToPlay) {
    for (int count = 0; count < SOUND_QUEUE_SIZE; count++) {
       if (soundQueue[count].playTime == 0) {
          soundQueue[count].soundIndex    = soundIndex;
          soundQueue[count].playTime      = timeToPlay;
-         soundQueue[count].audioType     = audioType;
          return true;
       }
    }
@@ -50,15 +39,11 @@ void AudioHandler::clearSoundQueue() {
    }
 }
 
-void AudioHandler::serviceSoundQueue(unsigned long currentTime) {
+void AudioHandler::update(unsigned long currentTime) {
    for (int count = 0; count < SOUND_QUEUE_SIZE; count++) {
       if (soundQueue[count].playTime != 0 && soundQueue[count].playTime < currentTime) {
-         playSound(soundQueue[count].soundIndex, soundQueue[count].audioType);
+         playSound(soundQueue[count].soundIndex);
          soundQueue[count].playTime = 0;
       }
    }
-}
-
-void AudioHandler::update(unsigned long currentTime) {
-   serviceSoundQueue(currentTime);
 }

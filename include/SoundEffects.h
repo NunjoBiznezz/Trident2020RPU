@@ -17,16 +17,16 @@ constexpr uint8_t SOUND_NATIVE_POP_BUMPER = 0x20;     // This plays the pop bump
 /*********************************************************************
     SB100 Sampled sounds for the WAV player
 *********************************************************************/
-constexpr uint8_t SOUND_LEGACY_TEN = 100;             // This plays the ten sound
-constexpr uint8_t SOUND_LEGACY_ONE_HUNDRED = 101;     // This plays the one hundred sound
-constexpr uint8_t SOUND_LEGACY_ONE_THOUSAND = 102;    // This plays the one thousand sound
-constexpr uint8_t SOUND_LEGACY_TEN_THOUSAND = 103;    // This plays the ten thousand sound
-constexpr uint8_t SOUND_LEGACY_ADD_BONUS = 104;       // This plays the add bonus sound
-constexpr uint8_t SOUND_LEGACY_POP_BUMPER = 105;      // This plays the pop bumper sound
-constexpr uint8_t SOUND_LEGACY_INTRO = 106;           // This plays the intro sound
+constexpr uint8_t SOUND_EFFECT_TEN = 100;             // This plays the ten sound
+constexpr uint8_t SOUND_EFFECT_ONE_HUNDRED = 101;     // This plays the one hundred sound
+constexpr uint8_t SOUND_EFFECT_ONE_THOUSAND = 102;    // This plays the one thousand sound
+constexpr uint8_t SOUND_EFFECT_TEN_THOUSAND = 103;    // This plays the ten thousand sound
+constexpr uint8_t SOUND_EFFECT_ADD_BONUS = 104;       // This plays the add bonus sound
+constexpr uint8_t SOUND_EFFECT_POP_BUMPER = 105;      // This plays the pop bumper sound
+constexpr uint8_t SOUND_EFFECT_INTRO = 106;           // This plays the intro sound
 
 /*********************************************************************
-    Sound Effect Definitions
+    Sound Tracks
 *********************************************************************/
 constexpr uint8_t SOUND_EFFECT_NONE = 0;
 constexpr uint8_t SOUND_EFFECT_DT_SKILL_SHOT = 1;
@@ -75,15 +75,15 @@ constexpr uint8_t SOUND_EFFECT_SAUCER_HIT_20K = 46;
 constexpr uint8_t SOUND_EFFECT_SAUCER_HIT_30K = 47;
 constexpr uint8_t SOUND_EFFECT_SHARP_SHOOTER_HIT = 48;
 constexpr uint8_t SOUND_EFFECT_DROP_TARGET_CLEAR_1 = 50;
-constexpr uint8_t SOUND_EFFECT_DROP_TARGET_CLEAR_2 = SOUND_EFFECT_DROP_TARGET_CLEAR_1 + 1;
-constexpr uint8_t SOUND_EFFECT_DROP_TARGET_CLEAR_3 = SOUND_EFFECT_DROP_TARGET_CLEAR_1 + 2;
-constexpr uint8_t SOUND_EFFECT_DROP_TARGET_CLEAR_4 = SOUND_EFFECT_DROP_TARGET_CLEAR_1 + 3;
-constexpr uint8_t SOUND_EFFECT_DROP_TARGET_CLEAR_5 = SOUND_EFFECT_DROP_TARGET_CLEAR_1 + 4;
+constexpr uint8_t SOUND_EFFECT_DROP_TARGET_CLEAR_2 = 51;
+constexpr uint8_t SOUND_EFFECT_DROP_TARGET_CLEAR_3 = 52;
+constexpr uint8_t SOUND_EFFECT_DROP_TARGET_CLEAR_4 = 53;
+constexpr uint8_t SOUND_EFFECT_DROP_TARGET_CLEAR_5 = 54;
 constexpr uint8_t SOUND_EFFECT_FIRST_SU_SWITCH_HIT = 55;
-constexpr uint8_t SOUND_EFFECT_SECOND_SU_SWITCH_HIT = SOUND_EFFECT_FIRST_SU_SWITCH_HIT + 1;
-constexpr uint8_t SOUND_EFFECT_THIRD_SU_SWITCH_HIT = SOUND_EFFECT_FIRST_SU_SWITCH_HIT + 2;
-constexpr uint8_t SOUND_EFFECT_FOURTH_SU_SWITCH_HIT = SOUND_EFFECT_FIRST_SU_SWITCH_HIT + 3;
-constexpr uint8_t SOUND_EFFECT_FIFTH_SU_SWITCH_HIT = SOUND_EFFECT_FIRST_SU_SWITCH_HIT + 4;
+constexpr uint8_t SOUND_EFFECT_SECOND_SU_SWITCH_HIT = 56;
+constexpr uint8_t SOUND_EFFECT_THIRD_SU_SWITCH_HIT = 57;
+constexpr uint8_t SOUND_EFFECT_FOURTH_SU_SWITCH_HIT = 58;
+constexpr uint8_t SOUND_EFFECT_FIFTH_SU_SWITCH_HIT = 59;
 constexpr uint8_t SOUND_EFFECT_EXPLORE_QUALIFIED = 60;
 constexpr uint8_t SOUND_EFFECT_STANDUPS_CLEARED = 61;
 constexpr uint8_t SOUND_EFFECT_EXPLORE_HIT = 62;
@@ -108,29 +108,10 @@ constexpr uint8_t SOUND_EFFECT_BACKGROUND_WIZ = 96;
 constexpr uint8_t SOUND_EFFECT_BACKGROUND_FOR_SINGLE_MODE = 97;
 constexpr uint8_t SOUND_EFFECT_BACKGROUND_FOR_DOUBLE_MODE = 98;
 constexpr uint8_t SOUND_EFFECT_BACKGROUND_FOR_TRIPLE_MODE = 99;
-constexpr uint8_t SOUND_EFFECT_COIN_DROP_1 = 100;
-constexpr uint8_t SOUND_EFFECT_COIN_DROP_2 = 101;
-constexpr uint8_t SOUND_EFFECT_COIN_DROP_3 = 102;
+constexpr uint8_t SOUND_EFFECT_COIN_DROP_1 = 100;  // TODO these are not on the sound card ATM
+constexpr uint8_t SOUND_EFFECT_COIN_DROP_2 = 101;  // TODO these are not on the sound card ATM
+constexpr uint8_t SOUND_EFFECT_COIN_DROP_3 = 102;  // TODO these are not on the sound card ATM
 
-constexpr uint8_t SOUND_EFFECT_SELF_TEST_CPC_START = 180;
-constexpr uint8_t SOUND_EFFECT_SELF_TEST_AUDIO_OPTIONS_START = 190;
 
-// Diagnostic sound effects
-constexpr uint16_t SOUND_EFFECT_DIAG_START = 1900;
-constexpr uint16_t SOUND_EFFECT_DIAG_CREDIT_RESET_BUTTON = 1900;
-constexpr uint16_t SOUND_EFFECT_DIAG_SELECTOR_SWITCH_ON = 1901;
-constexpr uint16_t SOUND_EFFECT_DIAG_SELECTOR_SWITCH_OFF = 1902;
-constexpr uint16_t SOUND_EFFECT_DIAG_STARTING_ORIGINAL_CODE = 1903;
-constexpr uint16_t SOUND_EFFECT_DIAG_STARTING_NEW_CODE = 1904;
-constexpr uint16_t SOUND_EFFECT_DIAG_ORIGINAL_CPU_DETECTED = 1905;
-constexpr uint16_t SOUND_EFFECT_DIAG_ORIGINAL_CPU_RUNNING = 1906;
-constexpr uint16_t SOUND_EFFECT_DIAG_PROBLEM_PIA_U10 = 1907;
-constexpr uint16_t SOUND_EFFECT_DIAG_PROBLEM_PIA_U11 = 1908;
-constexpr uint16_t SOUND_EFFECT_DIAG_PROBLEM_PIA_1 = 1909;
-constexpr uint16_t SOUND_EFFECT_DIAG_PROBLEM_PIA_2 = 1910;
-constexpr uint16_t SOUND_EFFECT_DIAG_PROBLEM_PIA_3 = 1911;
-constexpr uint16_t SOUND_EFFECT_DIAG_PROBLEM_PIA_4 = 1912;
-constexpr uint16_t SOUND_EFFECT_DIAG_PROBLEM_PIA_5 = 1913;
-constexpr uint16_t SOUND_EFFECT_DIAG_STARTING_DIAGNOSTICS_MODE = 1914;
 
 #endif // SOUND_EFFECTS_H
