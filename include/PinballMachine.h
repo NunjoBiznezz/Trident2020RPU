@@ -34,7 +34,7 @@ public:
    void init(unsigned long currentTime);
 
    // Queue a WAV notification during boot diagnostics (before game loop).
-   void queueDiagNotification(unsigned short notificationNum, unsigned long currentTime);
+   // void queueDiagNotification(unsigned short notificationNum, unsigned long currentTime);
 
    // -----------------------------------------------------------------------
    // Audio
@@ -65,7 +65,7 @@ public:
 
    // Send a command directly to the native sound card (SB-100, S&T, Dash-51).
    // sound = 0 typically silences. Separate from the WAV Trigger path.
-   void playNativeSound(uint8_t sound);
+   void playNativeSound(uint8_t sound, unsigned long duration = 75);
 
    void stopNativeSound() {
       playNativeSound(0);
