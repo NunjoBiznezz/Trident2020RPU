@@ -174,11 +174,11 @@ void PinballMachine::readStoredParameters() {
    settings_.soundSelector = readSetting(EEPROM_SOUND_SELECTOR_BYTE, 3);
    switch (settings_.soundSelector) {
    case SOUND_SELECTOR_NONE:
-   case SOUND_SELECTOR_ORIGINAL:
-   case SOUND_SELECTOR_TRIDENT2020:
+   case SOUND_SELECTOR_NATIVE:
+   case SOUND_SELECTOR_WAV_TRIGGER:
       break;
    default:
-      settings_.soundSelector = SOUND_SELECTOR_TRIDENT2020;
+      settings_.soundSelector = SOUND_SELECTOR_WAV_TRIGGER;
    }
    if (settings_.soundSelector > 3) {
       settings_.soundSelector = 3;
@@ -419,7 +419,7 @@ void PinballMachine::playCallout(uint8_t track) {
 }
 
 void PinballMachine::playBackgroundSong(unsigned short songNum) {
-   if (settings_.musicVolume != 0 && settings_.soundSelector == SOUND_SELECTOR_TRIDENT2020) {
+   if (settings_.musicVolume != 0 && settings_.soundSelector == SOUND_SELECTOR_WAV_TRIGGER) {
 #if defined(RPU_OS_USE_WAV_TRIGGER)
       wavHandler_.playBackgroundSong(songNum, true);
 #else
@@ -433,11 +433,11 @@ void PinballMachine::playSoundEffect(uint8_t soundEffectNum) {
    case SOUND_SELECTOR_NONE:
       return;
 
-   case SOUND_SELECTOR_ORIGINAL:
+   case SOUND_SELECTOR_NATIVE:
       audioHandler_.playSoundEffect(soundEffectNum);
       break;
 
-   case SOUND_SELECTOR_TRIDENT2020:
+   case SOUND_SELECTOR_WAV_TRIGGER:
    default:
 #if defined(RPU_OS_USE_WAV_TRIGGER)
       wavHandler_.playSound(soundEffectNum);

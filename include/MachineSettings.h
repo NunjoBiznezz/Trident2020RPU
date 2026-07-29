@@ -9,6 +9,10 @@
 #pragma once
 #include <stdint.h>
 
+constexpr uint8_t SOUND_SELECTOR_NONE = 0;
+constexpr uint8_t SOUND_SELECTOR_NATIVE = 1;
+constexpr uint8_t SOUND_SELECTOR_WAV_TRIGGER = 3;
+
 enum class RuleSet : uint8_t {
    Original    = 0,
    Trident2020 = 1,

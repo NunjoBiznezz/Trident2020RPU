@@ -48,12 +48,12 @@ public:
    //   playLegacySound / queueLegacySound — take a SOUND_NATIVE_xxx constant
    //       and route it to the SB100 hardware (RPU_OS_USE_SB100/SB300) or to
    //       the matching SOUND_LEGACY_xxx WAV track, based on soundSelector.
-   //       Both are no-ops when soundSelector != SOUND_SELECTOR_ORIGINAL.
+   //       Both are no-ops when soundSelector != SOUND_SELECTOR_NATIVE.
    //       SOUND_NATIVE_NONE is meaningful only for SB100 (mute); it is
    //       ignored on the WAV path.
    //
    //   playSoundEffect — plays a game-specific WAV track by number.
-   //       No-op when soundSelector == SOUND_SELECTOR_ORIGINAL or when
+   //       No-op when soundSelector == SOUND_SELECTOR_NATIVE or when
    //       RPU_OS_USE_WAV_TRIGGER is not compiled in.
    //
    // playNativeSound sends a raw command directly to the sound card (used by
@@ -68,7 +68,7 @@ public:
    // // on the WAV path the track plays immediately and `when` is ignored.
    // void queueLegacySound(uint8_t nativeSoundNum, unsigned long when);
 
-   // Play a game-specific WAV track. No-op when selector == SOUND_SELECTOR_ORIGINAL.
+   // Play a game-specific WAV track. No-op when selector == SOUND_SELECTOR_NATIVE.
    void playSoundEffect(uint8_t trackNum);
 
    // Start a looping background song on the WAV Trigger music channel.
