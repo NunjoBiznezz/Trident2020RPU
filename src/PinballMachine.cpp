@@ -152,10 +152,6 @@ void PinballMachine::readStoredParameters() {
    settings_.activeRuleSet = (ruleSetByte <= (uint8_t)RuleSet::Trident2020)
                              ? (RuleSet)ruleSetByte : RuleSet::Trident2020;
 
-   settings_.ballSaveNumSeconds = readSetting(EEPROM_BALL_SAVE_BYTE, BALL_SAVE_TIME_S_DEFAULT);
-   if (settings_.ballSaveNumSeconds > BALL_SAVE_TIME_S_MAX) {
-      settings_.ballSaveNumSeconds = BALL_SAVE_TIME_S_MAX;
-   }
 
    settings_.tournamentScoring = (readSetting(EEPROM_TOURNAMENT_SCORING_BYTE, 0)) != 0;
 
@@ -164,73 +160,15 @@ void PinballMachine::readStoredParameters() {
       settings_.maxTiltWarnings = TILT_WARNINGS_MAX;
    }
 
-   uint8_t awardOverride = readSetting(EEPROM_AWARD_OVERRIDE_BYTE, 99);
-   if (awardOverride != 99) {
-      settings_.trident2020Settings.scoreAwardReplay = awardOverride;
-   }
-
-   uint8_t ballsOverride = readSetting(EEPROM_BALLS_OVERRIDE_BYTE, 99);
-   if (ballsOverride == 3 || ballsOverride == 5) {
-      settings_.trident2020Settings.ballsPerGame = ballsOverride;
-   } else if (ballsOverride != 99) {
-      EEPROM.write(EEPROM_BALLS_OVERRIDE_BYTE, 99);
-   }
-
-   uint8_t origBallsOverride = readSetting(EEPROM_ORIGINAL_BALLS_OVERRIDE_BYTE, 99);
-   if (origBallsOverride == 3 || origBallsOverride == 5) {
-      settings_.tridentSettings.ballsPerGame = origBallsOverride;
-   } else if (origBallsOverride != 99) {
-      EEPROM.write(EEPROM_ORIGINAL_BALLS_OVERRIDE_BYTE, 99);
-   }
 
    settings_.scrollingScores = (readSetting(EEPROM_SCROLLING_SCORES_BYTE, 1)) != 0;
 
-   settings_.trident2020Settings.extraBallValue = readULSetting(EEPROM_EXTRA_BALL_SCORE_BYTE);
-   if ((settings_.trident2020Settings.extraBallValue % 1000) != 0 || settings_.trident2020Settings.extraBallValue > 100000) {
-      settings_.trident2020Settings.extraBallValue = 20000;
-   }
-
-   settings_.trident2020Settings.specialValue = readULSetting(EEPROM_SPECIAL_SCORE_BYTE);
-   if ((settings_.trident2020Settings.specialValue % 1000) != 0 || settings_.trident2020Settings.specialValue > 100000) {
-      settings_.trident2020Settings.specialValue = 40000;
-   }
 
    settings_.dimLevel = readSetting(EEPROM_DIM_LEVEL_BYTE, 2);
    if (settings_.dimLevel < 2 || settings_.dimLevel > 3) {
       settings_.dimLevel = 2;
    }
    RPU_SetDimDivisor(1, settings_.dimLevel);
-
-   settings_.trident2020Settings.sharpShooterStartBonus = readSetting(EEPROM_SHARP_SHOOTER_START_BONUS_BYTE, 3);
-   if (settings_.trident2020Settings.sharpShooterStartBonus < 1 || settings_.trident2020Settings.sharpShooterStartBonus > 5) {
-      settings_.trident2020Settings.sharpShooterStartBonus = 3;
-   }
-
-   settings_.trident2020Settings.targetSpecialBonus = readSetting(EEPROM_TARGET_SPECIAL_BONUS_BYTE, 4);
-   if (settings_.trident2020Settings.targetSpecialBonus < 1 || settings_.trident2020Settings.targetSpecialBonus > 5) {
-      settings_.trident2020Settings.targetSpecialBonus = 4;
-   }
-
-   settings_.trident2020Settings.standupSpecialLevel = readSetting(EEPROM_STANDUP_SPECIAL_LEVEL_BYTE, 2);
-   if (settings_.trident2020Settings.standupSpecialLevel < 1 || settings_.trident2020Settings.standupSpecialLevel > 4) {
-      settings_.trident2020Settings.standupSpecialLevel = 2;
-   }
-
-   settings_.trident2020Settings.highScore       = readULSetting(EEPROM_HIGHSCORE_BYTE, 10000);
-   settings_.trident2020Settings.awardScores[0]  = readULSetting(EEPROM_AWARD_SCORE_1_BYTE);
-   settings_.trident2020Settings.awardScores[1]  = readULSetting(EEPROM_AWARD_SCORE_2_BYTE);
-   settings_.trident2020Settings.awardScores[2]  = readULSetting(EEPROM_AWARD_SCORE_3_BYTE);
-
-   settings_.tridentSettings.highScore           = readULSetting(EEPROM_ORIGINAL_HIGHSCORE_BYTE, 10000);
-   settings_.tridentSettings.awardScores[0]      = readULSetting(EEPROM_ORIGINAL_AWARD_SCORE_1_BYTE);
-   settings_.tridentSettings.awardScores[1]      = readULSetting(EEPROM_ORIGINAL_AWARD_SCORE_2_BYTE);
-   settings_.tridentSettings.awardScores[2]      = readULSetting(EEPROM_ORIGINAL_AWARD_SCORE_3_BYTE);
-   settings_.tridentSettings.extraBallValue      = readULSetting(EEPROM_ORIGINAL_EXTRA_BALL_SCORE_BYTE);
-   settings_.tridentSettings.specialValue        = readULSetting(EEPROM_ORIGINAL_SPECIAL_SCORE_BYTE);
-   uint8_t origAwardOverride = readSetting(EEPROM_ORIGINAL_AWARD_OVERRIDE_BYTE, 99);
-   if (origAwardOverride != 99) {
-      settings_.tridentSettings.scoreAwardReplay = origAwardOverride;
-   }
 
    // --- Audio settings ---
    settings_.soundSelector = readSetting(EEPROM_SOUND_SELECTOR_BYTE, 3);
@@ -270,8 +208,6 @@ void PinballMachine::readStoredParameters() {
    // --- Audit counters and coin counts ---
    settings_.totalPlays   = readULSetting(EEPROM_TOTAL_PLAYS_BYTE);
    settings_.totalReplays = readULSetting(EEPROM_TOTAL_REPLAYS_BYTE);
-   settings_.trident2020Settings.hiscoreBeat = readULSetting(EEPROM_HISCORE_BEAT_BYTE);
-   settings_.tridentSettings.hiscoreBeat     = readULSetting(EEPROM_ORIGINAL_HISCORE_BEAT_BYTE);
    settings_.chute2Coins  = readULSetting(EEPROM_CHUTE_2_COINS_BYTE);
    settings_.chute1Coins  = readULSetting(EEPROM_CHUTE_1_COINS_BYTE);
    settings_.chute3Coins  = readULSetting(EEPROM_CHUTE_3_COINS_BYTE);
@@ -465,12 +401,6 @@ void PinballMachine::addReplayAudit(uint8_t count) {
    EEPROM.put(EEPROM_TOTAL_REPLAYS_BYTE, settings_.totalReplays);
 }
 
-void PinballMachine::saveHighScore(unsigned long score) {
-   settings_.trident2020Settings.highScore = score;
-   EEPROM.put(EEPROM_HIGHSCORE_BYTE, (uint32_t)score);
-   settings_.trident2020Settings.hiscoreBeat += 1;
-   EEPROM.put(EEPROM_HISCORE_BEAT_BYTE, settings_.trident2020Settings.hiscoreBeat);
-}
 
 void PinballMachine::acknowledgeResetScores() {
    settings_.resetScoresToClearVersion = false;
@@ -717,8 +647,7 @@ bool PinballMachine::addCoin(uint8_t chuteNum) {
    if (chuteNum > 2) {
       return false;
    }
-   playLegacySound(SOUND_NATIVE_TEN);
-   playWavSound(SOUND_EFFECT_COIN_DROP_1 + (currentTime_ % 3));
+   playSoundEffect(SOUND_EFFECT_COIN_DROP_1 + (currentTime_ % 3));
    addCredit(true, 1);
    return true;
 }

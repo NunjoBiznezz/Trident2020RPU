@@ -52,7 +52,7 @@ public:
    //       SOUND_NATIVE_NONE is meaningful only for SB100 (mute); it is
    //       ignored on the WAV path.
    //
-   //   playWavSound — plays a game-specific WAV track by number.
+   //   playSoundEffect — plays a game-specific WAV track by number.
    //       No-op when soundSelector == SOUND_SELECTOR_ORIGINAL or when
    //       RPU_OS_USE_WAV_TRIGGER is not compiled in.
    //
@@ -61,15 +61,15 @@ public:
    // effect IDs to the patterns of native/WAV calls.
    // -----------------------------------------------------------------------
 
-   // Play a SOUND_NATIVE_xxx sound immediately via SB100 or WAV legacy sample.
-   void playLegacySound(uint8_t nativeSoundNum);
-
-   // Queue a SOUND_NATIVE_xxx sound at a future time (SB100 timed queue);
-   // on the WAV path the track plays immediately and `when` is ignored.
-   void queueLegacySound(uint8_t nativeSoundNum, unsigned long when);
+   // // Play a SOUND_NATIVE_xxx sound immediately via SB100 or WAV legacy sample.
+   // void playLegacySound(uint8_t nativeSoundNum);
+   //
+   // // Queue a SOUND_NATIVE_xxx sound at a future time (SB100 timed queue);
+   // // on the WAV path the track plays immediately and `when` is ignored.
+   // void queueLegacySound(uint8_t nativeSoundNum, unsigned long when);
 
    // Play a game-specific WAV track. No-op when selector == SOUND_SELECTOR_ORIGINAL.
-   void playWavSound(uint8_t trackNum);
+   void playSoundEffect(uint8_t trackNum);
 
    // Start a looping background song on the WAV Trigger music channel.
    void playBackgroundSong(unsigned short songNum);
