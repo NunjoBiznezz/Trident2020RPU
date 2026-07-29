@@ -66,36 +66,42 @@ void AudioHandler::playSoundEffect(uint8_t soundEffectNum) {
          break;
 
          case SOUND_EFFECT_RIGHT_INLANE:
+         // Repeat 100 3 times, then 1000 3 times with 125ms between each sound
          for (int count = 0; count < 6; count++) {
             this->queueSound((count < 3) ? SOUND_NATIVE_ONE_HUNDRED : SOUND_NATIVE_ONE_THOUSAND, currentTime_ + 200 * count);
             this->queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
          }
          break;
       case SOUND_EFFECT_SAUCER_HIT_5K:
+         // Repeat 100 5 times with 125ms between each sound
          for (int count = 0; count < 5; count++) {
             this->queueSound(SOUND_NATIVE_ONE_HUNDRED, currentTime_ + 200 * count);
             this->queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
          }
          break;
       case SOUND_EFFECT_SAUCER_HIT_30K:
+         // Repeat 10,000 3 times with 125ms between each sound
          for (int count = 0; count < 3; count++) {
             this->queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_ + 200 * count);
             this->queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
          }
          break;
       case SOUND_EFFECT_SAUCER_HIT_20K:
+         // Repeat 10,000 2 times with 125ms between each sound
          for (int count = 0; count < 2; count++) {
             this->queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_ + 200 * count);
             this->queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
          }
          break;
       case SOUND_EFFECT_SAUCER_HIT_10K:
-         for (int count = 0; count < 1; count++) {
+         // Repeat 10,000 1 times with 125ms between each sound
+         for (int count = 0; count < 1; count++) { // WTF?
             this->queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_ + 200 * count);
             this->queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
          }
          break;
       case SOUND_EFFECT_RIGHT_OUTLANE:
+         // Repeat 1,000 5 times with 125ms between each sound
          for (int count = 0; count < 5; count++) {
             this->queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_ + 200 * count);
             this->queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
