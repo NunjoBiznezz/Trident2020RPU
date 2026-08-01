@@ -107,6 +107,8 @@ private:
    void playSoundEffect(uint8_t soundEffectNum);
    void saveHighScore(unsigned long score);
 
+   int  handleSwitches(int curState, int returnState);
+
    void setPlayerLamps(uint8_t numPlayers, uint8_t playerOffset = 0, int flashPeriod = 0);
    void showPlayerScores(uint8_t displayToUpdate, bool flashCurrent, bool dashCurrent,
                          unsigned long allScoresShowValue = 0);

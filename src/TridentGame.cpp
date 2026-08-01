@@ -222,7 +222,22 @@ TopState TridentGame::update(unsigned long currentTime) {
       }
    }
 
-   // Switch stack — drain every tick regardless of state
+   returnState = handleSwitches(curState, returnState);
+
+   if (returnState < 0) {
+      return TopState::HardwareTest;
+   }
+   if (returnState == kMatchMode) {
+      return TopState::Match;
+   }
+   if (returnState != curState) {
+      internalState_ = returnState;
+      internalStateChanged_ = true;
+   }
+   return TopState::Game;
+}
+
+int TridentGame::handleSwitches(int curState, int returnState) {
    if (NumTiltWarnings <= machine_->getMaxTiltWarnings()) {
       uint8_t switchHit;
       while ((switchHit = machine_->pullFirstFromSwitchStack()) != PinballMachine::SWITCH_STACK_EMPTY) {
@@ -523,18 +538,7 @@ TopState TridentGame::update(unsigned long currentTime) {
          }
       }
    }
-
-   if (returnState < 0) {
-      return TopState::HardwareTest;
-   }
-   if (returnState == kMatchMode) {
-      return TopState::Match;
-   }
-   if (returnState != curState) {
-      internalState_ = returnState;
-      internalStateChanged_ = true;
-   }
-   return TopState::Game;
+   return returnState;
 }
 
 // ===========================================================================
