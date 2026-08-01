@@ -104,6 +104,7 @@ private:
    TridentGameSettings tridentSettings_;
 
    void playSoundEffect(uint8_t soundEffectNum);
+   void queueScoreSound(unsigned long score);
    void saveHighScore(unsigned long score);
 
    int  handleSwitches(int curState, int returnState);

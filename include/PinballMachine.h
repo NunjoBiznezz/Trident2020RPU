@@ -68,8 +68,12 @@ public:
    // // on the WAV path the track plays immediately and `when` is ignored.
    // void queueLegacySound(uint8_t nativeSoundNum, unsigned long when);
 
-   // Play a game-specific WAV track. No-op when selector == SOUND_SELECTOR_NATIVE.
+   // Play a game-specific WAV track immediately. No-op when selector == SOUND_SELECTOR_NATIVE.
    void playSoundEffect(uint8_t trackNum);
+
+   // Schedule a game-specific WAV track to play at a future time.
+   // No-op when selector == SOUND_SELECTOR_NATIVE or WAV Trigger not compiled in.
+   void queueSoundEffect(uint8_t trackNum, unsigned long when);
 
    // Start a looping background song on the WAV Trigger music channel.
    void playBackgroundSong(unsigned short songNum);

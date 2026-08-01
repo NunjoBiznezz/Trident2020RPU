@@ -446,6 +446,17 @@ void PinballMachine::playSoundEffect(uint8_t soundEffectNum) {
    }
 }
 
+void PinballMachine::queueSoundEffect(uint8_t trackNum, unsigned long when) {
+   if (settings_.soundSelector == SOUND_SELECTOR_NONE) return;
+   if (settings_.soundSelector == SOUND_SELECTOR_NATIVE) return;
+#if defined(RPU_OS_USE_WAV_TRIGGER)
+   wavHandler_.queueSound(trackNum, when);
+#else
+   (void)trackNum;
+   (void)when;
+#endif
+}
+
 // ---------------------------------------------------------------------------
 // Credit and coin operations
 // ---------------------------------------------------------------------------
