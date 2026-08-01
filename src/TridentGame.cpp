@@ -182,7 +182,7 @@ TopState TridentGame::update(unsigned long currentTime) {
             machine_->addSpecialCredit();
          } else {
             machine_->setLampState(LAMP_SHOOT_AGAIN, true);
-            playSoundEffect(SOUND_EFFECT_EXTRA_BALL);
+            machine_->pushToTimedSolenoidStack(SOL_KNOCKER, 3, CurrentTime, true);
             SamePlayerShootsAgain = true;
          }
       }
@@ -229,7 +229,7 @@ TopState TridentGame::update(unsigned long currentTime) {
                   if (maxScore > tridentSettings_.highScore) {
                      saveHighScore(maxScore);
                   }
-                  playSoundEffect(SOUND_EFFECT_GAME_OVER);
+                  playSoundEffect(SOUND_EFFECT_TEN); // TODO: investigate correct game-over sound for classic Trident
                   setPlayerLamps(0);
                   machine_->setLastGameResult(CurrentNumPlayers, CurrentScores);
                   for (int count = 0; count < CurrentNumPlayers; count++) {
@@ -277,7 +277,7 @@ int TridentGame::handleSwitches(int curState, int returnState) {
                   machine_->turnOffAllLamps();
                   machine_->setLampState(LAMP_TILT, true);
                }
-               playSoundEffect(SOUND_EFFECT_TILT_WARNING);
+               playSoundEffect(SOUND_EFFECT_TEN); // TODO: investigate correct tilt-warning sound for classic Trident
             }
             break;
 
@@ -338,7 +338,7 @@ int TridentGame::handleSwitches(int curState, int returnState) {
                      }
                      StandupTargetsMask = 0;
                      StandupCompletions += 1;
-                     playSoundEffect(SOUND_EFFECT_STANDUPS_CLEARED);
+                     playSoundEffect(SOUND_EFFECT_TEN); // TODO: investigate correct standup-completion sound for classic Trident
                      if (StandupCompletions == 1) {
                         StandupExtraBallAvailable = true;
                         machine_->setLampState(LAMP_EXTRA_BALL, true);
@@ -351,7 +351,7 @@ int TridentGame::handleSwitches(int curState, int returnState) {
                            if (tridentSettings_.specialAward == 3) {
                               SamePlayerShootsAgain = true;
                               machine_->setLampState(LAMP_SHOOT_AGAIN, true);
-                              playSoundEffect(SOUND_EFFECT_EXTRA_BALL);
+                              machine_->pushToTimedSolenoidStack(SOL_KNOCKER, 3, CurrentTime, true);
                            }
                            machine_->addSpecialCredit();
                         }
@@ -409,7 +409,7 @@ int TridentGame::handleSwitches(int curState, int returnState) {
                   StandupExtraBallAvailable = false;
                   machine_->setLampState(LAMP_EXTRA_BALL, false);
                   machine_->setLampState(LAMP_SHOOT_AGAIN, true);
-                  playSoundEffect(SOUND_EFFECT_EXTRA_BALL);
+                  machine_->pushToTimedSolenoidStack(SOL_KNOCKER, 3, CurrentTime, true);
                   SamePlayerShootsAgain = true;
                }
             }
@@ -430,7 +430,7 @@ int TridentGame::handleSwitches(int curState, int returnState) {
                      if (tridentSettings_.specialAward == 3) {
                         SamePlayerShootsAgain = true;
                         machine_->setLampState(LAMP_SHOOT_AGAIN, true);
-                        playSoundEffect(SOUND_EFFECT_EXTRA_BALL);
+                        machine_->pushToTimedSolenoidStack(SOL_KNOCKER, 3, CurrentTime, true);
                      }
                      machine_->addSpecialCredit();
                   }
@@ -555,7 +555,7 @@ bool TridentGame::addPlayer(bool resetNumPlayers) {
       machine_->setCoinLockout(false);
    }
 
-   playSoundEffect(SOUND_EFFECT_ADD_PLAYER_1 + (CurrentNumPlayers - 1));
+   playSoundEffect(SOUND_EFFECT_TEN); // TODO: investigate correct add-player sound for classic Trident
    setPlayerLamps(CurrentNumPlayers);
    machine_->recordGamePlayed();
    return true;
@@ -631,7 +631,7 @@ int TridentGame::initNewBall(bool curStateChanged, uint8_t playerNum, int ballNu
       setPlayerLamps(playerNum + 1, 4);
 
       if (CurrentNumPlayers > 1 && (ballNum != 1 || playerNum != 0)) {
-         playSoundEffect(SOUND_EFFECT_PLAYER_1_UP + playerNum);
+         playSoundEffect(SOUND_EFFECT_TEN); // TODO: investigate correct player-up sound for classic Trident
       }
 
       machine_->setDisplayBallInPlay(ballNum);
