@@ -152,8 +152,7 @@ TopState TridentGame::update(unsigned long currentTime) {
    } else if (curState == kInitNewBall) {
       returnState = initNewBall(curStateChanged, CurrentPlayer, CurrentBallInPlay);
    } else if (curState == kNormalGameplay) {
-      showPlayerScores(CurrentPlayer, BallFirstSwitchHitTime == 0,
-                       BallFirstSwitchHitTime > 0 && (CurrentTime - BallFirstSwitchHitTime) > 2000);
+      showPlayerScores(CurrentPlayer, CurrentPlayerCurrentScore == CurrentScores[CurrentPlayer], false);
       if (!HighScoreBeaten[CurrentPlayer] && CurrentPlayerCurrentScore > tridentSettings_.highScore) {
          HighScoreBeaten[CurrentPlayer] = true;
          if (tridentSettings_.highScoreFeature == 1) {
@@ -271,15 +270,17 @@ int TridentGame::handleSwitches(int curState, int returnState) {
 
          case SW_OUTHOLE:
             if (curState == kNormalGameplay) {
-               returnState = kBallOver;
+               if (CurrentPlayerCurrentScore == CurrentScores[CurrentPlayer]) {
+                  machine_->pushToTimedSolenoidStack(SOL_OUTHOLE, 4, CurrentTime + 500);
+               } else {
+                  returnState = kBallOver;
+               }
             }
             break;
 
          case SW_SAUCER:
             if (curState == kNormalGameplay) {
-               if (BallFirstSwitchHitTime == 0) {
-                  BallFirstSwitchHitTime = CurrentTime;
-               }
+
                CurrentPlayerCurrentScore += CurrentSaucerValue;
                uint8_t saucerSound;
                if (CurrentSaucerValue >= 30000) {
@@ -302,9 +303,7 @@ int TridentGame::handleSwitches(int curState, int returnState) {
          case SW_YELLOW:
          case SW_PURPLE: {
             if (curState == kNormalGameplay) {
-               if (BallFirstSwitchHitTime == 0) {
-                  BallFirstSwitchHitTime = CurrentTime;
-               }
+
                advanceBonus(1);
                CurrentPlayerCurrentScore += STANDUP_TARGET_AWARD;
                uint8_t tIdx = switchHit - SW_PURPLE;
@@ -354,9 +353,7 @@ int TridentGame::handleSwitches(int curState, int returnState) {
          case SW_UL_SLING:
          case SW_UR_SLING:
             if (curState == kNormalGameplay) {
-               if (BallFirstSwitchHitTime == 0) {
-                  BallFirstSwitchHitTime = CurrentTime;
-               }
+
                CurrentPlayerCurrentScore += UPPER_SLINGSHOT_AWARD;
                advanceBonus(1);
             }
@@ -365,9 +362,7 @@ int TridentGame::handleSwitches(int curState, int returnState) {
          case SW_LL_SLING:
          case SW_LR_SLING:
             if (curState == kNormalGameplay) {
-               if (BallFirstSwitchHitTime == 0) {
-                  BallFirstSwitchHitTime = CurrentTime;
-               }
+
                CurrentPlayerCurrentScore += LOWER_SLINGSHOT_AWARD;
                advanceBonus(1);
             }
@@ -375,9 +370,7 @@ int TridentGame::handleSwitches(int curState, int returnState) {
 
          case SW_ROLLOVER:
             if (curState == kNormalGameplay) {
-               if (BallFirstSwitchHitTime == 0) {
-                  BallFirstSwitchHitTime = CurrentTime;
-               }
+
                CurrentPlayerCurrentScore += ROLLOVER_AWARD;
                if (LeftLaneValueIndex < 3) {
                   machine_->setLampState(LeftLaneLamps[LeftLaneValueIndex], false);
@@ -389,9 +382,7 @@ int TridentGame::handleSwitches(int curState, int returnState) {
 
          case SW_LEFT_INLANE:
             if (curState == kNormalGameplay) {
-               if (BallFirstSwitchHitTime == 0) {
-                  BallFirstSwitchHitTime = CurrentTime;
-               }
+
                advanceBonus(1);
                CurrentPlayerCurrentScore += LeftLaneValues[LeftLaneValueIndex];
             }
@@ -399,9 +390,7 @@ int TridentGame::handleSwitches(int curState, int returnState) {
 
          case SW_RIGHT_INLANE:
             if (curState == kNormalGameplay) {
-               if (BallFirstSwitchHitTime == 0) {
-                  BallFirstSwitchHitTime = CurrentTime;
-               }
+
                CurrentPlayerCurrentScore += RIGHT_INLANE_AWARD;
                advanceBonus(3);
                if (StandupExtraBallAvailable) {
@@ -416,9 +405,7 @@ int TridentGame::handleSwitches(int curState, int returnState) {
 
          case SW_RIGHT_OUTLANE:
             if (curState == kNormalGameplay) {
-               if (BallFirstSwitchHitTime == 0) {
-                  BallFirstSwitchHitTime = CurrentTime;
-               }
+
                CurrentPlayerCurrentScore += RIGHT_OUTLANE_AWARD;
                advanceBonus(3);
                if (DropTargetSpecialAvailable) {
@@ -445,9 +432,7 @@ int TridentGame::handleSwitches(int curState, int returnState) {
          case SW_DROP_TARGET_4:
          case SW_DROP_TARGET_5: {
             if (curState == kNormalGameplay) {
-               if (BallFirstSwitchHitTime == 0) {
-                  BallFirstSwitchHitTime = CurrentTime;
-               }
+
                uint8_t targetIdx = SW_DROP_TARGET_1 - switchHit;
                if (DropTargetsMask & (1u << targetIdx)) {
                   DropTargetsMask &= ~(1u << targetIdx);
@@ -504,9 +489,7 @@ int TridentGame::handleSwitches(int curState, int returnState) {
          case SW_TOP_BUMPER:
          case SW_BOTTOM_BUMPER:
             if (curState == kNormalGameplay) {
-               if (BallFirstSwitchHitTime == 0) {
-                  BallFirstSwitchHitTime = CurrentTime;
-               }
+
                unsigned bumperAward = (tridentSettings_.ballsPerGame == 3) ? BUMPER_AWARD_3_BALL : BUMPER_AWARD_5_BALL;
                CurrentPlayerCurrentScore += bumperAward;
             }
@@ -514,26 +497,19 @@ int TridentGame::handleSwitches(int curState, int returnState) {
 
          case SW_LEFT_SPINNER:
             if (curState == kNormalGameplay) {
-               if (BallFirstSwitchHitTime == 0) {
-                  BallFirstSwitchHitTime = CurrentTime;
-               }
+
                CurrentPlayerCurrentScore += LeftSpinnerValue;
             }
             break;
 
          case SW_RIGHT_SPINNER:
             if (curState == kNormalGameplay) {
-               if (BallFirstSwitchHitTime == 0) {
-                  BallFirstSwitchHitTime = CurrentTime;
-               }
+
                CurrentPlayerCurrentScore += RightSpinnerValue;
             }
             break;
 
          default:
-            if (curState == kNormalGameplay && BallFirstSwitchHitTime == 0) {
-               BallFirstSwitchHitTime = CurrentTime;
-            }
             break;
          }
       }
@@ -633,7 +609,6 @@ int TridentGame::initGamePlay() {
 int TridentGame::initNewBall(bool curStateChanged, uint8_t playerNum, int ballNum) {
    if (curStateChanged) {
       SamePlayerShootsAgain = false;
-      BallFirstSwitchHitTime = 0;
       BallSaveUsed = false;
       NumTiltWarnings = 0;
       LastTiltWarningTime = 0;

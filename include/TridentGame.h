@@ -72,7 +72,6 @@ private:
    bool          SamePlayerShootsAgain    = false;
    bool          HighScoreBeaten[4]       = {};
    bool          BallSaveUsed             = false;
-   unsigned long BallFirstSwitchHitTime   = 0;
    uint8_t       NumTiltWarnings          = 0;
    unsigned long LastTiltWarningTime      = 0;
 
