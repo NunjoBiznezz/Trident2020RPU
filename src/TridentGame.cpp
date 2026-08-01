@@ -708,12 +708,13 @@ int TridentGame::initNewBall(bool curStateChanged, uint8_t playerNum, int ballNu
 }
 
 void TridentGame::advanceBonus(uint8_t positions) {
-   uint8_t newBonus = CurrentBonusValue + positions;
-   if (newBonus > MAXIMUM_BONUSES) {
-      newBonus = MAXIMUM_BONUSES;
-   }
-   CurrentBonusValue = newBonus;
+   uint8_t available = MAXIMUM_BONUSES - CurrentBonusValue;
+   uint8_t awarded   = (positions < available) ? positions : available;
+   CurrentBonusValue += awarded;
    showBonusLamps();
+   for (uint8_t i = 0; i < awarded; i++) {
+      machine_->queueSoundEffect(SOUND_EFFECT_ADD_BONUS, CurrentTime + (unsigned long)i * SCORE_SOUND_INTERVAL);
+   }
 }
 
 void TridentGame::setupDropTargets(uint8_t mask) {
