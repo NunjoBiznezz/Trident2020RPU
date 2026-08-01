@@ -63,6 +63,13 @@ static constexpr uint8_t THREE_TARGETS_UP = 0x15; // 10101 < 3X: targets 1, 3 & 
 static constexpr uint8_t FOUR_TARGETS_UP = 0x1B;  // 11011 < 4X: targets 1, 2, 4 & 5 up.
 static constexpr uint8_t FIVE_TARGETS_UP = 0x1F;  // 11111 < 5X: all targets up.
 
+static uint8_t soundForScore(unsigned long score) {
+   if (score >= 10000) return SOUND_EFFECT_TEN_THOUSAND;
+   if (score >= 1000)  return SOUND_EFFECT_ONE_THOUSAND;
+   if (score >= 100)   return SOUND_EFFECT_ONE_HUNDRED;
+   return SOUND_EFFECT_TEN;
+}
+
 TridentGame::TridentGame() {}
 
 // ===========================================================================
@@ -175,7 +182,7 @@ TopState TridentGame::update(unsigned long currentTime) {
          CurrentPlayerCurrentScore += BONUS_AWARD;
          CurrentBonusValue -= 1;
          showBonusLamps();
-         playSoundEffect(SOUND_EFFECT_BONUS_COUNT);
+         playSoundEffect(SOUND_EFFECT_ADD_BONUS);
          showPlayerScores(CurrentPlayer, false, false);
          BonusCountdownTime += BONUS_COUNTDOWN_DELAY;
       }
@@ -280,19 +287,8 @@ int TridentGame::handleSwitches(int curState, int returnState) {
 
          case SW_SAUCER:
             if (curState == kNormalGameplay) {
-
                CurrentPlayerCurrentScore += CurrentSaucerValue;
-               uint8_t saucerSound;
-               if (CurrentSaucerValue >= 30000) {
-                  saucerSound = SOUND_EFFECT_SAUCER_HIT_30K;
-               } else if (CurrentSaucerValue >= 20000) {
-                  saucerSound = SOUND_EFFECT_SAUCER_HIT_20K;
-               } else if (CurrentSaucerValue >= 10000) {
-                  saucerSound = SOUND_EFFECT_SAUCER_HIT_10K;
-               } else {
-                  saucerSound = SOUND_EFFECT_SAUCER_HIT_5K;
-               }
-               playSoundEffect(saucerSound);
+               playSoundEffect(soundForScore(CurrentSaucerValue));
                machine_->pushToTimedSolenoidStack(SOL_SAUCER, 5, CurrentTime + 1000);
             }
             break;
@@ -303,9 +299,9 @@ int TridentGame::handleSwitches(int curState, int returnState) {
          case SW_YELLOW:
          case SW_PURPLE: {
             if (curState == kNormalGameplay) {
-
                advanceBonus(1);
                CurrentPlayerCurrentScore += STANDUP_TARGET_AWARD;
+               playSoundEffect(soundForScore(STANDUP_TARGET_AWARD));
                uint8_t tIdx = switchHit - SW_PURPLE;
                if (!(SpinnerBonusMask & (1u << tIdx))) {
                   SpinnerBonusMask |= (1u << tIdx);
@@ -353,8 +349,8 @@ int TridentGame::handleSwitches(int curState, int returnState) {
          case SW_UL_SLING:
          case SW_UR_SLING:
             if (curState == kNormalGameplay) {
-
                CurrentPlayerCurrentScore += UPPER_SLINGSHOT_AWARD;
+               playSoundEffect(soundForScore(UPPER_SLINGSHOT_AWARD));
                advanceBonus(1);
             }
             break;
@@ -362,16 +358,16 @@ int TridentGame::handleSwitches(int curState, int returnState) {
          case SW_LL_SLING:
          case SW_LR_SLING:
             if (curState == kNormalGameplay) {
-
                CurrentPlayerCurrentScore += LOWER_SLINGSHOT_AWARD;
+               playSoundEffect(soundForScore(LOWER_SLINGSHOT_AWARD));
                advanceBonus(1);
             }
             break;
 
          case SW_ROLLOVER:
             if (curState == kNormalGameplay) {
-
                CurrentPlayerCurrentScore += ROLLOVER_AWARD;
+               playSoundEffect(soundForScore(ROLLOVER_AWARD));
                if (LeftLaneValueIndex < 3) {
                   machine_->setLampState(LeftLaneLamps[LeftLaneValueIndex], false);
                   LeftLaneValueIndex += 1;
@@ -382,16 +378,16 @@ int TridentGame::handleSwitches(int curState, int returnState) {
 
          case SW_LEFT_INLANE:
             if (curState == kNormalGameplay) {
-
                advanceBonus(1);
                CurrentPlayerCurrentScore += LeftLaneValues[LeftLaneValueIndex];
+               playSoundEffect(soundForScore(LeftLaneValues[LeftLaneValueIndex]));
             }
             break;
 
          case SW_RIGHT_INLANE:
             if (curState == kNormalGameplay) {
-
                CurrentPlayerCurrentScore += RIGHT_INLANE_AWARD;
+               playSoundEffect(soundForScore(RIGHT_INLANE_AWARD));
                advanceBonus(3);
                if (StandupExtraBallAvailable) {
                   StandupExtraBallAvailable = false;
@@ -405,8 +401,8 @@ int TridentGame::handleSwitches(int curState, int returnState) {
 
          case SW_RIGHT_OUTLANE:
             if (curState == kNormalGameplay) {
-
                CurrentPlayerCurrentScore += RIGHT_OUTLANE_AWARD;
+               playSoundEffect(soundForScore(RIGHT_OUTLANE_AWARD));
                advanceBonus(3);
                if (DropTargetSpecialAvailable) {
                   DropTargetSpecialAvailable = false;
@@ -489,23 +485,23 @@ int TridentGame::handleSwitches(int curState, int returnState) {
          case SW_TOP_BUMPER:
          case SW_BOTTOM_BUMPER:
             if (curState == kNormalGameplay) {
-
                unsigned bumperAward = (tridentSettings_.ballsPerGame == 3) ? BUMPER_AWARD_3_BALL : BUMPER_AWARD_5_BALL;
                CurrentPlayerCurrentScore += bumperAward;
+               playSoundEffect(SOUND_EFFECT_POP_BUMPER);
             }
             break;
 
          case SW_LEFT_SPINNER:
             if (curState == kNormalGameplay) {
-
                CurrentPlayerCurrentScore += LeftSpinnerValue;
+               playSoundEffect(soundForScore(LeftSpinnerValue));
             }
             break;
 
          case SW_RIGHT_SPINNER:
             if (curState == kNormalGameplay) {
-
                CurrentPlayerCurrentScore += RightSpinnerValue;
+               playSoundEffect(soundForScore(RightSpinnerValue));
             }
             break;
 
