@@ -260,7 +260,23 @@ TopState TridentGame::update(unsigned long currentTime) {
 }
 
 int TridentGame::handleSwitches(int curState, int returnState) {
-   if (NumTiltWarnings <= machine_->getMaxTiltWarnings()) {
+   bool tilted = (NumTiltWarnings > machine_->getMaxTiltWarnings());
+
+   if (tilted) {
+      uint8_t switchHit;
+      while ((switchHit = machine_->pullFirstFromSwitchStack()) != PinballMachine::SWITCH_STACK_EMPTY) {
+         if (switchHit == SW_SELF_TEST_SWITCH) {
+            returnState = -1;
+         } else if (switchHit == SW_SAUCER) {
+            machine_->pushToTimedSolenoidStack(SOL_SAUCER, 5, CurrentTime + 500);
+         } else if (switchHit == SW_OUTHOLE && curState == kNormalGameplay) {
+            returnState = kBallOver;
+         }
+      }
+      return returnState;
+   }
+
+   {
       uint8_t switchHit;
       while ((switchHit = machine_->pullFirstFromSwitchStack()) != PinballMachine::SWITCH_STACK_EMPTY) {
          switch (switchHit) {
@@ -272,10 +288,10 @@ int TridentGame::handleSwitches(int curState, int returnState) {
                LastTiltWarningTime = CurrentTime;
                NumTiltWarnings += 1;
                if (NumTiltWarnings > machine_->getMaxTiltWarnings()) {
-                  machine_->disableSolenoidStack();
                   machine_->setDisableFlippers(true);
                   machine_->turnOffAllLamps();
                   machine_->setLampState(LAMP_TILT, true);
+                  CurrentBonusValue = 0;
                }
                playSoundEffect(SOUND_EFFECT_TEN); // TODO: investigate correct tilt-warning sound for classic Trident
             }
