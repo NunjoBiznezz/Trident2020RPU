@@ -198,7 +198,7 @@ TopState TridentGame::update(unsigned long currentTime) {
          CurrentPlayerCurrentScore += BONUS_AWARD;
          CurrentBonusValue -= 1;
          showBonusLamps();
-         playSoundEffect(SOUND_EFFECT_ADD_BONUS);
+         playSoundEffect(SOUND_EFFECT_ONE_THOUSAND);
          showPlayerScores(CurrentPlayer, false, false);
          BonusCountdownTime += BONUS_COUNTDOWN_DELAY;
       }
