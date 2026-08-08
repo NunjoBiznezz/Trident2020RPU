@@ -256,6 +256,7 @@ TopState TridentGame::update(unsigned long currentTime) {
       internalState_ = returnState;
       internalStateChanged_ = true;
    }
+
    return TopState::Game;
 }
 

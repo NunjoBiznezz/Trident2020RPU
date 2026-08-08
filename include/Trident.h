@@ -73,43 +73,54 @@ constexpr uint8_t DropTargetLampArray[] = {LAMP_DROP_TARGET_1, LAMP_DROP_TARGET_
                                               LAMP_DROP_TARGET_5};
 
 // Defines for switches
+
+// --- Strobe 0 (column 0, switches 1-8) ---
+constexpr uint8_t SW_COIN_2 = 0;
+constexpr uint8_t SW_COIN_1 = 1;
+constexpr uint8_t SW_COIN_3 = 2;
+constexpr uint8_t SW_RIGHT_SPINNER = 3;
+constexpr uint8_t SW_LEFT_SPINNER = 4;
 constexpr uint8_t SW_CREDIT_RESET = 5;
 constexpr uint8_t SW_TILT = 6;
-constexpr uint8_t SW_OUTHOLE = 32;
-constexpr uint8_t SW_COIN_1 = 1;
-constexpr uint8_t SW_COIN_2 = 0;
-constexpr uint8_t SW_COIN_3 = 2;
 constexpr uint8_t SW_SLAM = 7;
 
+// --- Strobe 1 (column 1, switches 9-16) ---
+//constexpr uint8_t SW_XX_UNUSED_1 = 8;
+constexpr uint8_t SW_ROLLOVER = 9;
+constexpr uint8_t SW_UR_SLING = 10;
+constexpr uint8_t SW_UL_SLING = 11;
+constexpr uint8_t SW_LR_SLING = 12;
+constexpr uint8_t SW_LL_SLING = 13;
+constexpr uint8_t SW_TOP_BUMPER = 14;
+constexpr uint8_t SW_BOTTOM_BUMPER = 15;
+
+// --- Strobe 2 (column 2, switches 17-24) ---
+constexpr uint8_t SW_RIGHT_OUTLANE = 16;
+constexpr uint8_t SW_RIGHT_INLANE = 17;
+constexpr uint8_t SW_LEFT_INLANE = 18;
+constexpr uint8_t SW_PURPLE = 19;
+constexpr uint8_t SW_YELLOW = 20;
+constexpr uint8_t SW_AMBER = 21;
+constexpr uint8_t SW_GREEN = 22;
+constexpr uint8_t SW_WHITE = 23;
+
+// --- Strobe 3 (column 3, switches 25-32) ---
+//constexpr uint8_t SW_XX_UNUSED_2 = 24;
+constexpr uint8_t SW_SAUCER = 25;
+constexpr uint8_t SW_10_PTS = 26;
 constexpr uint8_t SW_DROP_TARGET_5 = 27;
 constexpr uint8_t SW_DROP_TARGET_4 = 28;
 constexpr uint8_t SW_DROP_TARGET_3 = 29;
 constexpr uint8_t SW_DROP_TARGET_2 = 30;
 constexpr uint8_t SW_DROP_TARGET_1 = 31;
 
-constexpr uint8_t SW_SAUCER = 25;
-constexpr uint8_t SW_RIGHT_INLANE = 17;
-constexpr uint8_t SW_LEFT_INLANE = 18;
-constexpr uint8_t SW_10_PTS = 26;
-constexpr uint8_t SW_RIGHT_OUTLANE = 16;
-constexpr uint8_t SW_TOP_BUMPER = 14;
-constexpr uint8_t SW_BOTTOM_BUMPER = 15;
+// --- Strobe 4 (column 4, switches 33-40) ---
+constexpr uint8_t SW_OUTHOLE = 32;
+// All others unused...
 
-constexpr uint8_t SW_WHITE = 23;
-constexpr uint8_t SW_GREEN = 22;
-constexpr uint8_t SW_AMBER = 21;
-constexpr uint8_t SW_YELLOW = 20;
-constexpr uint8_t SW_PURPLE = 19;
 
-constexpr uint8_t SW_LEFT_SPINNER = 4;
-constexpr uint8_t SW_RIGHT_SPINNER = 3;
 
-constexpr uint8_t SW_UL_SLING = 11;
-constexpr uint8_t SW_UR_SLING = 10;
-constexpr uint8_t SW_LL_SLING = 13;
-constexpr uint8_t SW_LR_SLING = 12;
 
-constexpr uint8_t SW_ROLLOVER = 9;
 
 constexpr uint8_t DropTargetSwitchArray[] = {SW_DROP_TARGET_1, SW_DROP_TARGET_2, SW_DROP_TARGET_3, SW_DROP_TARGET_4, SW_DROP_TARGET_5};
 

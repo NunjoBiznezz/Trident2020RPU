@@ -153,6 +153,7 @@ static volatile int numberOfU11Interrupts = 0;
 static volatile uint8_t InsideZeroCrossingInterrupt = 0;
 
 // Display refresh ISR (ARCH 1 — Bally/Stern)
+// See bsp_bsos.h. This is called somewhere near 319Hz to refresh the displays
 ISR(TIMER1_COMPA_vect) {
    RPU::displays.serviceISR();
 }

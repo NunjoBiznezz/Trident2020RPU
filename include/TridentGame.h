@@ -7,7 +7,6 @@
  **************************************************************************/
 
 #pragma once
-#include "MachineEeprom.h"
 #include "MachineMode.h"
 #include "PinballMachine.h"
 #include <stdint.h>
