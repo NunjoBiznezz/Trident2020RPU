@@ -80,7 +80,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(RPU)
 
-add_subdirectory(lib/WavTrigger)
+# WavTrigger now lives in its own repo (https://github.com/NunjoBiznezz/WavTrigger) —
+# bump GIT_TAG here to pull a newer release.
+FetchContent_Declare(
+    WavTrigger
+    GIT_REPOSITORY https://github.com/NunjoBiznezz/WavTrigger.git
+    GIT_TAG        v1.0.0
+)
+FetchContent_MakeAvailable(WavTrigger)
 
 # Game executable — only game-specific sources
 set(SOURCES
