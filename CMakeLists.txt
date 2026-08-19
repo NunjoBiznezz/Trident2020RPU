@@ -70,7 +70,16 @@ endif()
 find_package(Arduino REQUIRED)
 
 # Libraries (must come before the game target so PUBLIC defines propagate)
-add_subdirectory(lib/RPU)
+# RPU now lives in its own repo (https://github.com/NunjoBiznezz/RPU) —
+# bump GIT_TAG here to pull a newer release.
+include(FetchContent)
+FetchContent_Declare(
+    RPU
+    GIT_REPOSITORY https://github.com/NunjoBiznezz/RPU.git
+    GIT_TAG        v5.7.0
+)
+FetchContent_MakeAvailable(RPU)
+
 add_subdirectory(lib/WavTrigger)
 
 # Game executable — only game-specific sources
