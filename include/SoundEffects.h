@@ -5,6 +5,18 @@
 
 /*********************************************************************
     Sound Effects - map directly to wav files
+    SB100 Sampled sounds for the WAV player
+*********************************************************************/
+constexpr uint8_t SOUND_EFFECT_TEN = 100;             // This plays the ten sound
+constexpr uint8_t SOUND_EFFECT_ONE_HUNDRED = 101;     // This plays the one hundred sound
+constexpr uint8_t SOUND_EFFECT_ONE_THOUSAND = 102;    // This plays the one thousand sound
+constexpr uint8_t SOUND_EFFECT_TEN_THOUSAND = 103;    // This plays the ten thousand sound
+constexpr uint8_t SOUND_EFFECT_ADD_BONUS = 104;       // This plays the add bonus sound
+constexpr uint8_t SOUND_EFFECT_POP_BUMPER = 105;      // This plays the pop bumper sound
+constexpr uint8_t SOUND_EFFECT_INTRO = 106;           // This plays the intro sound
+
+/*********************************************************************
+    Sound Tracks
 *********************************************************************/
 constexpr uint8_t SOUND_EFFECT_NONE = 0;
 constexpr uint8_t SOUND_EFFECT_DT_SKILL_SHOT = 1;
