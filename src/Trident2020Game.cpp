@@ -7,8 +7,10 @@
  **************************************************************************/
 
 #include "Trident2020Game.h"
+#include "EepromHelpers.h"
 #include "SoundEffects.h"
 #include "Trident2020.h"
+#include <EEPROM.h>
 
 #if defined(DEBUG_MESSAGES) && defined(DEBUG_PORT)
 #define DEBUG_MESSAGE(x) DEBUG_PORT.write(x)
@@ -22,10 +24,86 @@
 Trident2020Game::Trident2020Game() {}
 
 // ===========================================================================
+// Settings
+// ===========================================================================
+
+void Trident2020Game::readSettings() {
+   trident2020Settings_.ballSaveNumSeconds = readEepromSetting(EEPROM_BALL_SAVE_BYTE, BALL_SAVE_TIME_S_DEFAULT);
+   if (trident2020Settings_.ballSaveNumSeconds > BALL_SAVE_TIME_S_MAX) {
+      trident2020Settings_.ballSaveNumSeconds = BALL_SAVE_TIME_S_MAX;
+   }
+
+   uint8_t awardOverride = readEepromSetting(EEPROM_AWARD_OVERRIDE_BYTE, 99);
+   if (awardOverride != 99) {
+      trident2020Settings_.scoreAwardReplay = awardOverride;
+   }
+
+   uint8_t ballsOverride = readEepromSetting(EEPROM_BALLS_OVERRIDE_BYTE, 99);
+   if (ballsOverride == 3 || ballsOverride == 5) {
+      trident2020Settings_.ballsPerGame = ballsOverride;
+   } else {
+      if (ballsOverride != 99) {
+         EEPROM.write(EEPROM_BALLS_OVERRIDE_BYTE, 99);
+      }
+      trident2020Settings_.ballsPerGame = BALLS_PER_GAME_DEFAULT;
+   }
+
+   trident2020Settings_.extraBallValue = readEepromULSetting(EEPROM_EXTRA_BALL_SCORE_BYTE);
+   if ((trident2020Settings_.extraBallValue % 1000) != 0 || trident2020Settings_.extraBallValue > 100000) {
+      trident2020Settings_.extraBallValue = 20000;
+   }
+
+   trident2020Settings_.specialValue = readEepromULSetting(EEPROM_SPECIAL_SCORE_BYTE);
+   if ((trident2020Settings_.specialValue % 1000) != 0 || trident2020Settings_.specialValue > 100000) {
+      trident2020Settings_.specialValue = 40000;
+   }
+
+   trident2020Settings_.sharpShooterStartBonus = readEepromSetting(EEPROM_SHARP_SHOOTER_START_BONUS_BYTE, 3);
+   if (trident2020Settings_.sharpShooterStartBonus < 1 || trident2020Settings_.sharpShooterStartBonus > 5) {
+      trident2020Settings_.sharpShooterStartBonus = 3;
+   }
+
+   trident2020Settings_.targetSpecialBonus = readEepromSetting(EEPROM_TARGET_SPECIAL_BONUS_BYTE, 4);
+   if (trident2020Settings_.targetSpecialBonus < 1 || trident2020Settings_.targetSpecialBonus > 5) {
+      trident2020Settings_.targetSpecialBonus = 4;
+   }
+
+   trident2020Settings_.standupSpecialLevel = readEepromSetting(EEPROM_STANDUP_SPECIAL_LEVEL_BYTE, 2);
+   if (trident2020Settings_.standupSpecialLevel < 1 || trident2020Settings_.standupSpecialLevel > 4) {
+      trident2020Settings_.standupSpecialLevel = 2;
+   }
+
+   trident2020Settings_.highScore      = readEepromULSetting(EEPROM_HIGHSCORE_BYTE, 10000);
+   trident2020Settings_.awardScores[0] = readEepromULSetting(EEPROM_AWARD_SCORE_1_BYTE);
+   trident2020Settings_.awardScores[1] = readEepromULSetting(EEPROM_AWARD_SCORE_2_BYTE);
+   trident2020Settings_.awardScores[2] = readEepromULSetting(EEPROM_AWARD_SCORE_3_BYTE);
+   trident2020Settings_.hiscoreBeat    = readEepromULSetting(EEPROM_HISCORE_BEAT_BYTE);
+
+   machine_->setHighScore(trident2020Settings_.highScore);
+}
+
+void Trident2020Game::saveHighScore(unsigned long score) {
+   trident2020Settings_.highScore = score;
+   EEPROM.put(EEPROM_HIGHSCORE_BYTE, (uint32_t)score);
+   trident2020Settings_.hiscoreBeat += 1;
+   EEPROM.put(EEPROM_HISCORE_BEAT_BYTE, trident2020Settings_.hiscoreBeat);
+   machine_->setHighScore(score);
+}
+
+// ---------------------------------------------------------------------------
+// Audio
+// ---------------------------------------------------------------------------
+
+void Trident2020Game::playSoundEffect(uint8_t soundEffectNum) {
+   machine_->playSoundEffect(soundEffectNum);
+}
+
+// ===========================================================================
 // Public interface
 // ===========================================================================
 
 void Trident2020Game::enter(unsigned long currentTime) {
+   readSettings();
    CurrentTime = currentTime;
    addPlayer(true);
    internalState_ = kInitGameplay;
@@ -73,9 +151,9 @@ TopState Trident2020Game::update(unsigned long currentTime) {
          CurrentStandupsHit = StandupsHit[CurrentPlayer];
          scoreAtTop = CurrentPlayerCurrentScore;
 
-         if (CurrentBallInPlay > settings_->trident2020Settings.ballsPerGame) {
+         if (CurrentBallInPlay > trident2020Settings_.ballsPerGame) {
             checkHighScores();
-            machine_->playSoundEffect(SOUND_EFFECT_GAME_OVER);
+            playSoundEffect(SOUND_EFFECT_GAME_OVER);
             setPlayerLamps(0);
             machine_->setLastGameResult(CurrentNumPlayers, CurrentScores);
             for (int count = 0; count < CurrentNumPlayers; count++) {
@@ -90,7 +168,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
 
    uint8_t switchHit;
 
-   if (NumTiltWarnings <= settings_->maxTiltWarnings) {
+   if (NumTiltWarnings <= machine_->getMaxTiltWarnings()) {
       while ((switchHit = machine_->pullFirstFromSwitchStack()) != SWITCH_STACK_EMPTY) {
          switch (switchHit) {
          case SW_SLAM:
@@ -100,13 +178,13 @@ TopState Trident2020Game::update(unsigned long currentTime) {
             if ((CurrentTime - LastTiltWarningTime) > TILT_WARNING_DEBOUNCE_TIME) {
                LastTiltWarningTime = CurrentTime;
                NumTiltWarnings += 1;
-               if (NumTiltWarnings > settings_->maxTiltWarnings) {
+               if (NumTiltWarnings > machine_->getMaxTiltWarnings()) {
                   machine_->disableSolenoidStack();
                   machine_->setDisableFlippers(true);
                   machine_->turnOffAllLamps();
                   machine_->setLampState(LAMP_TILT, true);
                }
-               machine_->playSoundEffect(SOUND_EFFECT_TILT_WARNING);
+               playSoundEffect(SOUND_EFFECT_TILT_WARNING);
             }
             break;
 
@@ -117,7 +195,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
          case SW_LEFT_INLANE:
             CurrentPlayerCurrentScore += ((unsigned long)RolloverValue) * (unsigned long)1000;
             addToBonus(1);
-            machine_->playSoundEffect(SOUND_EFFECT_LEFT_INLANE);
+            playSoundEffect(SOUND_EFFECT_LEFT_INLANE);
             if (BallFirstSwitchHitTime == 0) {
                BallFirstSwitchHitTime = CurrentTime;
             }
@@ -126,7 +204,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
          case SW_RIGHT_INLANE:
             CurrentPlayerCurrentScore += 3000;
             addToBonus(3);
-            machine_->playSoundEffect(SOUND_EFFECT_RIGHT_INLANE);
+            playSoundEffect(SOUND_EFFECT_RIGHT_INLANE);
             if (BallFirstSwitchHitTime == 0) {
                BallFirstSwitchHitTime = CurrentTime;
             }
@@ -134,11 +212,11 @@ TopState Trident2020Game::update(unsigned long currentTime) {
 
          case SW_RIGHT_OUTLANE:
             CurrentPlayerCurrentScore += 500;
-            machine_->playSoundEffect(SOUND_EFFECT_RIGHT_OUTLANE);
-            if (NumberOfStandupClears == settings_->trident2020Settings.standupSpecialLevel && !SpecialCollected) {
+            playSoundEffect(SOUND_EFFECT_RIGHT_OUTLANE);
+            if (NumberOfStandupClears == trident2020Settings_.standupSpecialLevel && !SpecialCollected) {
                SpecialCollected = true;
-               if (settings_->tournamentScoring) {
-                  CurrentPlayerCurrentScore += (unsigned long)settings_->trident2020Settings.specialValue;
+               if (machine_->isTournamentScoring()) {
+                  CurrentPlayerCurrentScore += (unsigned long)trident2020Settings_.specialValue;
                }
             }
             if (BallFirstSwitchHitTime == 0) {
@@ -148,16 +226,16 @@ TopState Trident2020Game::update(unsigned long currentTime) {
 
          case SW_10_PTS:
             CurrentPlayerCurrentScore += 10;
-            machine_->playSoundEffect(SOUND_EFFECT_10PT_SWITCH);
+            playSoundEffect(SOUND_EFFECT_10PT_SWITCH);
             break;
 
          case SW_LEFT_SPINNER:
             if (GameMode == GAME_MODE_SKILL_SHOT) {
                CurrentPlayerCurrentScore += 10000;
-               machine_->playSoundEffect(SOUND_EFFECT_LEFT_SPINNER);
+               playSoundEffect(SOUND_EFFECT_LEFT_SPINNER);
             } else if ((GameMode & GAME_MODE_FEEDING_FRENZY_FLAG) != 0) {
                CurrentPlayerCurrentScore += (unsigned long)5000 * (unsigned long)scoreMultiplier;
-               machine_->playSoundEffect(SOUND_EFFECT_FEEDING_FRENZY);
+               playSoundEffect(SOUND_EFFECT_FEEDING_FRENZY);
                if (CurrentFeedingFrenzy < 255) {
                   CurrentFeedingFrenzy += 1;
                }
@@ -187,7 +265,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
                }
                LastSpinnerHitTime = CurrentTime;
                LastSpinnerSide = 1;
-               machine_->playSoundEffect(SOUND_EFFECT_LEFT_SPINNER);
+               playSoundEffect(SOUND_EFFECT_LEFT_SPINNER);
             }
             if (BallFirstSwitchHitTime == 0) {
                BallFirstSwitchHitTime = CurrentTime;
@@ -197,7 +275,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
          case SW_RIGHT_SPINNER:
             if ((GameMode & GAME_MODE_FEEDING_FRENZY_FLAG) != 0) {
                CurrentPlayerCurrentScore += (unsigned long)5000 * (unsigned long)scoreMultiplier;
-               machine_->playSoundEffect(SOUND_EFFECT_FEEDING_FRENZY);
+               playSoundEffect(SOUND_EFFECT_FEEDING_FRENZY);
                if (CurrentFeedingFrenzy < 255) {
                   CurrentFeedingFrenzy += 1;
                }
@@ -222,7 +300,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
                   scoreAddition += 1000;
                }
                CurrentPlayerCurrentScore += (200 + (unsigned long)scoreAddition);
-               machine_->playSoundEffect(SOUND_EFFECT_RIGHT_SPINNER);
+               playSoundEffect(SOUND_EFFECT_RIGHT_SPINNER);
                if (BallFirstSwitchHitTime == 0) {
                   BallFirstSwitchHitTime = CurrentTime;
                }
@@ -246,7 +324,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
                   CurrentFeedingFrenzy = 0;
                   CurrentExploreTheDepths = 0;
                   CurrentSharpShooter = 0;
-                  machine_->playSoundEffect(SOUND_EFFECT_JACKPOT);
+                  playSoundEffect(SOUND_EFFECT_JACKPOT);
                   CurrentPlayerCurrentScore += (unsigned long)FeedingFrenzySpins[CurrentPlayer] * 1000;
                   CurrentPlayerCurrentScore += (unsigned long)ExploreTheDepthsHits[CurrentPlayer] * 10000;
                   CurrentPlayerCurrentScore += (unsigned long)SharpShooterHits[CurrentPlayer] * 10000;
@@ -255,16 +333,16 @@ TopState Trident2020Game::update(unsigned long currentTime) {
                   CurrentPlayerCurrentScore += 1000 * ((unsigned long)SaucerValue);
                   switch (SaucerValue) {
                   case 5:
-                     machine_->playSoundEffect(SOUND_EFFECT_SAUCER_HIT_5K);
+                     playSoundEffect(SOUND_EFFECT_SAUCER_HIT_5K);
                      break;
                   case 10:
-                     machine_->playSoundEffect(SOUND_EFFECT_SAUCER_HIT_10K);
+                     playSoundEffect(SOUND_EFFECT_SAUCER_HIT_10K);
                      break;
                   case 20:
-                     machine_->playSoundEffect(SOUND_EFFECT_SAUCER_HIT_20K);
+                     playSoundEffect(SOUND_EFFECT_SAUCER_HIT_20K);
                      break;
                   case 30:
-                     machine_->playSoundEffect(SOUND_EFFECT_SAUCER_HIT_30K);
+                     playSoundEffect(SOUND_EFFECT_SAUCER_HIT_30K);
                      break;
                   }
                }
@@ -295,10 +373,10 @@ TopState Trident2020Game::update(unsigned long currentTime) {
             if (GameMode == GAME_MODE_SKILL_SHOT) {
                CurrentPlayerCurrentScore += 8000;
                RolloverValue = 6;
-               machine_->playSoundEffect(SOUND_EFFECT_ROLLOVER_SKILL_SHOT);
+               playSoundEffect(SOUND_EFFECT_ROLLOVER_SKILL_SHOT);
             } else {
                CurrentPlayerCurrentScore += 1000 * ((unsigned long)RolloverValue);
-               machine_->playSoundEffect(SOUND_EFFECT_ROLLOVER);
+               playSoundEffect(SOUND_EFFECT_ROLLOVER);
                RolloverValue += 2;
                if (RolloverValue > 14) {
                   RolloverValue = 14;
@@ -328,7 +406,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
 
          case SW_TOP_BUMPER:
             CurrentPlayerCurrentScore += (unsigned long)100 * (unsigned long)scoreMultiplier;
-            machine_->playSoundEffect(SOUND_EFFECT_TOP_BUMPER_HIT);
+            playSoundEffect(SOUND_EFFECT_TOP_BUMPER_HIT);
             if (BallFirstSwitchHitTime == 0) {
                BallFirstSwitchHitTime = CurrentTime;
             }
@@ -336,7 +414,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
 
          case SW_BOTTOM_BUMPER:
             CurrentPlayerCurrentScore += (unsigned long)100 * (unsigned long)scoreMultiplier;
-            machine_->playSoundEffect(SOUND_EFFECT_BOTTOM_BUMPER_HIT);
+            playSoundEffect(SOUND_EFFECT_BOTTOM_BUMPER_HIT);
             if (BallFirstSwitchHitTime == 0) {
                BallFirstSwitchHitTime = CurrentTime;
             }
@@ -357,7 +435,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
          case SW_UR_SLING:
             CurrentPlayerCurrentScore += 10;
             addToBonus(1);
-            machine_->playSoundEffect(SOUND_EFFECT_UPPER_SLING);
+            playSoundEffect(SOUND_EFFECT_UPPER_SLING);
             if (BallFirstSwitchHitTime == 0) {
                BallFirstSwitchHitTime = CurrentTime;
             }
@@ -366,7 +444,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
          case SW_LL_SLING:
          case SW_LR_SLING:
             CurrentPlayerCurrentScore += 10;
-            machine_->playSoundEffect(SOUND_EFFECT_LOWER_SLING);
+            playSoundEffect(SOUND_EFFECT_LOWER_SLING);
             if (BallFirstSwitchHitTime == 0) {
                BallFirstSwitchHitTime = CurrentTime;
             }
@@ -383,8 +461,8 @@ TopState Trident2020Game::update(unsigned long currentTime) {
             if (CurrentBallInPlay < 2) {
                addPlayer(false);
             } else {
-               if (settings_->credits >= 1 || settings_->freePlayMode) {
-                  if (!settings_->freePlayMode) {
+               if (machine_->getCredits() >= 1 || machine_->getFreePlayMode()) {
+                  if (!machine_->getFreePlayMode()) {
                      machine_->decrementCredits();
                      machine_->setDisplayCredits(machine_->getCredits());
                   }
@@ -412,7 +490,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
             machine_->addCredit(true, 1);
             break;
          case SW_OUTHOLE:
-            if (NumTiltWarnings > settings_->maxTiltWarnings) {
+            if (NumTiltWarnings > machine_->getMaxTiltWarnings()) {
                returnState = kCountdownBonus;
             }
             break;
@@ -424,24 +502,24 @@ TopState Trident2020Game::update(unsigned long currentTime) {
       showBonusOnTree(Bonus);
    }
 
-   if (!settings_->scrollingScores && CurrentPlayerCurrentScore > machine_->getMaxDisplayScore()) {
+   if (!machine_->isScrollingScores() && CurrentPlayerCurrentScore > machine_->getMaxDisplayScore()) {
       CurrentPlayerCurrentScore -= machine_->getMaxDisplayScore();
    }
 
    if (scoreAtTop != CurrentPlayerCurrentScore) {
       LastTimeScoreChanged = CurrentTime;
-      if (!settings_->tournamentScoring) {
+      if (!machine_->isTournamentScoring()) {
          for (int awardCount = 0; awardCount < 3; awardCount++) {
-            if (settings_->trident2020Settings.awardScores[awardCount] != 0 &&
-                scoreAtTop < settings_->trident2020Settings.awardScores[awardCount] &&
-                CurrentPlayerCurrentScore >= settings_->trident2020Settings.awardScores[awardCount]) {
-               if (((settings_->trident2020Settings.scoreAwardReplay) >> awardCount) & 0x01) {
+            if (trident2020Settings_.awardScores[awardCount] != 0 &&
+                scoreAtTop < trident2020Settings_.awardScores[awardCount] &&
+                CurrentPlayerCurrentScore >= trident2020Settings_.awardScores[awardCount]) {
+               if (((trident2020Settings_.scoreAwardReplay) >> awardCount) & 0x01) {
                   machine_->addSpecialCredit();
                } else if (!ExtraBallCollected) {
                   ExtraBallCollected = true;
                   SamePlayerShootsAgain = true;
                   machine_->setLampState(LAMP_SHOOT_AGAIN, SamePlayerShootsAgain);
-                  machine_->playSoundEffect(SOUND_EFFECT_EXTRA_BALL);
+                  playSoundEffect(SOUND_EFFECT_EXTRA_BALL);
                }
             }
          }
@@ -463,7 +541,7 @@ TopState Trident2020Game::update(unsigned long currentTime) {
 }
 
 bool Trident2020Game::addPlayer(bool resetNumPlayers) {
-   if (settings_->credits < 1 && !settings_->freePlayMode) {
+   if (machine_->getCredits() < 1 && !machine_->getFreePlayMode()) {
       return false;
    }
    if (resetNumPlayers) {
@@ -477,12 +555,12 @@ bool Trident2020Game::addPlayer(bool resetNumPlayers) {
    machine_->setDisplay(CurrentNumPlayers - 1, 0);
    machine_->setDisplayBlank(CurrentNumPlayers - 1, 0x30);
 
-   if (!settings_->freePlayMode) {
+   if (!machine_->getFreePlayMode()) {
       machine_->decrementCredits();
       machine_->setDisplayCredits(machine_->getCredits());
       machine_->setCoinLockout(false);
    }
-   machine_->playSoundEffect(SOUND_EFFECT_ADD_PLAYER_1 + (CurrentNumPlayers - 1));
+   playSoundEffect(SOUND_EFFECT_ADD_PLAYER_1 + (CurrentNumPlayers - 1));
    setPlayerLamps(CurrentNumPlayers);
 
    machine_->recordGamePlayed();
@@ -909,18 +987,18 @@ void Trident2020Game::showRightSpinnerLamps() {
 void Trident2020Game::showAwardLamps() {
    machine_->setLampState(LAMP_EXTRA_BALL, ((NumberOfStandupClears == 1 && !ExtraBallCollected) || RescueFromTheDeepEndTime != 0), 0,
                           (RescueFromTheDeepEndTime != 0) ? 100 : 0);
-   machine_->setLampState(LAMP_DROP_TARGET_SPECIAL, (BonusX == (settings_->trident2020Settings.targetSpecialBonus - 1)) &&
+   machine_->setLampState(LAMP_DROP_TARGET_SPECIAL, (BonusX == (trident2020Settings_.targetSpecialBonus - 1)) &&
                                                         (GameMode & GAME_MODE_SHARP_SHOOTER_FLAG) == 0);
-   machine_->setLampState(LAMP_STAND_UP_SPECIAL, (NumberOfStandupClears == (settings_->trident2020Settings.standupSpecialLevel - 1)) &&
+   machine_->setLampState(LAMP_STAND_UP_SPECIAL, (NumberOfStandupClears == (trident2020Settings_.standupSpecialLevel - 1)) &&
                                                      (GameMode & GAME_MODE_EXPLORE_THE_DEPTHS_FLAG) == 0);
    machine_->setLampState(LAMP_RIGHT_OUTLANE_SPECIAL,
-                          (NumberOfStandupClears == settings_->trident2020Settings.standupSpecialLevel && !SpecialCollected));
+                          (NumberOfStandupClears == trident2020Settings_.standupSpecialLevel && !SpecialCollected));
 }
 
 void Trident2020Game::showShootAgainLamp() {
-   if (!BallSaveUsed && settings_->ballSaveNumSeconds > 0 &&
-       (CurrentTime - BallFirstSwitchHitTime) < ((unsigned long)(settings_->ballSaveNumSeconds - 1) * 1000)) {
-      unsigned long msRemaining = ((unsigned long)(settings_->ballSaveNumSeconds - 1) * 1000) - (CurrentTime - BallFirstSwitchHitTime);
+   if (!BallSaveUsed && trident2020Settings_.ballSaveNumSeconds > 0 &&
+       (CurrentTime - BallFirstSwitchHitTime) < ((unsigned long)(trident2020Settings_.ballSaveNumSeconds - 1) * 1000)) {
+      unsigned long msRemaining = ((unsigned long)(trident2020Settings_.ballSaveNumSeconds - 1) * 1000) - (CurrentTime - BallFirstSwitchHitTime);
       machine_->setLampState(LAMP_SHOOT_AGAIN, true, 0, (msRemaining < 1000) ? 100 : 500);
    } else {
       machine_->setLampState(LAMP_SHOOT_AGAIN, SamePlayerShootsAgain);
@@ -983,7 +1061,7 @@ void Trident2020Game::resetDropTargets() {
 void Trident2020Game::handleDropTargetHit(uint8_t switchHit, unsigned long scoreMultiplier) {
    if (GameMode == GAME_MODE_SKILL_SHOT) {
       BonusX = 2;
-      machine_->playSoundEffect(SOUND_EFFECT_DT_SKILL_SHOT);
+      playSoundEffect(SOUND_EFFECT_DT_SKILL_SHOT);
       resetDropTargets();
       CurrentPlayerCurrentScore += 10000;
    } else {
@@ -995,19 +1073,19 @@ void Trident2020Game::handleDropTargetHit(uint8_t switchHit, unsigned long score
              machine_->readSingleSwitchState(SW_DROP_TARGET_5)) {
             if ((GameMode & GAME_MODE_SHARP_SHOOTER_FLAG) == 0) {
                BonusX += 1;
-               machine_->playSoundEffect(SOUND_EFFECT_DROP_TARGET_CLEAR_1 + (BonusX - 1));
-               if (BonusX == settings_->trident2020Settings.targetSpecialBonus) {
-                  if (settings_->tournamentScoring) {
-                     CurrentPlayerCurrentScore += settings_->trident2020Settings.specialValue;
+               playSoundEffect(SOUND_EFFECT_DROP_TARGET_CLEAR_1 + (BonusX - 1));
+               if (BonusX == trident2020Settings_.targetSpecialBonus) {
+                  if (machine_->isTournamentScoring()) {
+                     CurrentPlayerCurrentScore += trident2020Settings_.specialValue;
                   } else {
                      machine_->addSpecialCredit();
                   }
                }
 
-               if (BonusX == settings_->trident2020Settings.sharpShooterStartBonus &&
+               if (BonusX == trident2020Settings_.sharpShooterStartBonus &&
                    !(GameModeFlagsQualified & GAME_MODE_SHARP_SHOOTER_FLAG)) {
                   GameModeFlagsQualified |= GAME_MODE_SHARP_SHOOTER_FLAG;
-                  machine_->playSoundEffect(SOUND_EFFECT_SHARP_SHOOTER_QUALIFIED);
+                  playSoundEffect(SOUND_EFFECT_SHARP_SHOOTER_QUALIFIED);
                   SharpShooterTarget = 1;
                   if ((GameMode & 0x0F) == GAME_MODE_MINI_GAME_QUALIFIED) {
                      GameModeEndTime = CurrentTime + MODE_QUALIFY_TIME;
@@ -1022,7 +1100,7 @@ void Trident2020Game::handleDropTargetHit(uint8_t switchHit, unsigned long score
                if (SharpShooterTarget > 5) {
                   SharpShooterTarget = 1;
                }
-               machine_->playSoundEffect(SOUND_EFFECT_SHARP_SHOOTER_HIT);
+               playSoundEffect(SOUND_EFFECT_SHARP_SHOOTER_HIT);
             }
 
             if (BonusX > 5) {
@@ -1032,7 +1110,7 @@ void Trident2020Game::handleDropTargetHit(uint8_t switchHit, unsigned long score
             resetDropTargets();
          } else {
             CurrentPlayerCurrentScore += 500;
-            machine_->playSoundEffect(SOUND_EFFECT_DROP_TARGET);
+            playSoundEffect(SOUND_EFFECT_DROP_TARGET);
          }
       }
    }
@@ -1055,10 +1133,10 @@ void Trident2020Game::handleStandupHit(uint8_t switchHit, unsigned long scoreMul
 
       if (GameMode == GAME_MODE_SKILL_SHOT) {
          CurrentPlayerCurrentScore += 15000;
-         machine_->playSoundEffect(SOUND_EFFECT_SU_SKILL_SHOT);
+         playSoundEffect(SOUND_EFFECT_SU_SKILL_SHOT);
       } else {
          uint8_t numSwitchesOn = countBits(switchMask | CurrentStandupsHit);
-         machine_->playSoundEffect(SOUND_EFFECT_FIRST_SU_SWITCH_HIT + (numSwitchesOn - 1));
+         playSoundEffect(SOUND_EFFECT_FIRST_SU_SWITCH_HIT + (numSwitchesOn - 1));
          if ((CurrentStandupsHit & switchMask) != 0) {
             CurrentPlayerCurrentScore += 500;
          } else {
@@ -1068,7 +1146,7 @@ void Trident2020Game::handleStandupHit(uint8_t switchHit, unsigned long scoreMul
       CurrentStandupsHit |= switchMask;
       LastStandupTargetHit |= switchMask;
    } else {
-      machine_->playSoundEffect(SOUND_EFFECT_EXPLORE_HIT);
+      playSoundEffect(SOUND_EFFECT_EXPLORE_HIT);
       CurrentPlayerCurrentScore += (unsigned long)10000 * (unsigned long)scoreMultiplier;
       if (CurrentExploreTheDepths < 255) {
          CurrentExploreTheDepths += 1;
@@ -1079,21 +1157,21 @@ void Trident2020Game::handleStandupHit(uint8_t switchHit, unsigned long scoreMul
       CurrentStandupsHit = 0;
       LastStandupTargetHit = 0;
       NumberOfStandupClears += 1;
-      if (NumberOfStandupClears == settings_->trident2020Settings.standupSpecialLevel) {
-         if (settings_->tournamentScoring) {
-            CurrentPlayerCurrentScore += (unsigned long)settings_->trident2020Settings.specialValue;
+      if (NumberOfStandupClears == trident2020Settings_.standupSpecialLevel) {
+         if (machine_->isTournamentScoring()) {
+            CurrentPlayerCurrentScore += (unsigned long)trident2020Settings_.specialValue;
          } else {
             machine_->addSpecialCredit();
          }
       }
       if ((NumberOfStandupClears % ExploreTheDepthsStart) == 0 && !(GameModeFlagsQualified & GAME_MODE_EXPLORE_THE_DEPTHS_FLAG)) {
-         machine_->playSoundEffect(SOUND_EFFECT_EXPLORE_QUALIFIED);
+         playSoundEffect(SOUND_EFFECT_EXPLORE_QUALIFIED);
          GameModeFlagsQualified |= GAME_MODE_EXPLORE_THE_DEPTHS_FLAG;
          if ((GameMode & 0x0F) == GAME_MODE_MINI_GAME_QUALIFIED) {
             GameModeEndTime = CurrentTime + MODE_QUALIFY_TIME;
          }
       } else {
-         machine_->playSoundEffect(SOUND_EFFECT_STANDUPS_CLEARED);
+         playSoundEffect(SOUND_EFFECT_STANDUPS_CLEARED);
       }
    }
 }
@@ -1106,7 +1184,7 @@ int Trident2020Game::initGamePlay() {
    DEBUG_MESSAGE("Starting game\n\r");
 
    machine_->enableSolenoidStack();
-   machine_->setCoinLockout(settings_->credits >= settings_->maximumCredits);
+   machine_->setCoinLockout(machine_->getCredits() >= machine_->getMaximumCredits());
    machine_->turnOffAllLamps();
    setPlayerLamps(1);
 
@@ -1146,10 +1224,10 @@ int Trident2020Game::initNewBall(bool curStateChanged, uint8_t playerNum, int ba
 
       machine_->setDisableFlippers(false);
       machine_->enableSolenoidStack();
-      machine_->setDisplayCredits(settings_->credits, true);
+      machine_->setDisplayCredits(machine_->getCredits(), true);
       setPlayerLamps(playerNum + 1, 4);
       if (CurrentNumPlayers > 1 && (ballNum != 1 || playerNum != 0)) {
-         machine_->playSoundEffect(SOUND_EFFECT_PLAYER_1_UP + playerNum);
+         playSoundEffect(SOUND_EFFECT_PLAYER_1_UP + playerNum);
       }
       startBallBackgroundSong(ballNum);
 
@@ -1157,7 +1235,7 @@ int Trident2020Game::initNewBall(bool curStateChanged, uint8_t playerNum, int ba
       machine_->setLampState(LAMP_BALL_IN_PLAY, true);
       machine_->setLampState(LAMP_TILT, false);
 
-      if (settings_->ballSaveNumSeconds > 0) {
+      if (trident2020Settings_.ballSaveNumSeconds > 0) {
          machine_->setLampState(LAMP_SHOOT_AGAIN, true, 0, 500);
       }
 
@@ -1230,7 +1308,7 @@ void Trident2020Game::checkForFeedingFrenzyQualify() {
    }
    if (AlternatingSpinnerCount == 3 && !(GameModeFlagsQualified & GAME_MODE_FEEDING_FRENZY_FLAG)) {
       GameModeFlagsQualified |= GAME_MODE_FEEDING_FRENZY_FLAG;
-      machine_->playSoundEffect(SOUND_EFFECT_FEEDING_FRENZY_QUALIFIED);
+      playSoundEffect(SOUND_EFFECT_FEEDING_FRENZY_QUALIFIED);
       if ((GameMode & 0x0F) == GAME_MODE_MINI_GAME_QUALIFIED) {
          GameModeEndTime = CurrentTime + MODE_QUALIFY_TIME;
       }
@@ -1351,7 +1429,7 @@ int Trident2020Game::manageGameMode() {
             modeStartSound = SOUND_EFFECT_MEGA_STACK_START;
             break;
          }
-         machine_->playSoundEffect(modeStartSound);
+         playSoundEffect(modeStartSound);
 
          uint8_t numMiniGames = countBits(0xF0 & GameMode);
          if (numMiniGames == 1) {
@@ -1403,17 +1481,17 @@ int Trident2020Game::manageGameMode() {
             CurrentFeedingFrenzy -= 1;
             FeedingFrenzySpins[CurrentPlayer] += 1;
             CurrentPlayerCurrentScore += 1000;
-            machine_->playSoundEffect(SOUND_EFFECT_FEEDING_FRENZY);
+            playSoundEffect(SOUND_EFFECT_FEEDING_FRENZY);
          } else if (CurrentSharpShooter > 0) {
             CurrentSharpShooter -= 1;
             SharpShooterHits[CurrentPlayer] += 1;
             CurrentPlayerCurrentScore += 2500;
-            machine_->playSoundEffect(SOUND_EFFECT_SHARP_SHOOTER_HIT);
+            playSoundEffect(SOUND_EFFECT_SHARP_SHOOTER_HIT);
          } else if (CurrentExploreTheDepths > 0) {
             CurrentExploreTheDepths -= 1;
             ExploreTheDepthsHits[CurrentPlayer] += 1;
             CurrentPlayerCurrentScore += 2500;
-            machine_->playSoundEffect(SOUND_EFFECT_EXPLORE_HIT);
+            playSoundEffect(SOUND_EFFECT_EXPLORE_HIT);
          } else {
             GameModeEndTime = 0;
             GameModeStartTime = 0;
@@ -1423,7 +1501,7 @@ int Trident2020Game::manageGameMode() {
             } else {
                GameMode = GAME_MODE_UNSTRUCTURED_PLAY;
                startBallBackgroundSong(CurrentBallInPlay);
-               machine_->playSoundEffect(SOUND_EFFECT_MODE_FINISHED);
+               playSoundEffect(SOUND_EFFECT_MODE_FINISHED);
             }
          }
          LastMiniGameBonusTime = CurrentTime;
@@ -1435,7 +1513,7 @@ int Trident2020Game::manageGameMode() {
          GameModeStartTime = CurrentTime;
          GameModeEndTime = CurrentTime + WIZARD_MODE_DURATION;
          machine_->playBackgroundSong(SOUND_EFFECT_BACKGROUND_WIZ);
-         machine_->playSoundEffect(SOUND_EFFECT_DEEP_BLUE_SEA_MODE);
+         playSoundEffect(SOUND_EFFECT_DEEP_BLUE_SEA_MODE);
          JackpotLit = true;
       }
 
@@ -1461,7 +1539,7 @@ int Trident2020Game::manageGameMode() {
          LastMiniGameBonusTime = 0;
          showPlayerScores(0xFF, false, false);
          startBallBackgroundSong(CurrentBallInPlay);
-         machine_->playSoundEffect(SOUND_EFFECT_MODE_FINISHED);
+         playSoundEffect(SOUND_EFFECT_MODE_FINISHED);
          GameMode = GAME_MODE_UNSTRUCTURED_PLAY;
       }
       break;
@@ -1488,21 +1566,21 @@ int Trident2020Game::manageGameMode() {
          BallTimeInTrough = CurrentTime;
       } else {
          if ((CurrentTime - BallTimeInTrough) > 500) {
-            if (BallFirstSwitchHitTime == 0 && NumTiltWarnings <= settings_->maxTiltWarnings) {
+            if (BallFirstSwitchHitTime == 0 && NumTiltWarnings <= machine_->getMaxTiltWarnings()) {
                machine_->pushToTimedSolenoidStack(SOL_OUTHOLE, 4, CurrentTime);
                BallTimeInTrough = 0;
                returnState = kNormalGameplay;
             } else {
-               if (!BallSaveUsed && ((CurrentTime - BallFirstSwitchHitTime) / 1000) < ((unsigned long)settings_->ballSaveNumSeconds)) {
+               if (!BallSaveUsed && ((CurrentTime - BallFirstSwitchHitTime) / 1000) < ((unsigned long)trident2020Settings_.ballSaveNumSeconds)) {
                   machine_->pushToTimedSolenoidStack(SOL_OUTHOLE, 4, CurrentTime + 100);
                   BallSaveUsed = true;
-                  machine_->playSoundEffect(SOUND_EFFECT_SWIM_AGAIN);
+                  playSoundEffect(SOUND_EFFECT_SWIM_AGAIN);
                   machine_->setLampState(LAMP_SHOOT_AGAIN, false);
                   BallTimeInTrough = CurrentTime;
                   returnState = kNormalGameplay;
                } else if (RescueFromTheDeepEndTime != 0 && CurrentTime < RescueFromTheDeepEndTime) {
                   machine_->pushToTimedSolenoidStack(SOL_OUTHOLE, 4, CurrentTime + 100);
-                  machine_->playSoundEffect(SOUND_EFFECT_RESCUE_FROM_THE_DEEP);
+                  playSoundEffect(SOUND_EFFECT_RESCUE_FROM_THE_DEEP);
                   RescueFromTheDeepAvailable = false;
                   BallTimeInTrough = CurrentTime;
                   returnState = kNormalGameplay;
@@ -1535,14 +1613,14 @@ int Trident2020Game::countdownBonus(bool curStateChanged) {
 
    if ((CurrentTime - LastCountdownReportTime) > 200) {
       if (Bonus > 0) {
-         if (NumTiltWarnings <= settings_->maxTiltWarnings) {
-            machine_->playSoundEffect(SOUND_EFFECT_BONUS_COUNT + (BonusX - 1));
+         if (NumTiltWarnings <= machine_->getMaxTiltWarnings()) {
+            playSoundEffect(SOUND_EFFECT_BONUS_COUNT + (BonusX - 1));
             CurrentPlayerCurrentScore += (unsigned long)1000 * ((unsigned long)BonusX);
          }
          Bonus -= 1;
          showBonusOnTree(Bonus);
       } else if (BonusCountDownEndTime == 0xFFFFFFFF) {
-         machine_->playSoundEffect(SOUND_EFFECT_BALL_OVER);
+         playSoundEffect(SOUND_EFFECT_BALL_OVER);
          machine_->setLampState(LAMP_BONUS_1, false);
          BonusCountDownEndTime = CurrentTime + 1000;
       }
@@ -1567,12 +1645,12 @@ void Trident2020Game::checkHighScores() {
       highScorePlayerNum = count;
    }
 
-   if (highestScore > settings_->trident2020Settings.highScore) {
-      if (settings_->highScoreReplay) {
+   if (highestScore > trident2020Settings_.highScore) {
+      if (machine_->isHighScoreReplay()) {
          machine_->addCredit(false, 3);
          machine_->addReplayAudit(3);
       }
-      machine_->saveHighScore(highestScore);
+      saveHighScore(highestScore);
 
       for (int count = 0; count < 4; count++) {
          if (count == highScorePlayerNum) {
@@ -1596,7 +1674,7 @@ void Trident2020Game::startBallBackgroundSong(uint8_t ballNum) {
    uint8_t song;
    if (ballNum == 1) {
       song = SOUND_EFFECT_BACKGROUND_1;
-   } else if (ballNum == settings_->trident2020Settings.ballsPerGame) {
+   } else if (ballNum == trident2020Settings_.ballsPerGame) {
       song = SOUND_EFFECT_BACKGROUND_6;
    } else {
       song = SOUND_EFFECT_BACKGROUND_2 + (uint8_t)(CurrentTime % 4);

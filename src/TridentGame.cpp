@@ -7,25 +7,49 @@
  **************************************************************************/
 
 #include "TridentGame.h"
+#include "EepromHelpers.h"
 #include "SoundEffects.h"
 #include "Trident.h"
 #include "Trident2020.h"
+#include <EEPROM.h>
 
 static constexpr unsigned BUMPER_AWARD_3_BALL = 1000;
 static constexpr unsigned BUMPER_AWARD_5_BALL = 100;
 static constexpr unsigned SPINNER_AWARD = 200;
 static constexpr unsigned SPINNER_AWARD_WITH_COLOR = 400;
 static constexpr unsigned PURPLE_SPINNER_AWARD = 1000;
-static constexpr unsigned STANDUP_TARGET_AWARD = 400;
+static constexpr unsigned STANDUP_TARGET_AWARD = 1000;
 static constexpr unsigned RIGHT_OUTLANE_SPECIAL_AWARD = 5000;
 static constexpr unsigned MAXIMUM_BONUSES = 19;
 static constexpr unsigned BONUS_AWARD = 1000;
 static constexpr unsigned MAXIMUM_BONUS_AWARD = MAXIMUM_BONUSES * BONUS_AWARD;
+static constexpr unsigned long BONUS_COUNTDOWN_DELAY = 100;
+
+// Indexed by (switchHit - SW_PURPLE): PURPLE=0, YELLOW=1, AMBER=2, GREEN=3, WHITE=4
+static constexpr uint8_t StandupTargetLamps[] = {LAMP_STAND_UP_PURPLE, LAMP_STAND_UP_YELLOW, LAMP_STAND_UP_AMBER, LAMP_STAND_UP_GREEN,
+                                                 LAMP_STAND_UP_WHITE};
+
+// Spinner lamp lit when the corresponding standup target is first hit this ball.
+static constexpr uint8_t SpinnerLamps[] = {
+    LAMP_LEFT_SPINNER_PURPLE,  // tIdx 0 = PURPLE
+    LAMP_RIGHT_SPINNER_YELLOW, // tIdx 1 = YELLOW
+    LAMP_LEFT_SPINNER_AMBER,   // tIdx 2 = AMBER
+    LAMP_RIGHT_SPINNER_GREEN,  // tIdx 3 = GREEN
+    LAMP_LEFT_SPINNER_WHITE,   // tIdx 4 = WHITE
+};
+// Which spinner gets +400 per target: 0=none, 1=left, 2=right
+static constexpr uint8_t SpinnerSide[] = {0, 2, 1, 2, 1};
+
+static constexpr unsigned long LeftLaneValues[] = {2000, 4000, 6000, 8000};
+static constexpr uint8_t LeftLaneLamps[] = {LAMP_LEFT_LANE_2K, LAMP_LEFT_LANE_4K, LAMP_LEFT_LANE_6K, LAMP_LEFT_LANE_8K};
+
+static constexpr uint8_t DropTargetSolenoidArray[] = {SOL_DROP_TARGET_1, SOL_DROP_TARGET_2, SOL_DROP_TARGET_3, SOL_DROP_TARGET_4,
+                                                      SOL_DROP_TARGET_5};
 static constexpr unsigned LEFT_INLANE_AWARD = 2000;
 static constexpr unsigned RIGHT_INLANE_AWARD = 3000;
 static constexpr unsigned RIGHT_OUTLANE_AWARD = 5000;
 static constexpr unsigned ROLLOVER_AWARD = 100;
-static constexpr unsigned LOWER_SLINGSHOT_AWARD = 100;
+static constexpr unsigned LOWER_SLINGSHOT_AWARD = 10;
 static constexpr unsigned UPPER_SLINGSHOT_AWARD = 1000;
 
 static constexpr unsigned INITIAL_BONUS_VALUE = 1000;
@@ -34,18 +58,104 @@ static constexpr unsigned INITIAL_ROLLOVER_BONUS = 2000;
 
 /// Drop-target starting patterns for each multiplier level.
 /// true = target raised (up), false = knocked down.
-static constexpr uint8_t TWO_TARGETS_UP   = 0x0A;  // 01010 < 2X: targets 2 & 4 up.
-static constexpr uint8_t THREE_TARGETS_UP = 0x15;  // 10101 < 3X: targets 1, 3 & 5 up.
-static constexpr uint8_t FOUR_TARGETS_UP  = 0x1B;  // 11011 < 4X: targets 1, 2, 4 & 5 up.
-static constexpr uint8_t FIVE_TARGETS_UP  = 0x1F;  // 11111 < 5X: all targets up.
+static constexpr uint8_t TWO_TARGETS_UP = 0x0A;   // 01010 < 2X: targets 2 & 4 up.
+static constexpr uint8_t THREE_TARGETS_UP = 0x15; // 10101 < 3X: targets 1, 3 & 5 up.
+static constexpr uint8_t FOUR_TARGETS_UP = 0x1B;  // 11011 < 4X: targets 1, 2, 4 & 5 up.
+static constexpr uint8_t FIVE_TARGETS_UP = 0x1F;  // 11111 < 5X: all targets up.
+
+static constexpr unsigned long SCORE_SOUND_INTERVAL = 250;
 
 TridentGame::TridentGame() {}
+
+void TridentGame::queueScoreSound(unsigned long score) {
+   uint8_t track;
+   uint8_t count;
+   if (score >= 10000) {
+      track = SOUND_EFFECT_TEN_THOUSAND;
+      count = (uint8_t)(score / 10000);
+   } else if (score >= 1000) {
+      track = SOUND_EFFECT_ONE_THOUSAND;
+      count = (uint8_t)(score / 1000);
+   } else if (score >= 100) {
+      track = SOUND_EFFECT_ONE_HUNDRED;
+      count = (uint8_t)(score / 100);
+   } else {
+      track = SOUND_EFFECT_TEN;
+      count = (uint8_t)(score / 10);
+   }
+   for (uint8_t i = 0; i < count; i++) {
+      machine_->queueSoundEffect(track, CurrentTime + (unsigned long)i * SCORE_SOUND_INTERVAL);
+   }
+}
+
+// ===========================================================================
+// Settings
+// ===========================================================================
+
+void TridentGame::readSettings() {
+   uint8_t origBallsOverride = readEepromSetting(EEPROM_ORIGINAL_BALLS_OVERRIDE_BYTE, 99);
+   if (origBallsOverride == 3 || origBallsOverride == 5) {
+      tridentSettings_.ballsPerGame = origBallsOverride;
+   } else {
+      if (origBallsOverride != 99) {
+         EEPROM.write(EEPROM_ORIGINAL_BALLS_OVERRIDE_BYTE, 99);
+      }
+      tridentSettings_.ballsPerGame = 3;
+   }
+
+   bool is5Ball = (tridentSettings_.ballsPerGame == 5);
+   tridentSettings_.highScore = readEepromULSetting(EEPROM_ORIGINAL_HIGHSCORE_BYTE, is5Ball ? 800000UL : 700000UL);
+   tridentSettings_.awardScores[0] = readEepromULSetting(EEPROM_ORIGINAL_AWARD_SCORE_1_BYTE, is5Ball ? 540000UL : 360000UL);
+   tridentSettings_.awardScores[1] = readEepromULSetting(EEPROM_ORIGINAL_AWARD_SCORE_2_BYTE, is5Ball ? 680000UL : 520000UL);
+   tridentSettings_.awardScores[2] = readEepromULSetting(EEPROM_ORIGINAL_AWARD_SCORE_3_BYTE, 0UL);
+   tridentSettings_.extraBallValue = readEepromULSetting(EEPROM_ORIGINAL_EXTRA_BALL_SCORE_BYTE);
+
+   uint8_t specialAward = readEepromSetting(EEPROM_ORIGINAL_SPECIAL_SCORE_BYTE, 0);
+   tridentSettings_.specialAward = (specialAward <= 3) ? specialAward : 0;
+
+   uint8_t dropTargetSpecialAt = readEepromSetting(EEPROM_ORIGINAL_DROP_TARGET_SPECIAL_BYTE, 5);
+   tridentSettings_.dropTargetSpecialAt = (dropTargetSpecialAt == 4) ? 4 : 5;
+
+   uint8_t highScoreFeature = readEepromSetting(EEPROM_ORIGINAL_HIGH_SCORE_FEATURE_BYTE, 1);
+   tridentSettings_.highScoreFeature = (highScoreFeature == 0) ? 0 : 1;
+
+   tridentSettings_.melodyOption = readEepromSetting(EEPROM_ORIGINAL_MELODY_OPTION_BYTE, 1);
+
+   uint8_t hstdFeature = readEepromSetting(EEPROM_ORIGINAL_HSTD_FEATURE_BYTE, 1);
+   tridentSettings_.hstdFeature = (hstdFeature <= 3) ? hstdFeature : 1;
+
+   uint8_t origAwardOverride = readEepromSetting(EEPROM_ORIGINAL_AWARD_OVERRIDE_BYTE, 99);
+   if (origAwardOverride != 99) {
+      tridentSettings_.scoreAwardReplay = origAwardOverride;
+   }
+
+   tridentSettings_.hiscoreBeat = readEepromULSetting(EEPROM_ORIGINAL_HISCORE_BEAT_BYTE);
+
+   machine_->setOriginalHighScore(tridentSettings_.highScore);
+}
+
+// ---------------------------------------------------------------------------
+// Audio
+// ---------------------------------------------------------------------------
+
+void TridentGame::playSoundEffect(uint8_t soundEffectNum) {
+   machine_->playSoundEffect(soundEffectNum);
+}
+
+void TridentGame::saveHighScore(unsigned long score) {
+   tridentSettings_.highScore = score;
+   EEPROM.put(EEPROM_ORIGINAL_HIGHSCORE_BYTE, (uint32_t)score);
+   tridentSettings_.hiscoreBeat += 1;
+   EEPROM.put(EEPROM_ORIGINAL_HISCORE_BEAT_BYTE, tridentSettings_.hiscoreBeat);
+   machine_->setOriginalHighScore(score);
+}
 
 // ===========================================================================
 // MachineMode interface
 // ===========================================================================
 
 void TridentGame::enter(unsigned long currentTime) {
+   readSettings();
    CurrentTime = currentTime;
    addPlayer(true);
    internalState_ = kInitGameplay;
@@ -65,36 +175,109 @@ TopState TridentGame::update(unsigned long currentTime) {
    } else if (curState == kInitNewBall) {
       returnState = initNewBall(curStateChanged, CurrentPlayer, CurrentBallInPlay);
    } else if (curState == kNormalGameplay) {
-      showPlayerScores(CurrentPlayer, BallFirstSwitchHitTime == 0,
-                       BallFirstSwitchHitTime > 0 && (CurrentTime - BallFirstSwitchHitTime) > 2000);
-      // TODO: add Original Trident scoring and rule logic here
-   } else if (curState == kBallOver) {
-      CurrentScores[CurrentPlayer] = CurrentPlayerCurrentScore;
-      if (SamePlayerShootsAgain) {
-         returnState = kInitNewBall;
-      } else {
-         CurrentPlayer += 1;
-         if (CurrentPlayer >= CurrentNumPlayers) {
-            CurrentPlayer = 0;
-            CurrentBallInPlay += 1;
-         }
-         CurrentPlayerCurrentScore = CurrentScores[CurrentPlayer];
-         if (CurrentBallInPlay > settings_->tridentSettings.ballsPerGame) {
-            machine_->playSoundEffect(SOUND_EFFECT_GAME_OVER);
-            setPlayerLamps(0);
-            machine_->setLastGameResult(CurrentNumPlayers, CurrentScores);
-            for (int count = 0; count < CurrentNumPlayers; count++) {
-               machine_->setDisplay(count, CurrentScores[count], true, 2);
-            }
-            returnState = kMatchMode;
+      showPlayerScores(CurrentPlayer, CurrentPlayerCurrentScore == CurrentScores[CurrentPlayer], false);
+      if (!HighScoreBeaten[CurrentPlayer] && CurrentPlayerCurrentScore > tridentSettings_.highScore) {
+         HighScoreBeaten[CurrentPlayer] = true;
+         if (tridentSettings_.highScoreFeature == 1) {
+            machine_->addSpecialCredit();
          } else {
-            returnState = kInitNewBall;
+            machine_->setLampState(LAMP_SHOOT_AGAIN, true);
+            machine_->pushToTimedSolenoidStack(SOL_KNOCKER, 3, CurrentTime, true);
+            SamePlayerShootsAgain = true;
+         }
+      }
+   } else if (curState == kBallOver) {
+      if (curStateChanged) {
+         machine_->disableSolenoidStack();
+         machine_->setDisableFlippers(true);
+         SavedBonusValue = CurrentBonusValue;
+         BonusCountdownPassesLeft = BonusMultiplier;
+         BonusCountdownTime = CurrentTime + BONUS_COUNTDOWN_DELAY;
+      }
+      if (CurrentBonusValue > 0 && CurrentTime >= BonusCountdownTime) {
+         CurrentPlayerCurrentScore += BONUS_AWARD;
+         CurrentBonusValue -= 1;
+         showBonusLamps();
+         playSoundEffect(SOUND_EFFECT_ONE_THOUSAND);
+         showPlayerScores(CurrentPlayer, false, false);
+         BonusCountdownTime += BONUS_COUNTDOWN_DELAY;
+      }
+      if (CurrentBonusValue == 0) {
+         BonusCountdownPassesLeft -= 1;
+         if (BonusCountdownPassesLeft > 0) {
+            CurrentBonusValue = SavedBonusValue;
+            showBonusLamps();
+            BonusCountdownTime = CurrentTime + BONUS_COUNTDOWN_DELAY;
+         } else {
+            CurrentScores[CurrentPlayer] = CurrentPlayerCurrentScore;
+            if (SamePlayerShootsAgain) {
+               returnState = kInitNewBall;
+            } else {
+               CurrentPlayer += 1;
+               if (CurrentPlayer >= CurrentNumPlayers) {
+                  CurrentPlayer = 0;
+                  CurrentBallInPlay += 1;
+               }
+               CurrentPlayerCurrentScore = CurrentScores[CurrentPlayer];
+               if (CurrentBallInPlay > tridentSettings_.ballsPerGame) {
+                  unsigned long maxScore = 0;
+                  for (uint8_t i = 0; i < CurrentNumPlayers; i++) {
+                     if (CurrentScores[i] > maxScore) {
+                        maxScore = CurrentScores[i];
+                     }
+                  }
+                  if (maxScore > tridentSettings_.highScore) {
+                     saveHighScore(maxScore);
+                  }
+                  playSoundEffect(SOUND_EFFECT_TEN); // TODO: investigate correct game-over sound for classic Trident
+                  setPlayerLamps(0);
+                  machine_->setLastGameResult(CurrentNumPlayers, CurrentScores);
+                  for (int count = 0; count < CurrentNumPlayers; count++) {
+                     machine_->setDisplay(count, CurrentScores[count], true, 2);
+                  }
+                  returnState = kMatchMode;
+               } else {
+                  returnState = kInitNewBall;
+               }
+            }
          }
       }
    }
 
-   // Switch stack — drain every tick regardless of state
-   if (NumTiltWarnings <= settings_->maxTiltWarnings) {
+   returnState = handleSwitches(curState, returnState);
+
+   if (returnState < 0) {
+      return TopState::HardwareTest;
+   }
+   if (returnState == kMatchMode) {
+      return TopState::Match;
+   }
+   if (returnState != curState) {
+      internalState_ = returnState;
+      internalStateChanged_ = true;
+   }
+
+   return TopState::Game;
+}
+
+int TridentGame::handleSwitches(int curState, int returnState) {
+   bool tilted = (NumTiltWarnings > machine_->getMaxTiltWarnings());
+
+   if (tilted) {
+      uint8_t switchHit;
+      while ((switchHit = machine_->pullFirstFromSwitchStack()) != PinballMachine::SWITCH_STACK_EMPTY) {
+         if (switchHit == SW_SELF_TEST_SWITCH) {
+            returnState = -1;
+         } else if (switchHit == SW_SAUCER) {
+            machine_->pushToTimedSolenoidStack(SOL_SAUCER, 5, CurrentTime + 500);
+         } else if (switchHit == SW_OUTHOLE && curState == kNormalGameplay) {
+            returnState = kBallOver;
+         }
+      }
+      return returnState;
+   }
+
+   {
       uint8_t switchHit;
       while ((switchHit = machine_->pullFirstFromSwitchStack()) != PinballMachine::SWITCH_STACK_EMPTY) {
          switch (switchHit) {
@@ -105,13 +288,13 @@ TopState TridentGame::update(unsigned long currentTime) {
             if ((CurrentTime - LastTiltWarningTime) > TILT_WARNING_DEBOUNCE_TIME) {
                LastTiltWarningTime = CurrentTime;
                NumTiltWarnings += 1;
-               if (NumTiltWarnings > settings_->maxTiltWarnings) {
-                  machine_->disableSolenoidStack();
+               if (NumTiltWarnings > machine_->getMaxTiltWarnings()) {
                   machine_->setDisableFlippers(true);
                   machine_->turnOffAllLamps();
                   machine_->setLampState(LAMP_TILT, true);
+                  CurrentBonusValue = 0;
                }
-               machine_->playSoundEffect(SOUND_EFFECT_TILT_WARNING);
+               playSoundEffect(SOUND_EFFECT_TEN); // TODO: investigate correct tilt-warning sound for classic Trident
             }
             break;
 
@@ -127,36 +310,240 @@ TopState TridentGame::update(unsigned long currentTime) {
 
          case SW_OUTHOLE:
             if (curState == kNormalGameplay) {
-               if (!BallSaveUsed && settings_->ballSaveNumSeconds > 0 && BallFirstSwitchHitTime != 0 &&
-                   (CurrentTime - BallFirstSwitchHitTime) < ((unsigned long)settings_->ballSaveNumSeconds * 1000)) {
-                  machine_->pushToTimedSolenoidStack(SOL_OUTHOLE, 4, CurrentTime + 100);
-                  BallSaveUsed = true;
+               if (CurrentPlayerCurrentScore == CurrentScores[CurrentPlayer]) {
+                  machine_->pushToTimedSolenoidStack(SOL_OUTHOLE, 4, CurrentTime + 500);
                } else {
                   returnState = kBallOver;
                }
             }
             break;
 
-         default:
-            if (curState == kNormalGameplay && BallFirstSwitchHitTime == 0) {
-               BallFirstSwitchHitTime = CurrentTime;
+         case SW_SAUCER:
+            if (curState == kNormalGameplay) {
+               CurrentPlayerCurrentScore += CurrentSaucerValue;
+               queueScoreSound(CurrentSaucerValue);
+               machine_->pushToTimedSolenoidStack(SOL_SAUCER, 5, CurrentTime + 1000);
             }
+            break;
+
+         case SW_WHITE:
+         case SW_GREEN:
+         case SW_AMBER:
+         case SW_YELLOW:
+         case SW_PURPLE: {
+            if (curState == kNormalGameplay) {
+               advanceBonus(1);
+               CurrentPlayerCurrentScore += STANDUP_TARGET_AWARD;
+               queueScoreSound(STANDUP_TARGET_AWARD);
+               uint8_t tIdx = switchHit - SW_PURPLE;
+               if (!(SpinnerBonusMask & (1u << tIdx))) {
+                  SpinnerBonusMask |= (1u << tIdx);
+                  machine_->setLampState(SpinnerLamps[tIdx], true);
+                  if (SpinnerSide[tIdx] == 1) {
+                     LeftSpinnerValue += SPINNER_AWARD_WITH_COLOR;
+                  }
+                  if (SpinnerSide[tIdx] == 2) {
+                     RightSpinnerValue += SPINNER_AWARD_WITH_COLOR;
+                  }
+               }
+               if (!(StandupTargetsMask & (1u << tIdx))) {
+                  StandupTargetsMask |= (1u << tIdx);
+                  machine_->setLampState(StandupTargetLamps[tIdx], true);
+                  if (StandupTargetsMask == 0x1F) {
+                     for (uint8_t i = 0; i < 5; i++) {
+                        machine_->setLampState(StandupTargetLamps[i], false);
+                     }
+                     StandupTargetsMask = 0;
+                     StandupCompletions += 1;
+                     playSoundEffect(SOUND_EFFECT_TEN); // TODO: investigate correct standup-completion sound for classic Trident
+                     if (StandupCompletions == 1) {
+                        StandupExtraBallAvailable = true;
+                        machine_->setLampState(LAMP_EXTRA_BALL, true);
+                        machine_->setLampState(LAMP_STAND_UP_SPECIAL, true);
+                     } else {
+                        machine_->setLampState(LAMP_STAND_UP_SPECIAL, false);
+                        if (tridentSettings_.specialAward == 0) {
+                           CurrentPlayerCurrentScore += 100000UL;
+                        } else {
+                           if (tridentSettings_.specialAward == 3) {
+                              SamePlayerShootsAgain = true;
+                              machine_->setLampState(LAMP_SHOOT_AGAIN, true);
+                              machine_->pushToTimedSolenoidStack(SOL_KNOCKER, 3, CurrentTime, true);
+                           }
+                           machine_->addSpecialCredit();
+                        }
+                     }
+                  }
+               }
+            }
+            break;
+         }
+
+         case SW_UL_SLING:
+         case SW_UR_SLING:
+            if (curState == kNormalGameplay) {
+               CurrentPlayerCurrentScore += UPPER_SLINGSHOT_AWARD;
+               queueScoreSound(UPPER_SLINGSHOT_AWARD);
+               advanceBonus(1);
+            }
+            break;
+
+         case SW_LL_SLING:
+         case SW_LR_SLING:
+            if (curState == kNormalGameplay) {
+               CurrentPlayerCurrentScore += LOWER_SLINGSHOT_AWARD;
+               queueScoreSound(LOWER_SLINGSHOT_AWARD);
+               advanceBonus(1);
+            }
+            break;
+
+         case SW_ROLLOVER:
+            if (curState == kNormalGameplay) {
+               CurrentPlayerCurrentScore += ROLLOVER_AWARD;
+               queueScoreSound(ROLLOVER_AWARD);
+               if (LeftLaneValueIndex < 3) {
+                  machine_->setLampState(LeftLaneLamps[LeftLaneValueIndex], false);
+                  LeftLaneValueIndex += 1;
+                  machine_->setLampState(LeftLaneLamps[LeftLaneValueIndex], true);
+               }
+            }
+            break;
+
+         case SW_LEFT_INLANE:
+            if (curState == kNormalGameplay) {
+               advanceBonus(1);
+               CurrentPlayerCurrentScore += LeftLaneValues[LeftLaneValueIndex];
+               queueScoreSound(LeftLaneValues[LeftLaneValueIndex]);
+            }
+            break;
+
+         case SW_RIGHT_INLANE:
+            if (curState == kNormalGameplay) {
+               CurrentPlayerCurrentScore += RIGHT_INLANE_AWARD;
+               queueScoreSound(RIGHT_INLANE_AWARD);
+               advanceBonus(3);
+               if (StandupExtraBallAvailable) {
+                  StandupExtraBallAvailable = false;
+                  machine_->setLampState(LAMP_EXTRA_BALL, false);
+                  machine_->setLampState(LAMP_SHOOT_AGAIN, true);
+                  machine_->pushToTimedSolenoidStack(SOL_KNOCKER, 3, CurrentTime, true);
+                  SamePlayerShootsAgain = true;
+               }
+            }
+            break;
+
+         case SW_RIGHT_OUTLANE:
+            if (curState == kNormalGameplay) {
+               CurrentPlayerCurrentScore += RIGHT_OUTLANE_AWARD;
+               queueScoreSound(RIGHT_OUTLANE_AWARD);
+               advanceBonus(3);
+               if (DropTargetSpecialAvailable) {
+                  DropTargetSpecialAvailable = false;
+                  machine_->setLampState(LAMP_RIGHT_OUTLANE_SPECIAL, false);
+                  machine_->setLampState(LAMP_DROP_TARGET_SPECIAL, false);
+                  if (tridentSettings_.specialAward == 0) {
+                     CurrentPlayerCurrentScore += 100000UL;
+                  } else {
+                     if (tridentSettings_.specialAward == 3) {
+                        SamePlayerShootsAgain = true;
+                        machine_->setLampState(LAMP_SHOOT_AGAIN, true);
+                        machine_->pushToTimedSolenoidStack(SOL_KNOCKER, 3, CurrentTime, true);
+                     }
+                     machine_->addSpecialCredit();
+                  }
+               }
+            }
+            break;
+
+         case SW_DROP_TARGET_1:
+         case SW_DROP_TARGET_2:
+         case SW_DROP_TARGET_3:
+         case SW_DROP_TARGET_4:
+         case SW_DROP_TARGET_5: {
+            if (curState == kNormalGameplay) {
+
+               uint8_t targetIdx = SW_DROP_TARGET_1 - switchHit;
+               if (DropTargetsMask & (1u << targetIdx)) {
+                  DropTargetsMask &= ~(1u << targetIdx);
+                  machine_->setLampState(DropTargetLampArray[targetIdx], false);
+                  if (DropTargetsMask == 0) {
+                     if (BonusMultiplier < 5) {
+                        BonusMultiplier += 1;
+                     }
+                     switch (BonusMultiplier) {
+                     case 2:
+                        machine_->setLampState(LAMP_BONUS_2X_FEATURE, false);
+                        machine_->setLampState(LAMP_BONUS_2X, true);
+                        CurrentSaucerValue = 10000;
+                        machine_->setLampState(LAMP_TOP_EJECT_5K, false);
+                        machine_->setLampState(LAMP_TOP_EJECT_10K, true);
+                        setupDropTargets(THREE_TARGETS_UP);
+                        machine_->setLampState(LAMP_BONUS_3X_FEATURE, true);
+                        break;
+                     case 3:
+                        machine_->setLampState(LAMP_BONUS_3X_FEATURE, false);
+                        machine_->setLampState(LAMP_BONUS_3X, true);
+                        CurrentSaucerValue = 20000;
+                        machine_->setLampState(LAMP_TOP_EJECT_10K, false);
+                        machine_->setLampState(LAMP_TOP_EJECT_20K, true);
+                        setupDropTargets(FOUR_TARGETS_UP);
+                        machine_->setLampState(LAMP_BONUS_4X_FEATURE, true);
+                        break;
+                     case 4:
+                        machine_->setLampState(LAMP_BONUS_4X_FEATURE, false);
+                        machine_->setLampState(LAMP_BONUS_4X, true);
+                        CurrentSaucerValue = 30000;
+                        machine_->setLampState(LAMP_TOP_EJECT_20K, false);
+                        machine_->setLampState(LAMP_TOP_EJECT_30K, true);
+                        setupDropTargets(FIVE_TARGETS_UP);
+                        machine_->setLampState(LAMP_BONUS_5X_FEATURE, true);
+                        break;
+                     case 5:
+                        machine_->setLampState(LAMP_BONUS_5X_FEATURE, false);
+                        machine_->setLampState(LAMP_BONUS_5X, true);
+                        setupDropTargets(FIVE_TARGETS_UP);
+                        break;
+                     }
+                     if (BonusMultiplier >= tridentSettings_.dropTargetSpecialAt) {
+                        DropTargetSpecialAvailable = true;
+                        machine_->setLampState(LAMP_RIGHT_OUTLANE_SPECIAL, true);
+                        machine_->setLampState(LAMP_DROP_TARGET_SPECIAL, true);
+                     }
+                  }
+               }
+            }
+            break;
+         }
+
+         case SW_TOP_BUMPER:
+         case SW_BOTTOM_BUMPER:
+            if (curState == kNormalGameplay) {
+               unsigned bumperAward = (tridentSettings_.ballsPerGame == 3) ? BUMPER_AWARD_3_BALL : BUMPER_AWARD_5_BALL;
+               CurrentPlayerCurrentScore += bumperAward;
+               playSoundEffect(SOUND_EFFECT_POP_BUMPER);
+            }
+            break;
+
+         case SW_LEFT_SPINNER:
+            if (curState == kNormalGameplay) {
+               CurrentPlayerCurrentScore += LeftSpinnerValue;
+               queueScoreSound(LeftSpinnerValue);
+            }
+            break;
+
+         case SW_RIGHT_SPINNER:
+            if (curState == kNormalGameplay) {
+               CurrentPlayerCurrentScore += RightSpinnerValue;
+               queueScoreSound(RightSpinnerValue);
+            }
+            break;
+
+         default:
             break;
          }
       }
    }
-
-   if (returnState < 0) {
-      return TopState::HardwareTest;
-   }
-   if (returnState == kMatchMode) {
-      return TopState::Match;
-   }
-   if (returnState != curState) {
-      internalState_ = returnState;
-      internalStateChanged_ = true;
-   }
-   return TopState::Game;
+   return returnState;
 }
 
 // ===========================================================================
@@ -179,13 +566,13 @@ bool TridentGame::addPlayer(bool resetNumPlayers) {
    machine_->setDisplay(CurrentNumPlayers - 1, 0);
    machine_->setDisplayBlank(CurrentNumPlayers - 1, 0x30);
 
-   if (!settings_->freePlayMode) {
+   if (!machine_->getFreePlayMode()) {
       machine_->decrementCredits();
       machine_->setDisplayCredits(machine_->getCredits());
       machine_->setCoinLockout(false);
    }
 
-   machine_->playSoundEffect(SOUND_EFFECT_ADD_PLAYER_1 + (CurrentNumPlayers - 1));
+   playSoundEffect(SOUND_EFFECT_TEN); // TODO: investigate correct add-player sound for classic Trident
    setPlayerLamps(CurrentNumPlayers);
    machine_->recordGamePlayed();
    return true;
@@ -222,7 +609,7 @@ void TridentGame::showPlayerScores(uint8_t displayToUpdate, bool flashCurrent, b
 
 int TridentGame::initGamePlay() {
    machine_->enableSolenoidStack();
-   machine_->setCoinLockout(settings_->credits >= settings_->maximumCredits);
+   machine_->setCoinLockout(machine_->getCredits() >= machine_->getMaximumCredits());
    machine_->turnOffAllLamps();
    setPlayerLamps(1);
 
@@ -236,6 +623,9 @@ int TridentGame::initGamePlay() {
    CurrentBallInPlay = 1;
    CurrentNumPlayers = 1;
    CurrentPlayer = 0;
+   for (uint8_t i = 0; i < 4; i++) {
+      HighScoreBeaten[i] = false;
+   }
    showPlayerScores(0xFF, false, false);
 
    if (machine_->readSingleSwitchState(SW_SAUCER)) {
@@ -248,31 +638,81 @@ int TridentGame::initGamePlay() {
 int TridentGame::initNewBall(bool curStateChanged, uint8_t playerNum, int ballNum) {
    if (curStateChanged) {
       SamePlayerShootsAgain = false;
-      BallFirstSwitchHitTime = 0;
       BallSaveUsed = false;
       NumTiltWarnings = 0;
       LastTiltWarningTime = 0;
 
       machine_->setDisableFlippers(false);
       machine_->enableSolenoidStack();
-      machine_->setDisplayCredits(settings_->credits, true);
+      machine_->setDisplayCredits(machine_->getCredits(), true);
       setPlayerLamps(playerNum + 1, 4);
 
       if (CurrentNumPlayers > 1 && (ballNum != 1 || playerNum != 0)) {
-         machine_->playSoundEffect(SOUND_EFFECT_PLAYER_1_UP + playerNum);
+         playSoundEffect(SOUND_EFFECT_TEN); // TODO: investigate correct player-up sound for classic Trident
       }
-      startBallBackgroundSong(ballNum);
 
       machine_->setDisplayBallInPlay(ballNum);
       machine_->setLampState(LAMP_BALL_IN_PLAY, true);
       machine_->setLampState(LAMP_TILT, false);
 
-      if (settings_->ballSaveNumSeconds > 0) {
-         machine_->setLampState(LAMP_SHOOT_AGAIN, true, 0, 500);
-      }
-
       CurrentPlayerCurrentScore = CurrentScores[CurrentPlayer];
 
+      // Bonus and multiplier reset
+      BonusMultiplier = 1;
+      CurrentBonusValue = 1;
+      showBonusLamps();
+      machine_->setLampState(LAMP_BONUS_2X_FEATURE, true);
+      machine_->setLampState(LAMP_BONUS_2X, false);
+      machine_->setLampState(LAMP_BONUS_3X_FEATURE, false);
+      machine_->setLampState(LAMP_BONUS_3X, false);
+      machine_->setLampState(LAMP_BONUS_4X_FEATURE, false);
+      machine_->setLampState(LAMP_BONUS_4X, false);
+      machine_->setLampState(LAMP_BONUS_5X_FEATURE, false);
+      machine_->setLampState(LAMP_BONUS_5X, false);
+
+      // Standup targets: all off, no completions
+      StandupTargetsMask = 0;
+      StandupCompletions = 0;
+      StandupExtraBallAvailable = false;
+      for (uint8_t i = 0; i < 5; i++) {
+         machine_->setLampState(StandupTargetLamps[i], false);
+      }
+      machine_->setLampState(LAMP_EXTRA_BALL, false);
+      machine_->setLampState(LAMP_STAND_UP_SPECIAL, false);
+
+      // Spinner lamps and values: reset all
+      SpinnerBonusMask = 0;
+      LeftSpinnerValue = SPINNER_AWARD;
+      RightSpinnerValue = SPINNER_AWARD;
+      machine_->setLampState(LAMP_LEFT_SPINNER_WHITE, false);
+      machine_->setLampState(LAMP_LEFT_SPINNER_AMBER, false);
+      machine_->setLampState(LAMP_LEFT_SPINNER_PURPLE, false);
+      machine_->setLampState(LAMP_RIGHT_SPINNER_YELLOW, false);
+      machine_->setLampState(LAMP_RIGHT_SPINNER_GREEN, false);
+      machine_->setLampState(LAMP_RIGHT_SPINNER_PURPLE, false);
+
+      // Left lane value: reset to 2K
+      LeftLaneValueIndex = 0;
+      for (uint8_t i = 0; i < 4; i++) {
+         machine_->setLampState(LeftLaneLamps[i], i == 0);
+      }
+
+      // Drop targets start at 2X: targets 2 and 4 up
+      DropTargetSpecialAvailable = false;
+      machine_->setLampState(LAMP_RIGHT_OUTLANE_SPECIAL, false);
+      machine_->setLampState(LAMP_DROP_TARGET_SPECIAL, false);
+      setupDropTargets(TWO_TARGETS_UP);
+
+      // Saucer starts at 5K
+      CurrentSaucerValue = INITIAL_SAUCER_VALUE;
+      machine_->setLampState(LAMP_TOP_EJECT_5K, true);
+      machine_->setLampState(LAMP_TOP_EJECT_10K, false);
+      machine_->setLampState(LAMP_TOP_EJECT_20K, false);
+      machine_->setLampState(LAMP_TOP_EJECT_30K, false);
+
+      if (machine_->readSingleSwitchState(SW_SAUCER)) {
+         machine_->pushToTimedSolenoidStack(SOL_SAUCER, 5, CurrentTime + 500);
+      }
       if (machine_->readSingleSwitchState(SW_OUTHOLE)) {
          machine_->pushToTimedSolenoidStack(SOL_OUTHOLE, 4, CurrentTime + 100);
       }
@@ -284,16 +724,41 @@ int TridentGame::initNewBall(bool curStateChanged, uint8_t playerNum, int ballNu
    return kNormalGameplay;
 }
 
-void TridentGame::startBallBackgroundSong(uint8_t ballNum) {
-   uint8_t song;
-   if (ballNum == 1) {
-      song = SOUND_EFFECT_BACKGROUND_1;
-   } else if (ballNum == settings_->tridentSettings.ballsPerGame) {
-      song = SOUND_EFFECT_BACKGROUND_6;
-   } else {
-      song = SOUND_EFFECT_BACKGROUND_2 + (uint8_t)(CurrentTime % 4);
+void TridentGame::advanceBonus(uint8_t positions) {
+   uint8_t available = MAXIMUM_BONUSES - CurrentBonusValue;
+   uint8_t awarded   = (positions < available) ? positions : available;
+   CurrentBonusValue += awarded;
+   showBonusLamps();
+   for (uint8_t i = 0; i < awarded; i++) {
+      machine_->queueSoundEffect(SOUND_EFFECT_ADD_BONUS, CurrentTime + (unsigned long)i * SCORE_SOUND_INTERVAL);
    }
-   machine_->playBackgroundSong(song);
 }
 
+void TridentGame::setupDropTargets(uint8_t mask) {
+   DropTargetsMask = mask;
+   machine_->pushToSolenoidStack(SOL_DROP_TARGET_RESET, 10);
+   for (uint8_t i = 0; i < 5; i++) {
+      bool targetUp = (mask >> i) & 1;
+      if (!targetUp) {
+         machine_->pushToTimedSolenoidStack(DropTargetSolenoidArray[i], 4, CurrentTime + 500);
+      }
+      machine_->setLampState(DropTargetLampArray[i], targetUp);
+   }
+}
 
+void TridentGame::showBonusLamps() {
+   for (uint8_t i = 0; i < 10; i++) {
+      machine_->setLampState(LAMP_BONUS_1 + i, false);
+   }
+   if (CurrentBonusValue == 0) {
+      return;
+   }
+   if (CurrentBonusValue >= 10) {
+      machine_->setLampState(LAMP_BONUS_10, true);
+      if (CurrentBonusValue > 10) {
+         machine_->setLampState(LAMP_BONUS_1 + (CurrentBonusValue - 11), true);
+      }
+   } else {
+      machine_->setLampState(LAMP_BONUS_1 + (CurrentBonusValue - 1), true);
+   }
+}

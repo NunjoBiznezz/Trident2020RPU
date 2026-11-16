@@ -69,14 +69,14 @@ static const BuildInfoRecord FIRMWARE_BUILD_INFO PROGMEM = {
 static unsigned long CurrentTime = 0;
 
 static PinballMachine pinballMachine;
+static AttractMode attractMode;
 static TridentGame tridentGame;
 static Trident2020Game trident2020Game;
+static MatchMode matchMode;
 static HardwareTestMode hardwareTestMode;
 static StoredAdjustmentsMode storedAdjustmentsMode;
 static TridentAdjustmentsMode tridentAdjustmentsMode;
 static Trident2020AdjustmentsMode t2020AdjustmentsMode;
-static MatchMode matchMode;
-static AttractMode attractMode;
 
 static TopState topState = TopState::Attract;
 static MachineMode* activeMode = &attractMode;
@@ -110,7 +110,7 @@ void setup() {
 
    hardwareTestMode.setDependencies(pinballMachine);
    storedAdjustmentsMode.setDependencies(pinballMachine);
-   tridentAdjustmentsMode.setDependencies(pinballMachine);
+   tridentAdjustmentsMode.setDependencies(tridentGame, pinballMachine);
    t2020AdjustmentsMode.setDependencies(trident2020Game, pinballMachine);
    matchMode.setDependencies(pinballMachine);
    attractMode.setDependencies(pinballMachine);
@@ -152,7 +152,7 @@ void loop() {
          activeMode = &matchMode;
          break;
       case TopState::Game:
-         if (pinballMachine.getSettings().activeRuleSet == RuleSet::Original) {
+         if (pinballMachine.getActiveRuleSet() == RuleSet::Original) {
             activeMode = &tridentGame;
          } else {
             activeMode = &trident2020Game;

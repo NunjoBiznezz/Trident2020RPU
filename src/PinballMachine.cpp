@@ -19,6 +19,7 @@
 // Static data
 // ---------------------------------------------------------------------------
 
+
 // ---------------------------------------------------------------------------
 // Private helpers
 // ---------------------------------------------------------------------------
@@ -143,17 +144,14 @@ void PinballMachine::readStoredParameters() {
       settings_.credits = settings_.maximumCredits;
    }
 
-   settings_.freePlayMode = (readSetting(EEPROM_FREE_PLAY_BYTE, 0)) != 0;
-   settings_.matchFeature = (readSetting(EEPROM_MATCH_FEATURE_BYTE, 1)) != 0;
+   settings_.freePlayMode    = (readSetting(EEPROM_FREE_PLAY_BYTE,        0)) != 0;
+   settings_.matchFeature    = (readSetting(EEPROM_MATCH_FEATURE_BYTE,    1)) != 0;
    settings_.highScoreReplay = (readSetting(EEPROM_HIGH_SCORE_REPLAY_BYTE, 1)) != 0;
 
    uint8_t ruleSetByte = readSetting(EEPROM_ACTIVE_RULE_SET_BYTE, (uint8_t)RuleSet::Trident2020);
-   settings_.activeRuleSet = (ruleSetByte <= (uint8_t)RuleSet::Trident2020) ? (RuleSet)ruleSetByte : RuleSet::Trident2020;
+   settings_.activeRuleSet = (ruleSetByte <= (uint8_t)RuleSet::Trident2020)
+                             ? (RuleSet)ruleSetByte : RuleSet::Trident2020;
 
-   settings_.ballSaveNumSeconds = readSetting(EEPROM_BALL_SAVE_BYTE, BALL_SAVE_TIME_S_DEFAULT);
-   if (settings_.ballSaveNumSeconds > BALL_SAVE_TIME_S_MAX) {
-      settings_.ballSaveNumSeconds = BALL_SAVE_TIME_S_MAX;
-   }
 
    settings_.tournamentScoring = (readSetting(EEPROM_TOURNAMENT_SCORING_BYTE, 0)) != 0;
 
@@ -162,36 +160,9 @@ void PinballMachine::readStoredParameters() {
       settings_.maxTiltWarnings = TILT_WARNINGS_MAX;
    }
 
-   uint8_t awardOverride = readSetting(EEPROM_AWARD_OVERRIDE_BYTE, 99);
-   if (awardOverride != 99) {
-      settings_.trident2020Settings.scoreAwardReplay = awardOverride;
-   }
-
-   uint8_t ballsOverride = readSetting(EEPROM_BALLS_OVERRIDE_BYTE, 99);
-   if (ballsOverride == 3 || ballsOverride == 5) {
-      settings_.trident2020Settings.ballsPerGame = ballsOverride;
-   } else if (ballsOverride != 99) {
-      EEPROM.write(EEPROM_BALLS_OVERRIDE_BYTE, 99);
-   }
-
-   uint8_t origBallsOverride = readSetting(EEPROM_ORIGINAL_BALLS_OVERRIDE_BYTE, 99);
-   if (origBallsOverride == 3 || origBallsOverride == 5) {
-      settings_.tridentSettings.ballsPerGame = origBallsOverride;
-   } else if (origBallsOverride != 99) {
-      EEPROM.write(EEPROM_ORIGINAL_BALLS_OVERRIDE_BYTE, 99);
-   }
 
    settings_.scrollingScores = (readSetting(EEPROM_SCROLLING_SCORES_BYTE, 1)) != 0;
 
-   settings_.trident2020Settings.extraBallValue = readULSetting(EEPROM_EXTRA_BALL_SCORE_BYTE);
-   if ((settings_.trident2020Settings.extraBallValue % 1000) != 0 || settings_.trident2020Settings.extraBallValue > 100000) {
-      settings_.trident2020Settings.extraBallValue = 20000;
-   }
-
-   settings_.trident2020Settings.specialValue = readULSetting(EEPROM_SPECIAL_SCORE_BYTE);
-   if ((settings_.trident2020Settings.specialValue % 1000) != 0 || settings_.trident2020Settings.specialValue > 100000) {
-      settings_.trident2020Settings.specialValue = 40000;
-   }
 
    settings_.dimLevel = readSetting(EEPROM_DIM_LEVEL_BYTE, 2);
    if (settings_.dimLevel < 2 || settings_.dimLevel > 3) {
@@ -199,46 +170,15 @@ void PinballMachine::readStoredParameters() {
    }
    RPU_SetDimDivisor(1, settings_.dimLevel);
 
-   settings_.trident2020Settings.sharpShooterStartBonus = readSetting(EEPROM_SHARP_SHOOTER_START_BONUS_BYTE, 3);
-   if (settings_.trident2020Settings.sharpShooterStartBonus < 1 || settings_.trident2020Settings.sharpShooterStartBonus > 5) {
-      settings_.trident2020Settings.sharpShooterStartBonus = 3;
-   }
-
-   settings_.trident2020Settings.targetSpecialBonus = readSetting(EEPROM_TARGET_SPECIAL_BONUS_BYTE, 4);
-   if (settings_.trident2020Settings.targetSpecialBonus < 1 || settings_.trident2020Settings.targetSpecialBonus > 5) {
-      settings_.trident2020Settings.targetSpecialBonus = 4;
-   }
-
-   settings_.trident2020Settings.standupSpecialLevel = readSetting(EEPROM_STANDUP_SPECIAL_LEVEL_BYTE, 2);
-   if (settings_.trident2020Settings.standupSpecialLevel < 1 || settings_.trident2020Settings.standupSpecialLevel > 4) {
-      settings_.trident2020Settings.standupSpecialLevel = 2;
-   }
-
-   settings_.trident2020Settings.highScore = readULSetting(EEPROM_HIGHSCORE_BYTE, 10000);
-   settings_.trident2020Settings.awardScores[0] = readULSetting(EEPROM_AWARD_SCORE_1_BYTE);
-   settings_.trident2020Settings.awardScores[1] = readULSetting(EEPROM_AWARD_SCORE_2_BYTE);
-   settings_.trident2020Settings.awardScores[2] = readULSetting(EEPROM_AWARD_SCORE_3_BYTE);
-
-   settings_.tridentSettings.highScore = readULSetting(EEPROM_ORIGINAL_HIGHSCORE_BYTE, 10000);
-   settings_.tridentSettings.awardScores[0] = readULSetting(EEPROM_ORIGINAL_AWARD_SCORE_1_BYTE);
-   settings_.tridentSettings.awardScores[1] = readULSetting(EEPROM_ORIGINAL_AWARD_SCORE_2_BYTE);
-   settings_.tridentSettings.awardScores[2] = readULSetting(EEPROM_ORIGINAL_AWARD_SCORE_3_BYTE);
-   settings_.tridentSettings.extraBallValue = readULSetting(EEPROM_ORIGINAL_EXTRA_BALL_SCORE_BYTE);
-   settings_.tridentSettings.specialValue = readULSetting(EEPROM_ORIGINAL_SPECIAL_SCORE_BYTE);
-   uint8_t origAwardOverride = readSetting(EEPROM_ORIGINAL_AWARD_OVERRIDE_BYTE, 99);
-   if (origAwardOverride != 99) {
-      settings_.tridentSettings.scoreAwardReplay = origAwardOverride;
-   }
-
    // --- Audio settings ---
    settings_.soundSelector = readSetting(EEPROM_SOUND_SELECTOR_BYTE, 3);
    switch (settings_.soundSelector) {
    case SOUND_SELECTOR_NONE:
-   case SOUND_SELECTOR_ORIGINAL:
-   case SOUND_SELECTOR_TRIDENT2020:
+   case SOUND_SELECTOR_NATIVE:
+   case SOUND_SELECTOR_WAV_TRIGGER:
       break;
    default:
-      settings_.soundSelector = SOUND_SELECTOR_TRIDENT2020;
+      settings_.soundSelector = SOUND_SELECTOR_WAV_TRIGGER;
    }
    if (settings_.soundSelector > 3) {
       settings_.soundSelector = 3;
@@ -266,13 +206,11 @@ void PinballMachine::readStoredParameters() {
 #endif
 
    // --- Audit counters and coin counts ---
-   settings_.totalPlays = readULSetting(EEPROM_TOTAL_PLAYS_BYTE);
+   settings_.totalPlays   = readULSetting(EEPROM_TOTAL_PLAYS_BYTE);
    settings_.totalReplays = readULSetting(EEPROM_TOTAL_REPLAYS_BYTE);
-   settings_.trident2020Settings.hiscoreBeat = readULSetting(EEPROM_HISCORE_BEAT_BYTE);
-   settings_.tridentSettings.hiscoreBeat = readULSetting(EEPROM_ORIGINAL_HISCORE_BEAT_BYTE);
-   settings_.chute2Coins = readULSetting(EEPROM_CHUTE_2_COINS_BYTE);
-   settings_.chute1Coins = readULSetting(EEPROM_CHUTE_1_COINS_BYTE);
-   settings_.chute3Coins = readULSetting(EEPROM_CHUTE_3_COINS_BYTE);
+   settings_.chute2Coins  = readULSetting(EEPROM_CHUTE_2_COINS_BYTE);
+   settings_.chute1Coins  = readULSetting(EEPROM_CHUTE_1_COINS_BYTE);
+   settings_.chute3Coins  = readULSetting(EEPROM_CHUTE_3_COINS_BYTE);
 
    this->haveSettings_ = true;
 }
@@ -382,6 +320,7 @@ bool PinballMachine::readSingleSwitchState(uint8_t sw) {
    return RPU_ReadSingleSwitchState(sw);
 }
 
+
 void PinballMachine::setDisplayBlank(uint8_t display, uint8_t mask) {
    RPU_SetDisplayBlank(display, mask);
 }
@@ -394,29 +333,19 @@ void PinballMachine::cycleAllDisplays(unsigned long t, uint8_t curValue) {
    RPU_CycleAllDisplays(t, curValue);
 }
 
-int PinballMachine::getMaxLamps() const {
-   return RPU_MAX_LAMPS;
-}
-uint8_t PinballMachine::getHardwareMajorVersion() const {
-   return RPU_OS_MAJOR_VERSION;
-}
-uint8_t PinballMachine::getHardwareMinorVersion() const {
-   return RPU_OS_MINOR_VERSION;
-}
-unsigned long PinballMachine::getMaxDisplayScore() const {
-   return RPU_OS_MAX_DISPLAY_SCORE;
-}
-uint8_t PinballMachine::getNumDisplayDigits() const {
-   return RPU_OS_NUM_DIGITS;
-}
+int           PinballMachine::getMaxLamps()             const { return RPU_MAX_LAMPS; }
+uint8_t       PinballMachine::getHardwareMajorVersion() const { return RPU_OS_MAJOR_VERSION; }
+uint8_t       PinballMachine::getHardwareMinorVersion() const { return RPU_OS_MINOR_VERSION; }
+unsigned long PinballMachine::getMaxDisplayScore()      const { return RPU_OS_MAX_DISPLAY_SCORE; }
+uint8_t       PinballMachine::getNumDisplayDigits()     const { return RPU_OS_NUM_DIGITS; }
 
 uint8_t PinballMachine::getTotalDisplayDigits() const {
 #ifdef RPU_OS_USE_7_DIGIT_DISPLAYS
-#ifdef RPU_OS_USE_6_DIGIT_CREDIT_DISPLAY_WITH_7_DIGIT_DISPLAYS
+#  ifdef RPU_OS_USE_6_DIGIT_CREDIT_DISPLAY_WITH_7_DIGIT_DISPLAYS
    return 34;
-#else
+#  else
    return 35;
-#endif
+#  endif
 #else
    return 30;
 #endif
@@ -472,12 +401,6 @@ void PinballMachine::addReplayAudit(uint8_t count) {
    EEPROM.put(EEPROM_TOTAL_REPLAYS_BYTE, settings_.totalReplays);
 }
 
-void PinballMachine::saveHighScore(unsigned long score) {
-   settings_.trident2020Settings.highScore = score;
-   EEPROM.put(EEPROM_HIGHSCORE_BYTE, (uint32_t)score);
-   settings_.trident2020Settings.hiscoreBeat += 1;
-   EEPROM.put(EEPROM_HISCORE_BEAT_BYTE, settings_.trident2020Settings.hiscoreBeat);
-}
 
 void PinballMachine::acknowledgeResetScores() {
    settings_.resetScoresToClearVersion = false;
@@ -496,7 +419,7 @@ void PinballMachine::playCallout(uint8_t track) {
 }
 
 void PinballMachine::playBackgroundSong(unsigned short songNum) {
-   if (settings_.musicVolume != 0 && settings_.soundSelector == SOUND_SELECTOR_TRIDENT2020) {
+   if (settings_.musicVolume != 0 && settings_.soundSelector == SOUND_SELECTOR_WAV_TRIGGER) {
 #if defined(RPU_OS_USE_WAV_TRIGGER)
       wavHandler_.playBackgroundSong(songNum, true);
 #else
@@ -510,173 +433,28 @@ void PinballMachine::playSoundEffect(uint8_t soundEffectNum) {
    case SOUND_SELECTOR_NONE:
       return;
 
-   case SOUND_SELECTOR_ORIGINAL:
-      switch (soundEffectNum) {
-      case SOUND_EFFECT_ADD_BONUS:
-         audioHandler_.queueSound(SOUND_NATIVE_ADD_BONUS, currentTime_);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
-         break;
-
-      case SOUND_EFFECT_POP_BUMPER:
-         audioHandler_.queueSound(SOUND_NATIVE_POP_BUMPER, currentTime_);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
-         break;
-
-      case SOUND_EFFECT_ONE_HUNDRED:
-      case SOUND_EFFECT_ROLLOVER:
-      case SOUND_EFFECT_DT_SKILL_SHOT:
-      case SOUND_EFFECT_ROLLOVER_SKILL_SHOT:
-      case SOUND_EFFECT_SU_SKILL_SHOT:
-      case SOUND_EFFECT_LEFT_SPINNER:
-      case SOUND_EFFECT_RIGHT_SPINNER:
-      case SOUND_EFFECT_DROP_TARGET:
-      case SOUND_EFFECT_BALL_OVER:
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_HUNDRED, currentTime_);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
-         break;
-
-      case SOUND_EFFECT_LEFT_INLANE:
-         for (int count = 0; count < rolloverValue_; count++) {
-            audioHandler_.queueSound(SOUND_NATIVE_ONE_HUNDRED, currentTime_ + 200 * count);
-            audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
-         }
-         break;
-      case SOUND_EFFECT_RIGHT_INLANE:
-         for (int count = 0; count < 6; count++) {
-            audioHandler_.queueSound((count < 3) ? SOUND_NATIVE_ONE_HUNDRED : SOUND_NATIVE_ONE_THOUSAND, currentTime_ + 200 * count);
-            audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
-         }
-         break;
-      case SOUND_EFFECT_SAUCER_HIT_5K:
-         for (int count = 0; count < 5; count++) {
-            audioHandler_.queueSound(SOUND_NATIVE_ONE_HUNDRED, currentTime_ + 200 * count);
-            audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
-         }
-         break;
-      case SOUND_EFFECT_SAUCER_HIT_30K:
-         for (int count = 0; count < 3; count++) {
-            audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_ + 200 * count);
-            audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
-         }
-         break;
-      case SOUND_EFFECT_SAUCER_HIT_20K:
-         for (int count = 0; count < 2; count++) {
-            audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_ + 200 * count);
-            audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
-         }
-         break;
-      case SOUND_EFFECT_SAUCER_HIT_10K:
-         for (int count = 0; count < 1; count++) {
-            audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_ + 200 * count);
-            audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
-         }
-         break;
-      case SOUND_EFFECT_RIGHT_OUTLANE:
-         for (int count = 0; count < 5; count++) {
-            audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_ + 200 * count);
-            audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75 + (200 * count));
-         }
-         break;
-
-      case SOUND_EFFECT_ONE_THOUSAND:
-      case SOUND_EFFECT_TOP_BUMPER_HIT:
-      case SOUND_EFFECT_BOTTOM_BUMPER_HIT:
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
-         break;
-
-      case SOUND_EFFECT_SHOOT_AGAIN:
-      case SOUND_EFFECT_PLAYER_1_UP:
-      case SOUND_EFFECT_PLAYER_2_UP:
-      case SOUND_EFFECT_PLAYER_3_UP:
-      case SOUND_EFFECT_PLAYER_4_UP:
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 175);
-         break;
-
-      case SOUND_EFFECT_BONUS_COUNT:
-      case SOUND_EFFECT_2X_BONUS_COUNT:
-      case SOUND_EFFECT_3X_BONUS_COUNT:
-      case SOUND_EFFECT_4X_BONUS_COUNT:
-      case SOUND_EFFECT_5X_BONUS_COUNT:
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
-         break;
-
-      case SOUND_EFFECT_UPPER_SLING:
-      case SOUND_EFFECT_EXTRA_BALL:
-      case SOUND_EFFECT_TILT_WARNING:
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
-         break;
-
-      case SOUND_EFFECT_TEN:
-      case SOUND_EFFECT_10PT_SWITCH:
-      case SOUND_EFFECT_MATCH_SPIN:
-      case SOUND_EFFECT_LOWER_SLING:
-         audioHandler_.queueSound(SOUND_NATIVE_TEN, currentTime_);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
-         break;
-
-      case SOUND_EFFECT_TEN_THOUSAND:
-      case SOUND_EFFECT_DROP_TARGET_CLEAR_1:
-      case SOUND_EFFECT_DROP_TARGET_CLEAR_2:
-      case SOUND_EFFECT_DROP_TARGET_CLEAR_3:
-      case SOUND_EFFECT_DROP_TARGET_CLEAR_4:
-      case SOUND_EFFECT_DROP_TARGET_CLEAR_5:
-         audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
-         break;
-
-      case SOUND_EFFECT_FIRST_SU_SWITCH_HIT:
-      case SOUND_EFFECT_SECOND_SU_SWITCH_HIT:
-      case SOUND_EFFECT_THIRD_SU_SWITCH_HIT:
-      case SOUND_EFFECT_FOURTH_SU_SWITCH_HIT:
-      case SOUND_EFFECT_FIFTH_SU_SWITCH_HIT:
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
-         break;
-
-      case SOUND_EFFECT_ADD_CREDIT:
-      case SOUND_EFFECT_GAME_OVER:
-         audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 75);
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_HUNDRED, currentTime_ + 150);
-         audioHandler_.queueSound(SOUND_NATIVE_TEN, currentTime_ + 225);
-         audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_ + 325);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 400);
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_HUNDRED, currentTime_ + 475);
-         audioHandler_.queueSound(SOUND_NATIVE_TEN, currentTime_ + 550);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 650);
-         break;
-
-      case SOUND_EFFECT_ADD_PLAYER_1:
-      case SOUND_EFFECT_ADD_PLAYER_2:
-      case SOUND_EFFECT_ADD_PLAYER_3:
-      case SOUND_EFFECT_ADD_PLAYER_4:
-      case SOUND_EFFECT_RESCUE_FROM_THE_DEEP:
-      case SOUND_EFFECT_TRIDENT_INTRO:
-         audioHandler_.queueSound(SOUND_NATIVE_TEN, currentTime_);
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_HUNDRED, currentTime_ + 75);
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_ + 150);
-         audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_ + 225);
-         audioHandler_.queueSound(SOUND_NATIVE_TEN, currentTime_ + 325);
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_HUNDRED, currentTime_ + 400);
-         audioHandler_.queueSound(SOUND_NATIVE_ONE_THOUSAND, currentTime_ + 475);
-         audioHandler_.queueSound(SOUND_NATIVE_TEN_THOUSAND, currentTime_ + 550);
-         audioHandler_.queueSound(SOUND_NATIVE_NONE, currentTime_ + 650);
-         break;
-      }
+   case SOUND_SELECTOR_NATIVE:
+      audioHandler_.playSoundEffect(soundEffectNum);
       break;
 
-   case SOUND_SELECTOR_TRIDENT2020:
+   case SOUND_SELECTOR_WAV_TRIGGER:
    default:
 #if defined(RPU_OS_USE_WAV_TRIGGER)
       wavHandler_.playSound(soundEffectNum);
 #endif
       break;
    }
+}
+
+void PinballMachine::queueSoundEffect(uint8_t trackNum, unsigned long when) {
+   if (settings_.soundSelector == SOUND_SELECTOR_NONE) return;
+   if (settings_.soundSelector == SOUND_SELECTOR_NATIVE) return;
+#if defined(RPU_OS_USE_WAV_TRIGGER)
+   wavHandler_.queueSound(trackNum, when);
+#else
+   (void)trackNum;
+   (void)when;
+#endif
 }
 
 // ---------------------------------------------------------------------------
@@ -708,11 +486,13 @@ void PinballMachine::addSpecialCredit() {
 }
 
 void PinballMachine::addCoinToAudit(uint8_t chuteNum) {
-   static const int kEeprom[3] = {EEPROM_CHUTE_1_COINS_BYTE, EEPROM_CHUTE_2_COINS_BYTE, EEPROM_CHUTE_3_COINS_BYTE};
-   uint32_t* const kField[3] = {&settings_.chute1Coins, &settings_.chute2Coins, &settings_.chute3Coins};
-   if (chuteNum > 2) {
-      return;
-   }
+   static const int kEeprom[3] = {
+      EEPROM_CHUTE_1_COINS_BYTE, EEPROM_CHUTE_2_COINS_BYTE, EEPROM_CHUTE_3_COINS_BYTE
+   };
+   uint32_t* const kField[3] = {
+      &settings_.chute1Coins, &settings_.chute2Coins, &settings_.chute3Coins
+   };
+   if (chuteNum > 2) return;
    *kField[chuteNum] += 1;
    EEPROM.put(kEeprom[chuteNum], *kField[chuteNum]);
 }

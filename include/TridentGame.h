@@ -8,15 +8,28 @@
 
 #pragma once
 #include "MachineMode.h"
-#include "MachineSettings.h"
 #include "PinballMachine.h"
 #include <stdint.h>
+
+struct TridentGameSettings {
+   unsigned long highScore           = 0;
+   unsigned long awardScores[3]      = {};
+   unsigned long extraBallValue      = 0;       // Switch 23
+   uint8_t       specialAward        = 0;       // 00=100K pts, 01=free game, 10=free game, 11=free ball+free game
+   uint8_t       scoreAwardReplay    = 0;
+   uint32_t      hiscoreBeat         = 0;
+   uint8_t       dropTargetSpecialAt = 5;       // BonusMultiplier level that lights the outlane special (4 or 5)
+   uint8_t       highScoreFeature    = 1;       // Switch 6: 1=high score awards replay, 0=awards extra ball
+   uint8_t       ballsPerGame        = 3;       // Switch 7
+   uint8_t       melodyOption        = 1;       // Switch 8: ON=Full melodies, OFF=2 tones for coin/credit
+   uint8_t       hstdFeature         = 1;       // Switch 15/16: 00=Novelty, 01=1 Free Game…11=3 Free Games
+};
 
 class TridentGame : public MachineMode {
 public:
    TridentGame();
 
-   void setMachine(PinballMachine& m) { machine_ = &m; settings_ = &m.getSettings(); }
+   void setMachine(PinballMachine& m) { machine_ = &m; }
 
    void     enter(unsigned long currentTime) override;
    void     exit() override {}
@@ -29,6 +42,11 @@ public:
    uint8_t       getCurrentPlayer() const              { return CurrentPlayer; }
    uint8_t       getNumPlayers() const                 { return CurrentNumPlayers; }
 
+   TridentGameSettings& getSettings() { return tridentSettings_; }
+   unsigned long        getHighScore() const { return tridentSettings_.highScore; }
+
+   void readSettings();
+
 private:
    // Internal substates — private to this class; not shared with other modes.
    static constexpr int kInitGameplay   =   1;
@@ -37,8 +55,7 @@ private:
    static constexpr int kBallOver       = 100;
    static constexpr int kMatchMode      = 110;
 
-   const MachineSettings* settings_ = nullptr;
-   PinballMachine*        machine_  = nullptr;
+   PinballMachine* machine_ = nullptr;
 
    int  internalState_        = kInitGameplay;
    bool internalStateChanged_ = false;
@@ -52,10 +69,44 @@ private:
    unsigned long CurrentPlayerCurrentScore = 0;
 
    bool          SamePlayerShootsAgain    = false;
+   bool          HighScoreBeaten[4]       = {};
    bool          BallSaveUsed             = false;
-   unsigned long BallFirstSwitchHitTime   = 0;
    uint8_t       NumTiltWarnings          = 0;
    unsigned long LastTiltWarningTime      = 0;
+
+   uint8_t       CurrentBonusValue        = 1;  // bonus positions 1–19
+   unsigned long BonusCountdownTime       = 0;
+
+   // Left lane value progression (rollover advances, left inlane collects)
+   uint8_t       LeftLaneValueIndex       = 0;  // 0–3 → 2K/4K/6K/8K
+
+   // Standup target completion state
+   uint8_t       StandupTargetsMask      = 0;     // bit i = target i lit this round
+   uint8_t       StandupCompletions      = 0;     // times all 5 completed this ball
+   bool          StandupExtraBallAvailable = false;
+
+   // Spinner values (per-spin score) and bonus tracking
+   uint8_t       SpinnerBonusMask        = 0;     // bit i = spinner bonus for target i awarded this ball
+   uint16_t      LeftSpinnerValue        = 200;   // 200 base + 400 per lit left-side target
+   uint16_t      RightSpinnerValue       = 200;   // 200 base + 400 per lit right-side target
+
+   // Drop-target multiplier state
+   uint8_t       DropTargetsMask          = 0;    // bit i = drop target (i+1) is UP
+   uint8_t       BonusMultiplier          = 1;    // current multiplier level (1–5)
+   unsigned long CurrentSaucerValue       = 0;    // current top-eject award
+   bool          DropTargetSpecialAvailable = false;  // outlane special can be collected
+
+   // kBallOver multi-pass countdown state
+   uint8_t       SavedBonusValue          = 1;
+   uint8_t       BonusCountdownPassesLeft = 0;
+
+   TridentGameSettings tridentSettings_;
+
+   void playSoundEffect(uint8_t soundEffectNum);
+   void queueScoreSound(unsigned long score);
+   void saveHighScore(unsigned long score);
+
+   int  handleSwitches(int curState, int returnState);
 
    void setPlayerLamps(uint8_t numPlayers, uint8_t playerOffset = 0, int flashPeriod = 0);
    void showPlayerScores(uint8_t displayToUpdate, bool flashCurrent, bool dashCurrent,
@@ -63,5 +114,8 @@ private:
 
    int  initGamePlay();
    int  initNewBall(bool curStateChanged, uint8_t playerNum, int ballNum);
-   void startBallBackgroundSong(uint8_t ballNum);
+
+   void advanceBonus(uint8_t positions = 1);
+   void showBonusLamps();
+   void setupDropTargets(uint8_t mask);
 };

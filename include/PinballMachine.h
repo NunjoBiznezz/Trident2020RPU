@@ -43,15 +43,37 @@ public:
    //   WAV Trigger  — high-quality samples on SD card (RPU_OS_USE_WAV_TRIGGER)
    //   Sound card   — original Stern SB-100 / Squawk & Talk / Dash-51 hardware
    //
-   // playSoundEffect / playBackgroundSong / playCallout target the WAV Trigger
-   // path (managed by WavTriggerHandler). playNativeSound targets the
-   // native sound card path (managed by AudioHandler).
+   // Three primitives cover all audio output:
+   //
+   //   playLegacySound / queueLegacySound — take a SOUND_NATIVE_xxx constant
+   //       and route it to the SB100 hardware (RPU_OS_USE_SB100/SB300) or to
+   //       the matching SOUND_LEGACY_xxx WAV track, based on soundSelector.
+   //       Both are no-ops when soundSelector != SOUND_SELECTOR_NATIVE.
+   //       SOUND_NATIVE_NONE is meaningful only for SB100 (mute); it is
+   //       ignored on the WAV path.
+   //
+   //   playSoundEffect — plays a game-specific WAV track by number.
+   //       No-op when soundSelector == SOUND_SELECTOR_NATIVE or when
+   //       RPU_OS_USE_WAV_TRIGGER is not compiled in.
+   //
+   // playNativeSound sends a raw command directly to the sound card (used by
+   // the hardware test mode). Game classes own the mapping from logical sound-
+   // effect IDs to the patterns of native/WAV calls.
    // -----------------------------------------------------------------------
 
-   // One-shot sound effect. soundEffectNum maps directly to the WAV file
-   // track number on the SD card, or to an audioHandler command when the
-   // original sound card is selected.
-   void playSoundEffect(uint8_t soundEffectNum);
+   // // Play a SOUND_NATIVE_xxx sound immediately via SB100 or WAV legacy sample.
+   // void playLegacySound(uint8_t nativeSoundNum);
+   //
+   // // Queue a SOUND_NATIVE_xxx sound at a future time (SB100 timed queue);
+   // // on the WAV path the track plays immediately and `when` is ignored.
+   // void queueLegacySound(uint8_t nativeSoundNum, unsigned long when);
+
+   // Play a game-specific WAV track immediately. No-op when selector == SOUND_SELECTOR_NATIVE.
+   void playSoundEffect(uint8_t trackNum);
+
+   // Schedule a game-specific WAV track to play at a future time.
+   // No-op when selector == SOUND_SELECTOR_NATIVE or WAV Trigger not compiled in.
+   void queueSoundEffect(uint8_t trackNum, unsigned long when);
 
    // Start a looping background song on the WAV Trigger music channel.
    void playBackgroundSong(unsigned short songNum);
@@ -200,10 +222,6 @@ public:
    // multiple replays at once (e.g. 3 for beating the high score).
    void addReplayAudit(uint8_t count);
 
-   // Record a new Trident 2020 high score: updates the in-memory field,
-   // persists to EEPROM, and increments the beaten counter.
-   void saveHighScore(unsigned long score);
-
    // Clear the resetScoresToClearVersion flag once the game has acted on it.
    void acknowledgeResetScores();
 
@@ -213,7 +231,8 @@ public:
 
    // Set the rollover lane value used by the original-sound-card path to
    // determine how many tones to play on an inlane hit.
-   void setRolloverValue(uint8_t v) { rolloverValue_ = v; }
+   void    setRolloverValue(uint8_t v) { rolloverValue_ = v; }
+   uint8_t getRolloverValue()    const { return rolloverValue_; }
 
    // RPU loop housekeeping — call at start and end of each loop() tick in place
    // of RPU_DataRead / RPU_Update so callers need no RPU headers.
@@ -232,9 +251,16 @@ public:
    // Accessors
    // -----------------------------------------------------------------------
 
-   uint8_t          getCredits() const       { return settings_.credits; }
-   bool             getFreePlayMode() const  { return settings_.freePlayMode; }
-   bool             getMatchFeature() const  { return settings_.matchFeature; }
+   uint8_t          getCredits() const           { return settings_.credits; }
+   bool             getFreePlayMode() const      { return settings_.freePlayMode; }
+   bool             getMatchFeature() const      { return settings_.matchFeature; }
+   bool             isHighScoreReplay() const    { return settings_.highScoreReplay; }
+   bool             isTournamentScoring() const  { return settings_.tournamentScoring; }
+   bool             isScrollingScores() const    { return settings_.scrollingScores; }
+   int              getMaxTiltWarnings() const   { return settings_.maxTiltWarnings; }
+   int              getMaximumCredits() const    { return settings_.maximumCredits; }
+   RuleSet          getActiveRuleSet() const     { return settings_.activeRuleSet; }
+
    MachineSettings& getSettings();
 
    // Hardware capability queries — use these instead of RPU_* constants.
@@ -245,8 +271,11 @@ public:
    uint8_t       getNumDisplayDigits()      const;
    uint8_t       getTotalDisplayDigits()    const;
 
-   unsigned long getHighScore() const         { return settings_.trident2020Settings.highScore; }
-   unsigned long getOriginalHighScore() const { return settings_.tridentSettings.highScore; }
+   // High scores for attract-mode display; updated by games via setHighScore().
+   unsigned long getHighScore()         const { return t2020HighScore_; }
+   unsigned long getOriginalHighScore() const { return tridentHighScore_; }
+   void          setHighScore(unsigned long v)         { t2020HighScore_ = v; }
+   void          setOriginalHighScore(unsigned long v) { tridentHighScore_ = v; }
 
    // -----------------------------------------------------------------------
    // Last-game result — stored between games for attract mode display.
@@ -286,6 +315,11 @@ private:
    uint8_t       displayScrollPhase_[4]  = {0xFF, 0xFF, 0xFF, 0xFF};
 
    bool haveSettings_ = false;
+
+   // High scores cached from EEPROM for attract-mode display.
+   // Each game updates these via setHighScore() / setOriginalHighScore().
+   unsigned long t2020HighScore_   = 0;
+   unsigned long tridentHighScore_ = 0;
 
    // Last completed game results (for attract mode).
    unsigned long lastGameScores_[4]  = {};
